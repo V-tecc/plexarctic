@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://plexarctic.local/app" version="0.58.1" viewmodes="maximized">
+<widget xmlns="http://www.w3.org/ns/widgets" xmlns:tizen="http://tizen.org/ns/widgets" id="http://plexarctic.local/app" version="0.58.2" viewmodes="maximized">
     <tizen:application id="PlxArctic1.PlexArctic" package="PlxArctic1" required_version="2.3"/>
     <name>PLEX:arctic</name>
     <icon src="icon.png"/>
@@ -17,6 +17,13 @@
     <tizen:privilege name="http://tizen.org/privilege/internet"/>
     <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
     <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
+    <tizen:service id="PlxArctic1.service" auto-restart="false" on-boot="false">
+        <tizen:content src="service/service.js"/>
+        <tizen:name>PLEX:arctic preview</tizen:name>
+        <tizen:icon src="icon.png"/>
+        <tizen:description>Puts Continue watching and Recently added on the TV home screen</tizen:description>
+        <tizen:category name="http://tizen.org/category/service"/>
+    </tizen:service>
     <tizen:profile name="tv-samsung"/>
     <tizen:setting screen-orientation="landscape" context-menu="disable" background-support="disable" encryption="disable" install-location="auto" hwkey-event="enable"/>
 </widget>

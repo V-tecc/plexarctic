@@ -351,8 +351,8 @@ function abPage(x, d) {
    an update at most every 10 minutes; a tile opens the title here (or plays it). */
 function tvPreviewUpdate(d) {
   try {
-    if (!window.IS_TV || !window.webapis || !webapis.preview || !d) return;
-    const last = store.get('tvPreviewAt', 0) || 0;
+    if (!window.IS_TV || !window.tizen || !d) return;
+    const last = store.get('tvPreviewAt2', 0) || 0;
     if (Date.now() - last < 10 * 60000) return;
     const poster = (it) => imgURL(it.type === 'episode' ? (it.grandparentThumb || it.parentThumb || it.thumb) : it.thumb, 300, 450);
     const tile = (it, play) => ({
@@ -368,11 +368,26 @@ function tvPreviewUpdate(d) {
     if (cont.length) sections.push({ title: t('continue'), tiles: cont });
     if (fresh.length) sections.push({ title: t('recent'), tiles: fresh });
     if (!sections.length) return;
-    webapis.preview.setPreviewData(JSON.stringify({ sections: sections }),
-      () => { store.set('tvPreviewAt', Date.now()); },
-      (e) => { console.log('preview failed', e && e.message); });
+    const json = JSON.stringify({ sections: sections });
+    const fail = (where, e) => { if (!tvPreviewWarned) { tvPreviewWarned = true; toast('Smart Hub: ' + where + ' – ' + ((e && (e.message || e.name)) || e), 8000); } };
+    /* Samsung's way: hand the row to the app's small background service, which passes it on to the TV */
+    let viaService = false;
+    try {
+      if (tizen.systeminfo.getCapability('http://tizen.org/feature/web.service')) {
+        const ac = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/pick', null, 'image/jpeg', null,
+          [new tizen.ApplicationControlData('caller', ['ForegroundApp']), new tizen.ApplicationControlData('preview', [json])]);
+        tizen.application.launchAppControl(ac, tizen.application.getCurrentApplication().appInfo.packageId + '.service',
+          () => { store.set('tvPreviewAt2', Date.now()); }, (e) => fail('service', e));
+        viaService = true;
+      }
+    } catch (e) { fail('service', e); }
+    /* and straight from the app as well, in case this TV takes it that way */
+    if (window.webapis && webapis.preview) {
+      try { webapis.preview.setPreviewData(json, () => { store.set('tvPreviewAt2', Date.now()); }, (e) => { if (!viaService) fail('preview', e); }); } catch (e) { if (!viaService) fail('preview', e); }
+    }
   } catch (e) { /* not supported on this TV */ }
 }
+let tvPreviewWarned = false;
 /* open what was picked in the Smart Hub row */
 function tvDeepLinkGo() {
   const l = window.__deepLink;
