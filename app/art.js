@@ -131,7 +131,7 @@ const ART_KINDS = {
   logo: { list: 'clearLogos', one: 'clearLogo', lock: 'clearLogo.locked', label: 'artLogo', tmdb: 'logos', tw: 'w500', ratio: 'logo' },
   clear: { label: 'artClearart', ratio: 'logo', local: true }
 };
-const ART_TYPE = { movie: 1, show: 2, season: 3, episode: 4 };
+const ART_TYPE = { movie: 1, show: 2, season: 3, episode: 4, collection: 18 };
 function artAllowedNow() { return !!(adminCheck && adminCheck.yes && adminCheck.key === (S.server && S.server.id) + '|' + (S.user ? S.user.id : 'owner')); }
 /* writes go with the owner's token when we have it (a Home admin's own token may not be allowed to edit) */
 function artURL(path, extra) { return S.adminToken ? ownerURL(path, extra) : pmsURL(path, extra); }
@@ -143,10 +143,19 @@ async function artList(key, kind) {
   }));
 }
 async function artTmdb(m, kind) {
-  if (!S.tmdb || (m.type !== 'movie' && m.type !== 'show')) return [];
-  const id = tmdbIdOf(m);
-  if (!id) return [];
-  const r = await tmdbGet('/' + (m.type === 'movie' ? 'movie' : 'tv') + '/' + id + '/images', { include_image_language: [S.lang, 'en', 'null'].join(',') });
+  if (!S.tmdb || (m.type !== 'movie' && m.type !== 'show' && m.type !== 'collection')) return [];
+  let r;
+  if (m.type === 'collection') {
+    /* a collection: find TMDB's collection by name */
+    const name = String(m.title || '').replace(/\s*(collection|samlingen|samling|kolekce)\s*$/i, '');
+    const hit = ((await tmdbGet('/search/collection', { query: name })).results || [])[0];
+    if (!hit) return [];
+    r = await tmdbGet('/collection/' + hit.id + '/images', { include_image_language: [S.lang, 'en', 'null'].join(',') });
+  } else {
+    const id = tmdbIdOf(m);
+    if (!id) return [];
+    r = await tmdbGet('/' + (m.type === 'movie' ? 'movie' : 'tv') + '/' + id + '/images', { include_image_language: [S.lang, 'en', 'null'].join(',') });
+  }
   const k = ART_KINDS[kind];
   return (r[k.tmdb] || []).slice(0, 40).map((x) => ({
     src: 'tmdb', id: x.file_path, lang: x.iso_639_1 || '', thumb: 'https://image.tmdb.org/t/p/' + k.tw + x.file_path,
@@ -192,7 +201,7 @@ async function artEditor(item, kindIn) {
   let m;
   try { m = ((await api('/library/metadata/' + item.ratingKey, { includeGuids: 1 })).Metadata || [])[0]; } catch (e) { m = null; }
   if (!m) { toast(t('notFound'), 4000); return; }
-  const kinds = m.type === 'episode' ? ['poster'] : m.type === 'season' ? ['poster', 'art'] : ['poster', 'art', 'logo', 'clear'];
+  const kinds = m.type === 'episode' ? ['poster'] : (m.type === 'season' || m.type === 'collection') ? ['poster', 'art'] : ['poster', 'art', 'logo', 'clear'];
   let kind = kinds.includes(kindIn) ? kindIn : 'poster';
   let busy = false, changed = false;
   const draw = async (focusKey) => {
