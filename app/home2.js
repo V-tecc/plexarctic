@@ -253,3 +253,8 @@ function abPool(favs) {
   const pinned = rnd(pins.map((p) => Object.assign({ n: 0, films: null }, (favs || []).find((f) => f.name === p.name) || {}, p)));
   return pinned.concat(rnd((favs || []).slice(0, 10).filter((f) => !pins.some((p) => p.name === f.name))));
 }
+
+ICON.bookmark = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path><path d="M12 7v6M9 10h6"></path></svg>';
+ICON.bookmarkOn = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>';
+/* know the Watchlist on other pages too (the button on a title's page) */
+setTimeout(() => { if (S.server && S.token) wlLoad().catch(() => {}); }, 4000);
