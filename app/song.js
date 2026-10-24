@@ -78,8 +78,27 @@ function songRemember(res, m, at) {
 }
 
 /* the button in the player: listen, then show a card at the bottom left */
+let songBusy = false, songLast = null;
 async function songFind(pl, m, at, audioStreamID) {
   if (!songKey()) { toast(t('songNeedsKey'), 6000); return; }
+  /* never spend two lookups on the same moment: a second press while listening does nothing, and asking again
+     within 40 seconds of the same spot shows the earlier answer */
+  if (songBusy) return;
+  if (songLast && songLast.key === m.ratingKey && Math.abs(songLast.at - at) < 40 && songLast.res) { songShow(pl, songLast.res); return; }
+  songBusy = true;
+  try { await songFindNow(pl, m, at, audioStreamID); } finally { songBusy = false; }
+}
+function songShow(pl, res) {
+  const old = $('.songcard', pl); if (old) old.remove();
+  const card = document.createElement('div');
+  card.className = 'songcard';
+  const art = songArt(res);
+  card.innerHTML = (art ? '<img src="' + esc(art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
+    '<div class="songtx"><span class="label">' + esc(t('songFound')) + '</span><b>' + esc(res.title) + '</b><span>' + esc(res.artist) + (res.album && res.album !== res.title ? ' · ' + esc(res.album) : '') + '</span></div>';
+  pl.appendChild(card);
+  setTimeout(() => { if (document.contains(card)) { card.classList.add('out'); setTimeout(() => card.remove(), 400); } }, 15000);
+}
+async function songFindNow(pl, m, at, audioStreamID) {
   const old = $('.songcard', pl); if (old) old.remove();
   const card = document.createElement('div');
   card.className = 'songcard listening';
@@ -94,6 +113,7 @@ async function songFind(pl, m, at, audioStreamID) {
   } else if (!res) {
     card.innerHTML = '<div class="songtx"><b>' + esc(t('songNone')) + '</b><span>' + esc(t('songNoneSub')) + '</span></div>';
   } else {
+    songLast = { key: m.ratingKey, at: at, res: res };
     songRemember(res, m, at);
     const art = songArt(res);
     card.innerHTML = (art ? '<img src="' + esc(art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
