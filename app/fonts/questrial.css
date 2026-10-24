@@ -1,0 +1,9 @@
+/* Questrial (SIL OFL) for light/regular text; Roboto (Apache 2.0) supplies the heavier weights,
+   since Questrial only has one weight. Roboto also covers Cyrillic and Greek. */
+@font-face { font-family: 'Questrial'; font-style: normal; font-display: swap; font-weight: 100 600; src: url(questrial/Questrial-Regular.woff2) format('woff2'); unicode-range: U+0000-024F, U+1E00-1EFF, U+2000-206F, U+20AC, U+2122, U+2190-2199, U+2212; }
+@font-face { font-family: 'Questrial'; font-style: normal; font-display: swap; font-weight: 100 600; src: url(questrial/roboto-400.woff2) format('woff2'); unicode-range: U+0370-03FF, U+0400-052F; }
+@font-face { font-family: 'Questrial'; font-style: normal; font-display: swap; font-weight: 700 900; src: url(questrial/roboto-700.woff2) format('woff2'); }
+/* Plain Roboto, the whole family */
+@font-face { font-family: 'Roboto'; font-style: normal; font-display: swap; font-weight: 100 450; src: url(questrial/roboto-400.woff2) format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-display: swap; font-weight: 451 600; src: url(questrial/roboto-500.woff2) format('woff2'); }
+@font-face { font-family: 'Roboto'; font-style: normal; font-display: swap; font-weight: 601 900; src: url(questrial/roboto-700.woff2) format('woff2'); }
