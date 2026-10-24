@@ -15,7 +15,10 @@
 <script>
 /* Trailer page for PLEX:arctic. The TV app shows this page in a frame; because this page has a normal
    web address, YouTube agrees to play here. The app sends simple commands (play/pause, skip). */
-var id = new URLSearchParams(location.search).get('v') || '';
+var q = new URLSearchParams(location.search);
+var id = q.get('v') || '';
+var cc = q.get('cc') || '';   /* subtitle language wanted, e.g. sv */
+var hl = q.get('hl') || cc;
 var player = null;
 function send(msg) { try { parent.postMessage(msg, '*'); } catch (e) {} }
 var tag = document.createElement('script');
@@ -24,9 +27,20 @@ document.head.appendChild(tag);
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('p', {
     videoId: id,
-    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin },
+    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin,
+      cc_load_policy: cc ? 1 : 0, cc_lang_pref: cc || undefined, hl: hl || undefined },
     events: {
       onReady: function (e) { e.target.playVideo(); send({ yt: 'ready' }); },
+      onApiChange: function () {
+        /* pick the subtitle language; YouTube can translate the English subtitles when there are none in it */
+        if (!cc || !player.getOption) return;
+        try {
+          var list = player.getOption('captions', 'tracklist') || [];
+          var own = list.filter(function (x) { return x.languageCode === cc; })[0];
+          if (own) player.setOption('captions', 'track', own);
+          else if (list.length) player.setOption('captions', 'track', { languageCode: list[0].languageCode, translationLanguage: { languageCode: cc } });
+        } catch (err) {}
+      },
       onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
       onError: function (e) { send({ yt: 'error', code: e.data }); }
     }
