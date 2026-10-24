@@ -9,5 +9,6 @@ PLEX:arctic's own code is under the MIT license (see LICENSE). It ships with the
 | Manrope font | `app/fonts/manrope` | SIL Open Font License 1.1, https://github.com/sharanda/manrope |
 | Questrial font | `app/fonts/questrial/Questrial-Regular.woff2` | SIL Open Font License 1.1, https://fonts.google.com/specimen/Questrial |
 | Roboto font | `app/fonts/questrial/roboto-*.woff2` | Apache License 2.0, https://github.com/googlefonts/roboto |
+| Roboto Condensed font | `app/fonts/condensed/rc-*.woff2` | SIL Open Font License 1.1 (see `app/fonts/condensed/LICENSE`), https://fonts.google.com/specimen/Roboto+Condensed |
 
 Data comes from your own Plex server and plex.tv, TVmaze (https://www.tvmaze.com/api) and TMDB (https://www.themoviedb.org). This product uses the TMDB API but is not endorsed or certified by TMDB. PLEX:arctic is not made by or affiliated with Plex, Inc.

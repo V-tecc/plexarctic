@@ -1177,3 +1177,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .azrail .az { font-weight: var(--w400); }
 .azrail .az.focus, #stage[data-accent="color"] .azrail .az.focus { font-size: 38px; font-weight: var(--w500); }
 .azrail .az.focus::before { left: -12px; width: 7px; height: 7px; margin-top: -3.5px; }
+/* A–Z rail: a narrow font, and a smaller square sitting close to the letter */
+@font-face { font-family: 'Arctic Condensed'; font-weight: 400; src: url('fonts/condensed/rc-400.woff2') format('woff2'); }
+@font-face { font-family: 'Arctic Condensed'; font-weight: 500 900; src: url('fonts/condensed/rc-500.woff2') format('woff2'); }
+.azrail .az { font-family: 'Arctic Condensed', 'Roboto Condensed', sans-serif; }
+.azrail .az.focus::before { left: 0; width: 5px; height: 5px; margin-top: -2.5px; }
+.azrail .az.focus::before { position: static; display: inline-block; flex: none; margin: 0 5px 0 -10px; }
