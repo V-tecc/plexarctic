@@ -1472,3 +1472,14 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* spotlight 👍 when this one is marked More like this */
 .spothero .ghostbtn.on { background: var(--focus); color: #04211d; }
 .spothero .ghostbtn.on svg path:first-child { fill: none; }
+
+/* actor banner: the film's text sits on a dark, soft-edged panel so it reads over any picture, and is larger */
+.absel { width: 660px; top: 44px; right: 44px; padding: 24px 28px 26px; box-sizing: border-box; border-radius: 12px;
+  background: linear-gradient(90deg, rgba(11,11,13,.55) 0%, rgba(11,11,13,.82) 35%, rgba(11,11,13,.86) 100%);
+  box-shadow: 0 0 60px 30px rgba(11,11,13,.45); text-shadow: 0 2px 8px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9); gap: 10px; }
+.absel .ablabel { font-size: 18px; }
+.absel b { font-size: 48px; line-height: 1.05; }
+.absel .abmeta { font-size: 25px; color: #F1F1EC; }
+.absel p { font-size: 23px; line-height: 1.45; color: #E2E2E4; }
+.absel:empty { display: none; }
+.absel b { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
