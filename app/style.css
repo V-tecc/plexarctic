@@ -1256,3 +1256,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .eprow2.wo .num { width: 250px; flex: none; white-space: nowrap; font-size: 21px; }
 .eprow2.wo .et { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chip .chipstar { display: inline-flex; color: #F5C518; margin-right: 6px; } .chip .chipstar svg { width: 18px; height: 18px; fill: currentColor; }
+.trailerpage .ytcc { margin-left: auto; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,0.12); font-size: 18px; font-weight: var(--w600); }
+.trailerpage .ytcc.own, .trailerpage .ytcc.translated { background: rgba(45,212,191,0.22); color: #2DD4BF; }
+.trailerpage .ytcc + .ythint { margin-left: 0; }

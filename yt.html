@@ -30,7 +30,7 @@ function onYouTubeIframeAPIReady() {
     playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin,
       cc_load_policy: cc ? 1 : 0, cc_lang_pref: cc || undefined, hl: hl || undefined },
     events: {
-      onReady: function (e) { e.target.playVideo(); send({ yt: 'ready' }); },
+      onReady: function (e) { e.target.playVideo(); send({ yt: 'ready', v: 2 }); if (cc) send({ yt: 'cc', mode: 'looking' }); },
       onApiChange: function () { pickCaptions(); },
       onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
       onError: function (e) { send({ yt: 'error', code: e.data }); }
