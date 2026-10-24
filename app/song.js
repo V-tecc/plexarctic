@@ -101,6 +101,9 @@ function songRemember(res, m, at) {
 
 /* the button in the player: listen, then show a card at the bottom left */
 let songBusy = false, songLast = null;
+/* set by the player: jump inside the title that's playing instead of reopening it */
+let songJump = null;
+function songsFor(key) { return (store.get('songHistory', []) || []).filter((x) => String(x.key) === String(key)); }
 async function songFind(pl, m, at, audioStreamID) {
   if (!songKey()) { toast(t('songNeedsKey'), 6000); return; }
   /* never spend two lookups on the same moment: a second press while listening does nothing, and asking again
@@ -116,9 +119,19 @@ function songShow(pl, res) {
   card.className = 'songcard';
   const art = songArt(res);
   card.innerHTML = (art ? '<img src="' + esc(art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
-    '<div class="songtx"><span class="label">' + esc(t('songFound')) + '</span><b>' + esc(res.title) + '</b><span>' + esc(res.artist) + (res.album && res.album !== res.title ? ' · ' + esc(res.album) : '') + '</span></div>';
+    '<div class="songtx"><span class="label">' + esc(t('songFound')) + '</span><b>' + esc(res.title) + '</b><span>' + esc(res.artist) + (res.album && res.album !== res.title ? ' · ' + esc(res.album) : '') + '</span><small>' + esc(t('songListHint')) + '</small></div>';
   pl.appendChild(card);
-  setTimeout(() => { if (document.contains(card)) { card.classList.add('out'); setTimeout(() => card.remove(), 400); } }, 15000);
+  songAutoHide(pl, card, 15000);
+}
+/* the card stays while the video is paused; it only counts down while it plays */
+function songAutoHide(pl, card, ms) {
+  let left = ms;
+  const vid = $('#vid', pl);
+  const tick = setInterval(() => {
+    if (!document.contains(card)) { clearInterval(tick); return; }
+    if (!vid || !vid.paused) left -= 500;
+    if (left <= 0) { clearInterval(tick); card.classList.add('out'); setTimeout(() => card.remove(), 400); }
+  }, 500);
 }
 async function songFindNow(pl, m, at, audioStreamID) {
   const old = $('.songcard', pl); if (old) old.remove();
@@ -139,17 +152,18 @@ async function songFindNow(pl, m, at, audioStreamID) {
     songRemember(res, m, at);
     const art = songArt(res);
     card.innerHTML = (art ? '<img src="' + esc(art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
-      '<div class="songtx"><span class="label">' + esc(t('songFound')) + '</span><b>' + esc(res.title) + '</b><span>' + esc(res.artist) + (res.album && res.album !== res.title ? ' · ' + esc(res.album) : '') + '</span></div>';
+      '<div class="songtx"><span class="label">' + esc(t('songFound')) + '</span><b>' + esc(res.title) + '</b><span>' + esc(res.artist) + (res.album && res.album !== res.title ? ' · ' + esc(res.album) : '') + '</span><small>' + esc(t('songListHint')) + '</small></div>';
   }
-  setTimeout(() => { if (document.contains(card)) { card.classList.add('out'); setTimeout(() => card.remove(), 400); } }, res ? 15000 : 7000);
+  songAutoHide(pl, card, res ? 15000 : 7000);
 }
 
 /* every song you've looked up, newest first (Settings → Songs you looked up) */
-function songHistorySheet() {
-  const list = store.get('songHistory', []) || [];
-  const rows = list.map((s, i) => '<div class="songrow f" data-key="sh-' + i + '" data-act="' + A(() => { closeModal(true); go(viewPlayer, [s.key, { at: s.at }]); }) + '">' +
+function songHistorySheet(onlyKey, title) {
+  const all = store.get('songHistory', []) || [];
+  const list = onlyKey ? all.filter((x) => String(x.key) === String(onlyKey)) : all;
+  const rows = list.map((s, i) => '<div class="songrow f" data-key="sh-' + i + '" data-act="' + A(() => { closeModal(true); if (!(songJump && songJump.key === String(s.key) && songJump.go(s.at))) go(viewPlayer, [s.key, { at: s.at }]); }) + '">' +
     (s.art ? '<img src="' + esc(s.art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
     '<div class="songtx"><b>' + esc(s.title) + '</b><span>' + esc(s.artist) + '</span><small>' + esc(s.from + ' · ' + tc(s.at)) + '</small></div></div>').join('');
-  gradSheet(openModal(sheetHeader(t('songHistory'), list.length ? (list.length === 1 ? t('songCount1') : t('songCount', { n: list.length })) : '') +
+  gradSheet(openModal(sheetHeader(title ? t('songsIn', { s: title }) : t('songHistory'), list.length ? (list.length === 1 ? t('songCount1') : t('songCount', { n: list.length })) : '') +
     (rows ? '<p class="sheettext small">' + esc(t('songHistoryNote')) + '</p><div class="songlist">' + rows + '</div>' : '<p class="sheettext">' + esc(t('songHistoryEmpty')) + '</p>'), 'sh-0'));
 }

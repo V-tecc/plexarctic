@@ -1236,3 +1236,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .fimg::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0)); pointer-events: none; border-radius: 0 0 8px 8px; }
 .fimg .flogo { bottom: 6px; height: 30%; }
 .fimg .flogo { bottom: 10px; }
+.songcard .songtx small { font-size: 15px; opacity: 0.55; margin-top: 4px; }
