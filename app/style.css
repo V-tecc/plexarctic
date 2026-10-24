@@ -1469,3 +1469,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .artopt.wide { padding-top: 56.25%; }
 .artopt.tall > img, .artopt.wide > img { position: absolute; left: 0; top: 0; }
 .vstrip.loading .vscells { opacity: .35; transition: opacity 120ms; }
+/* spotlight 👍 when this one is marked More like this */
+.spothero .ghostbtn.on { background: var(--focus); color: #04211d; }
+.spothero .ghostbtn.on svg path:first-child { fill: none; }
