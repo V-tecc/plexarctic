@@ -1563,3 +1563,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abbig, .abanner .abbig.f.focus { bottom: 66px; }
 /* small and big posters share the bottom line; the arrows sit below it */
 .abrow { bottom: 66px; }
+/* ‹ in the poster's bottom-left corner, › in the bottom-right; posters back down nearer the edge */
+.abanner .abbig, .abanner .abbig.f.focus { bottom: 40px; }
+.abrow { bottom: 40px; }
+.abarrows { bottom: 40px; height: 288px; justify-content: space-between; align-items: flex-end; gap: 0; padding: 0 0 8px; box-sizing: border-box; z-index: 2; }
+.abarrows i { width: 40px; height: 40px; line-height: 38px; text-align: center; font-size: 34px; background: rgba(11,11,13,.72); margin: 0 8px; }
+.abarrows { z-index: 6; }
