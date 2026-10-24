@@ -1259,3 +1259,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .trailerpage .ytcc { margin-left: auto; padding: 6px 12px; border-radius: 4px; background: rgba(255,255,255,0.12); font-size: 18px; font-weight: var(--w600); }
 .trailerpage .ytcc.own, .trailerpage .ytcc.translated { background: rgba(45,212,191,0.22); color: #2DD4BF; }
 .trailerpage .ytcc + .ythint { margin-left: 0; }
+.pick .actions .btn { flex: none; }
+.pick .actions .btn.icon { width: 70px; }
+.spothero .actions .btn.icon { flex: none; }

@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.48.2';
+const VERSION = '0.49.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -858,6 +858,7 @@ function viewSettings() {
     row(t('auddKeyLabel'), '<input class="input f" id="auddkey" data-key="auddkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.auddKey) + '">' +
       '<button type="button" class="btn f" data-key="auddsave" data-act="' + A(() => { S.auddKey = $('#auddkey').value.trim(); store.set('auddKey', S.auddKey); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>' +
       '<button type="button" class="btn f" data-key="songhist" data-act="' + A(songHistorySheet) + '">' + ICON.music + esc(t('songHistory')) + '</button>') +
+    row(t('tasteSettings'), '<button type="button" class="btn f" data-key="tastereset" data-act="' + A(() => { tasteReset(); rerun(); }) + '">' + esc(t('tasteResetBtn', { n: tasteCount() })) + '</button>', t('tasteSettingsNote')) +
     row(t('trailerSrc'), '<div class="seg">' + [['youtube', t('trailerYt')], ['plex', t('trailerPlex')]].map((x) => '<button type="button" class="f' + (S.trailerSrc === x[0] ? ' on' : '') + '" data-key="tr-' + x[0] + '" data-act="' + A(() => { S.trailerSrc = x[0]; store.set('trailerSrc', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('ytPage'), '<input class="input f" id="ytpage" data-key="ytpage" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="https://…github.io/…/yt.html" value="' + esc(S.ytPage) + '">' +
       '<button type="button" class="btn f" data-key="ytsave" data-act="' + A(() => { S.ytPage = $('#ytpage').value.trim(); store.set('ytPage', S.ytPage); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
@@ -1025,6 +1026,7 @@ function showMenu(it) {
   }), 'S1 E1'));
   rows.push(optionRow('cx-wt', t('wt'), [], false, A(() => { closeModal(true); wtStart(it); }), t('wtMenuNote')));
   rows.push(optionRow('cx-open', t('ctxShow'), [], false, A(() => { closeModal(true); go(viewDetails, [showKey]); })));
+  if (typeof tasteRows === 'function' && it.type === 'show') tasteRows(it).forEach((r) => rows.push(r));
   if (typeof artAllowedNow === 'function' && artAllowedNow()) rows.push(optionRow('cx-art', t('artChange'), [], false, A(() => { closeModal(true); artEditor({ ratingKey: showKey }); }), t('artMenuNote')));
   rows.push(optionRow('cx-seen', allSeen ? t('markUnwatched') : t('markWatched'), [], false, A(async () => {
     closeModal(true);
@@ -1068,6 +1070,7 @@ function itemMenu(it) {
     toast(t('ctxResetDone'), 3500);
     rerun();
   }), t('ctxResetSub')));
+  if (typeof tasteRows === 'function') tasteRows(it).forEach((r) => rows.push(r));
   if (ep || it.viewOffset) rows.push(optionRow('cx-deck', t('deckRemove'), [], false, A(() => { closeModal(true); deckRemove(it); }), t('deckRemoveSub')));
   if (typeof artAllowedNow === 'function' && artAllowedNow()) rows.push(optionRow('cx-art', t('artChange'), [], false, A(() => { closeModal(true); artEditor(it); }), t('artMenuNote')));
   const prevArt = modalArt;
@@ -1321,9 +1324,10 @@ function showTrending(x) {
    suggestions based on the last movie you watched, and library numbers. */
 const spot = { at: 0, movies: null, idx: 0, pickFilters: { short: true, rated: false }, pick: null, timer: null };
 async function loadMovieList(sec) {
-  if (spot.movies && spot.movies.key === sec.key && Date.now() - spot.at < 10 * 60000) return spot.movies.items;
+  const mk = sec.key + '|' + (S.user ? S.user.id : 'owner');
+  if (spot.movies && spot.movies.key === mk && Date.now() - spot.at < 10 * 60000) return spot.movies.items;
   const r = await api('/library/sections/' + sec.key + '/all', { type: 1, 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 20000 });
-  spot.movies = { key: sec.key, items: r.Metadata || [] };
+  spot.movies = { key: mk, items: r.Metadata || [] };
   spot.at = Date.now();
   return spot.movies.items;
 }
@@ -1350,8 +1354,15 @@ async function loadSpotExtras(d) {
       const unwatched = movies.filter((m) => !m.viewCount && m.duration);
       const left = fitsTarget() - Date.now();
       out.fitsTarget = fitsTarget();
-      out.fits = unwatched.filter((m) => m.duration <= left).sort((a, b) => rateOf(b) - rateOf(a)).slice(0, 8);
-      out.pickPool = unwatched;
+      /* what this profile likes (its own watch history plus More/Less like this) decides the order */
+      const h = out.taste = tasteHistory(movies);
+      out.fits = tasteSort(unwatched.filter((m) => m.duration <= left), h).slice(0, 8);
+      out.pickPool = unwatched.filter((m) => tasteOK(m, h));
+      /* a row with a favourite actor: the first of the top favourites with at least three films you haven't seen */
+      for (const name of h.favList.slice(0, 4)) {
+        const withA = tasteSort(unwatched.filter((m) => (m.Role || []).slice(0, 3).some((r) => r.tag === name)), h);
+        if (withA.length >= 3) { out.actor = { name: name, n: h.actors.get(name), items: withA.slice(0, 8) }; break; }
+      }
       const k4 = movies.filter((m) => m.Media && m.Media.some((x) => String(x.videoResolution).toLowerCase() === '4k')).length;
       const month = Date.now() / 1000 - 30 * 86400;
       out.stats = {
@@ -1398,6 +1409,8 @@ async function loadSpotExtras(d) {
           .filter((b) => b.own);
         /* films you haven't seen yet first */
         items.sort((a, b) => (a.own.viewCount ? 1 : 0) - (b.own.viewCount ? 1 : 0));
+        const no = tasteGet().no;
+        for (let i = items.length - 1; i >= 0; i--) if (no[items[i].own.ratingKey]) items.splice(i, 1);
         if (items.length >= 3) out.because = { title: out.lastWatched.title, items: items.slice(0, 8) };
       }
     } catch (e) { /* leave the row out */ }
@@ -1409,8 +1422,8 @@ async function loadSpotExtras(d) {
   const add = (it, kind) => { if (it && !heroes.some((h) => h.it.ratingKey === it.ratingKey)) heroes.push({ it: it, kind: kind }); };
   add(newEp, 'newEpisode');
   add(d.deckAll.find((i) => i.viewOffset), 'continue');
-  add((d.raMAll || []).find((m) => !m.viewCount), 'recentlyAddedOne');
-  add(randomOf(out.fits.length ? out.fits : out.pickPool.filter((m) => rateOf(m) >= 7)), 'fromLibrary');
+  add((d.raMAll || []).find((m) => !m.viewCount && tasteOK(m, out.taste)), 'recentlyAddedOne');
+  add(tastePick(out.fits.length ? out.fits : out.pickPool.filter((m) => rateOf(m) >= 7), out.taste), 'fromLibrary');
   add(d.deckAll.find((i) => !i.viewOffset), 'upNext');
   out.heroes = heroes.slice(0, 5);
   return out;
@@ -1442,6 +1455,7 @@ function spotHeroHTML(d) {
     '<div class="actions">' +
     '<button type="button" class="btn primary f" data-default data-key="sp-play" data-act="' + play + '" data-ctx="' + A(() => itemMenu(it)) + '">' + ICON.play + esc(it.viewOffset ? t('resume') : t('play')) + (ep ? ' ' + esc(epCode(it)) : '') + '</button>' +
     '<button type="button" class="btn ghostbtn f" data-key="sp-info" data-act="' + A(() => go(viewDetails, [it.ratingKey])) + '">' + esc(t('details')) + '</button>' +
+    ((h.kind === 'fromLibrary' || h.kind === 'recentlyAddedOne') && typeof tasteMark === 'function' ? '<button type="button" class="btn ghostbtn icon f" data-key="sp-no" aria-label="' + esc(t('tasteNotForMe')) + '" data-act="' + A(() => { x.heroes.splice(spot.idx % heroes.length, 1); tasteMark(it, -1); }) + '">' + ICON.thumbDown + '</button>' : '') +
     (heroes.length > 1 ? '<button type="button" class="btn ghostbtn icon f" data-key="sp-next" aria-label="' + esc(t('nextSpot')) + '" data-act="' + A(() => { spot.idx++; current.focusKey = 'sp-next'; drawHome(d); }) + '">' + ICON.next + '</button>' : '') +
     '</div></div>' +
     (heroes.length > 1 ? '<div class="pager">' + heroes.map((_, i) => '<i class="' + (i === spot.idx % heroes.length ? 'on' : '') + '"></i>').join('') + '<span>' + ((spot.idx % heroes.length) + 1) + ' / ' + heroes.length + '</span></div>' : '') +
@@ -1502,7 +1516,7 @@ function drawSpotlight(d, topHTML, extra) {
     if (!x || !x.pickPool.length) return '';
     const f = spot.pickFilters;
     const pool = x.pickPool.filter((m) => (!f.short || m.duration <= 2 * 3600000) && (!f.rated || rateOf(m) >= 7));
-    if (!spot.pick || !pool.includes(spot.pick)) spot.pick = randomOf(pool);
+    if (!spot.pick || !pool.includes(spot.pick)) spot.pick = tastePick(pool, x.taste);
     const m = spot.pick;
     const chip = (key, on, label, fn, icon) => '<button type="button" class="chip f' + (on ? ' on' : '') + '" data-key="' + key + '" data-act="' + A(fn) + '">' + (on ? ICON.check : '') + (icon || '') + esc(label) + '</button>';
     /* redraw in place: keep the page where it is so the new pick stays in view */
@@ -1520,10 +1534,11 @@ function drawSpotlight(d, topHTML, extra) {
       (m ? '<h3>' + esc(m.title) + '</h3><span class="pmeta">' + esc([m.year, (m.Genre || []).slice(0, 1).map((g) => g.tag)[0], durText(m.duration), endsAtText(m.duration)].filter(Boolean).join(' · ')) + '</span>' : '<h3>' + esc(t('noMatches')) + '</h3>') +
       '<div class="chips">' + chip('pk-short', f.short, t('under2h'), () => { f.short = !f.short; spot.pick = null; redraw('pk-short'); }) +
       chip('pk-rated', f.rated, t('rated7'), () => { f.rated = !f.rated; spot.pick = null; redraw('pk-rated'); }, '<span class="chipstar">' + ICON.star + '</span>') + '</div>' +
-      '<div class="actions">' + (m ? '<button type="button" class="btn primary f" data-key="pk-play" data-act="' + A(() => go(viewPlayer, [m.ratingKey])) + '">' + ICON.play + esc(t('play')) + '</button>' +
+      '<div class="actions">' + (m ? '<button type="button" class="btn primary f" data-key="pk-play" data-act="' + A(() => go(viewPlayer, [m.ratingKey])) + '" data-ctx="' + A(() => itemMenu(m)) + '">' + ICON.play + esc(t('play')) + '</button>' +
         '<button type="button" class="btn f" data-key="pk-wt" data-act="' + A(() => wtStart(m)) + '">' + ICON.people + esc(t('wtShort')) + '</button>' +
         '<button type="button" class="btn f" data-key="pk-info" data-act="' + A(() => openItem(m)) + '">' + esc(t('moreInfo')) + '</button>' : '') +
-      '<button type="button" class="btn f" data-key="pk-again" data-act="' + A(() => { spot.pick = randomOf(pool.filter((p) => p !== m)) || m; redraw('pk-again'); }) + '">' + esc(t('anotherOne')) + '</button></div></div></section>';
+      '<button type="button" class="btn f" data-key="pk-again" data-act="' + A(() => { spot.pick = tastePick(pool, x.taste, m) || m; redraw('pk-again'); }) + '">' + esc(t('anotherOne')) + '</button>' +
+      (m ? '<button type="button" class="btn icon f" data-key="pk-no" aria-label="' + esc(t('tasteNotForMe')) + '" data-act="' + A(async () => { const was = m; spot.pick = tastePick(pool, x.taste, was) || null; x.pickPool = x.pickPool.filter((p) => p !== was); await tasteMark(was, -1); }) + '">' + ICON.thumbDown + '</button>' : '') + '</div></div></section>';
   };
   const finishBlock = () => {
     if (!x || !x.finish.length) return '';
@@ -1549,6 +1564,12 @@ function drawSpotlight(d, topHTML, extra) {
           (b.own ? '<span class="ownmark">' + ICON.play + '</span>' : '') + '</div>' +
           '<span class="t">' + esc(b.x.title || '') + '</span><span class="s">' + esc([y, b.own ? '' : t('notInLibrary')].filter(Boolean).join(' · ')) + '</span></div>';
       }).join('') + '</div></section>';
+  }
+  if (x && x.actor) {
+    rows += '<section class="hub"><div class="hubhead"><h2>' + esc(t('tasteWithActor', { s: x.actor.name })) + '</h2><span>' + esc(t('tasteActorSub', { n: x.actor.n })) + '</span></div><div class="grid8">' +
+      x.actor.items.map((m, i) => '<div class="card f" data-key="fa-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '"><div class="imgwrap">' +
+        '<img class="img" loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt=""></div>' +
+        '<span class="t">' + esc(m.title) + '</span><span class="s">' + esc([m.year, durText(m.duration)].filter(Boolean).join(' · ')) + '</span></div>').join('') + '</div></section>';
   }
   if (x && x.stats) {
     const st = x.stats;
@@ -3485,7 +3506,7 @@ async function viewPlayer(ratingKey, opts) {
     '<button type="button" class="pbtn f" data-key="subs2" data-act="' + A(openSub2) + '"><span class="lbl">' + esc(t('sub2')) + '</span><span id="sub2Label"></span></button>' +
     '<button type="button" class="pbtn f" data-key="aud" data-act="' + A(openAudio) + '"><span class="lbl">' + esc(t('audio')) + '</span><span id="audLabel"></span></button>' +
     '<button type="button" class="pbtn f" data-key="qual" data-act="' + A(openQuality) + '"><span class="lbl">' + esc(t('quality')) + '</span><span id="qualLabel"></span></button>' +
-    '<button type="button" class="pbtn f" data-key="wt" data-act="' + A(() => { wtPanel(); pl.classList.remove('idle'); }) + '">' + ICON.people + '<span class="lbl">' + esc(t('wtShort')) + '</span></button>' +
+    '<button type="button" class="pbtn f" data-key="wt" data-act="' + A(() => { if (wtActive()) wtPanel(); else wtStart(m); pl.classList.remove('idle'); }) + '">' + ICON.people + '<span class="lbl">' + esc(t('wtShort')) + '</span></button>' +
     (S.auddKey ? '<button type="button" class="pbtn f" data-key="song" data-ctx="' + A(() => songHistorySheet(m.ratingKey, m.type === 'episode' ? (m.grandparentTitle + ' · ' + epCode(m)) : m.title)) + '" data-act="' + A(() => { songFind(pl, m, position(), st.audioId); }) + '">' + ICON.music + '<span class="lbl">' + esc(t('songBtn')) + '</span></button>' : '') +
     '<button type="button" class="pbtn muted f" id="hint" data-key="hint" data-act="' + A(() => { setInfo(!st.info); if (st.info) setFocus($('#more'), true); }) + '"></button>' +
     '</div>' +

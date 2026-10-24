@@ -307,10 +307,11 @@ function wtPanel() {
     gradSheet(openModal(sheetHeader(t('wt'), '') +
       '<p class="sheettext">' + esc(t('wtIntro')) + '</p>' +
       '<span class="label">' + esc(t('wtJoinCode')) + '</span>' +
-      '<div class="sline"><span class="sicon">' + ICON.search + '</span><input class="input f" id="wtq" data-key="wtq" type="text" spellcheck="false" autocomplete="off" autocapitalize="characters" maxlength="9" placeholder="K7M-Q2X"></div>' +
+      '<div class="sline"><span class="sicon">' + ICON.search + '</span><input class="input f" id="wtq" data-key="wtq" data-okfocus="1" type="text" spellcheck="false" autocomplete="off" autocapitalize="characters" maxlength="9" placeholder="K7M-Q2X"></div>' +
       (msg ? '<p class="sheettext"><b>' + esc(msg) + '</b></p>' : '') +
       '<div class="optlist">' + optionRow('wt-joinbtn', t('wtJoinBtn'), [], false, A(() => go2())) + '</div>' +
       '<p class="sheettext">' + esc(t('wtHowStart')) + '</p><p class="sheettext small">' + esc(t('wtRelayNote')) + '</p>', 'wtq'));
+    /* the box only takes typing (and the TV keyboard only opens) after OK */
     const inp = $('#wtq');
     const go2 = () => {
       const v = (inp && inp.value || '').trim();
@@ -319,7 +320,7 @@ function wtPanel() {
       wtJoin(v);
     };
     if (inp) {
-      inp.dataset.act = A(go2);
+      inp.dataset.act = A(() => { if (document.activeElement !== inp) inp.focus(); else go2(); });
       inp.addEventListener('keydown', (e) => { if (e.keyCode === 65376) { e.preventDefault(); e.stopPropagation(); go2(); } });
       inp.addEventListener('input', () => { if (inp.value.replace(/[^0-9a-z]/gi, '').length >= 6) { inp.blur(); setFocus($('[data-key="wt-joinbtn"]')); } });
     }
