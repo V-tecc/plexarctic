@@ -248,7 +248,7 @@ function vsStripHTML(st, movieSec, showSec) {
   const year = st.mode === 'year';
   const cells = year
     ? [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShowsYear')], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')], [st.genres[0] ? st.genres[0].name : '–', t('vsGenre')]]
-    : [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShows', { n: nf(st.eps) })], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')], [nf(st.thisYear), t('vsStripThisYear')]];
+    : [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShowsOnly')], [nf(st.eps), t('vsStripEps')], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')]];
   const art = (st.rewatch && st.rewatch.art) || (st.show && st.show.art) || '';
   return '<div class="vstrip f" id="vsstrip" data-key="vs-strip" data-act="' + A(() => {
     vsMode = year ? 'all' : 'year';
