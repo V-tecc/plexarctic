@@ -13,6 +13,10 @@ function abSelect(m) {
   const art = $('#abart'); const sel = $('#absel');
   if (art && m.art) { const src = imgURL(m.art, 1600, 900); if (art.getAttribute('src') !== src) { art.classList.add('swap'); setTimeout(() => { art.src = src; art.classList.remove('swap'); }, 160); } }
   if (sel) sel.innerHTML = abSelHTML(m);
+  /* the chosen film's poster, big, under the face; the small one keeps a mark */
+  const big = $('#abbig');
+  if (big && m.thumb) big.src = imgURL(m.thumb, 400, 600);
+  if (focused && focused.classList.contains('abcard')) { document.querySelectorAll('.abcard.sel').forEach((c) => c.classList.remove('sel')); focused.classList.add('sel'); }
 }
 function actorBannerHTML(x, d) {
   const a = x.actor;
@@ -31,7 +35,8 @@ function actorBannerHTML(x, d) {
     '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2><span class="abmw">' + esc(t('abMore')) + '</span>' + esc(a.name) + '</h2>' +
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
-    '<div class="abrow">' + items.map((m, i) => '<div class="abcard f" data-key="ab-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '" data-onfocus="' + A(() => abSelect(m)) + '">' +
+    (first && first.thumb ? '<img class="abbig" id="abbig" src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt="">' : '') +
+    '<div class="abrow">' + items.map((m, i) => '<div class="abcard f' + (i === 0 ? ' sel' : '') + '" data-key="ab-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '" data-onfocus="' + A(() => abSelect(m)) + '">' +
       '<img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="' + esc(m.title) + '"></div>').join('') +
     (more ? '<button type="button" class="abpage f" data-key="ab-page" aria-label="' + esc(t('abMoreFilms')) + '" data-act="' + A(() => abPage(x, d)) + '">' + ICON.next + '<small>' + esc((page * 6 + items.length) + ' / ' + a.items.length) + '</small></button>' : '') +
     (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +

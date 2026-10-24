@@ -1524,3 +1524,12 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .absel { top: 226px; width: 780px; }
 .absel p { -webkit-line-clamp: 3; max-width: 780px; }
 .abtx .eyebrow { margin-top: 0; }
+/* the chosen poster is big, filling the space under the face; the next ones line up with the text above */
+.abcard { transition: width 160ms ease, height 160ms ease; }
+.abcard.sel { width: 192px; height: 288px; }
+.abcard.focus { transform: none; }
+/* replaces the growing poster: one fixed big poster of the chosen film under the face, the row lines up with the text */
+.abcard.sel { width: 130px; height: 195px; }
+.abcard.sel:not(.focus) { box-shadow: 0 0 0 3px rgba(241,241,236,.8); }
+.abbig { position: absolute; left: 56px; bottom: 34px; width: 192px; height: 288px; object-fit: cover; box-shadow: 0 18px 40px rgba(0,0,0,.6); }
+.abrow { left: 270px; }
