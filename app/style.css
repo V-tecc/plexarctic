@@ -1461,3 +1461,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abpage small { font-size: 15px; color: #C9C9CC; }
 .abpage.focus { background: #F1F1EC; color: #111113; } .abpage.focus small { color: #4A4A4F; }
 .abnav .abcount { font-size: 17px; color: #C9C9CC; }
+.tlfoot { padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-right: 64px; }
