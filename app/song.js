@@ -13,7 +13,7 @@ async function songClip(ratingKey, at, audioStreamID) {
   const session = songSession();
   const master = pmsURL('/video/:/transcode/universal/start.m3u8', {
     hasMDE: 1, path: '/library/metadata/' + ratingKey, mediaIndex: 0, partIndex: 0, protocol: 'hls',
-    offset: Math.max(0, Math.floor(at)), fastSeek: 1, directPlay: 0, directStream: 0, directStreamAudio: 0,
+    fastSeek: 1, directPlay: 0, directStream: 0, directStreamAudio: 0,
     videoQuality: 60, maxVideoBitrate: 1500, videoResolution: '1280x720', audioBoost: 100,
     location: S.server.local ? 'lan' : 'wan', subtitles: 'none', audioStreamID: audioStreamID || null,
     session: session, 'X-Plex-Session-Identifier': session
@@ -34,11 +34,16 @@ async function songClip(ratingKey, at, audioStreamID) {
     let segs = [];
     for (let i = 0; i < 12 && !segs.length; i++) {
       const pl = await lines(listURL);
-      let dur = 0;
+      /* the list covers the whole title from the start; take the pieces from where you are (asking for a later
+         piece makes the server jump there, the same way the player seeks) */
+      let t0 = 0, dur = 0;
       segs = [];
       for (let j = 0; j < pl.length && dur < SONG_SECONDS; j++) {
         const inf = /^#EXTINF:([\d.]+)/.exec(pl[j]);
-        if (inf && pl[j + 1] && !pl[j + 1].startsWith('#')) { segs.push(abs(pl[j + 1], listURL)); dur += parseFloat(inf[1]); }
+        if (!inf || !pl[j + 1] || pl[j + 1].startsWith('#')) continue;
+        const d = parseFloat(inf[1]);
+        if (t0 + d > at) { segs.push(abs(pl[j + 1], listURL)); dur += d; }
+        t0 += d;
       }
       if (!segs.length) await sleep(700);
     }
