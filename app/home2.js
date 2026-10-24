@@ -70,7 +70,9 @@ function fitsTimelineHTML(x) {
   /* a tick on every half hour */
   const ticks = [];
   const tk = new Date(now); tk.setSeconds(0, 0); tk.setMinutes(tk.getMinutes() < 30 ? 30 : 60);
-  for (let ts = tk.getTime(); ts < end - 10 * 60000; ts += 30 * 60000) if ((ts - now) / total > 0.07 && (end - ts) / total > 0.06) ticks.push(ts);
+  const step = total > 3.5 * 3600000 ? 60 : 30;
+  if (step === 60 && tk.getMinutes() === 30) tk.setMinutes(60);
+  for (let ts = tk.getTime(); ts < end - 10 * 60000; ts += step * 60000) if ((ts - now) / total > 0.07 && (end - ts) / total > 0.06) ticks.push(ts);
   return '<section class="hub fitstl"><div class="hubhead"><h2>' + esc(t('fitsBefore', { t: hhmm(new Date(end)) })) + '</h2><span>' + esc(t('fitsTlSub')) + '</span></div>' +
     '<div class="tlaxis"><span class="tlnow">' + esc(t('tlNow', { t: hhmm(new Date(now)) })) + '</span>' +
     ticks.map((ts) => '<span class="tltick" style="left: ' + pct(ts - now).toFixed(2) + '%">' + esc(hhmm(new Date(ts))) + '</span>').join('') +

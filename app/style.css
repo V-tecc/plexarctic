@@ -1394,3 +1394,29 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .sirow .siv { display: flex; flex-direction: column; gap: 4px; }
 .sirow .siv b { font-size: 21px; font-weight: var(--w500); }
 .sirow .siv small { font-size: 18px; color: #2DD4BF; }
+/* statistics strip is one big button */
+.vstrip { cursor: pointer; }
+.vstrip.focus { box-shadow: inset 0 0 0 4px var(--focus); }
+.vstrip .vsok { font-size: 19px; font-weight: var(--w600); display: inline-flex; align-items: center; gap: 6px; background: rgba(17,17,19,.6); padding: 10px 16px; border-radius: 6px; }
+.vstrip.focus .vsok { background: #F1F1EC; color: #111113; }
+/* decade tile: small coloured timeline */
+.vtile .vdec { display: flex; align-items: flex-end; gap: 6px; height: 60px; z-index: 1; margin: 16px 0 26px; }
+.vtile .vdec i { position: relative; flex: 1 1 0; min-width: 0; border-radius: 3px 3px 0 0; background: #3A3A40; }
+.vtile .vdec i:nth-child(3n+1) { background: #8B7FD9; } .vtile .vdec i:nth-child(3n+2) { background: #E08A5B; } .vtile .vdec i:nth-child(3n) { background: #5B8DE0; }
+.vtile .vdec i.top { background: #2DD4BF; }
+.vtile .vdec em { position: absolute; left: 50%; bottom: -20px; transform: translateX(-50%); font-style: normal; font-size: 13px; color: var(--muted); }
+.vtile .vdt { font-size: 20px !important; font-weight: var(--w600) !important; color: var(--fg); }
+/* watching now as posters */
+.npcard .npinfo { color: #2DD4BF; }
+.npcard .npinfo.tc { color: #F0A35E; }
+/* Fits before: bigger again */
+.tlbar { height: 92px; border-radius: 0 10px 10px 0; }
+.tlbar img { width: 61px; height: 92px; }
+.tlbar .tltx { flex-direction: column; align-items: flex-start; gap: 4px; }
+.tlbar .tltx b { font-size: 28px; }
+.tlbar .tltx small { font-size: 20px; }
+.tlbar .tlendt { font-size: 28px; }
+.tlbar.focus { box-shadow: inset 0 0 0 4px var(--focus); }
+.fitstl .tlaxis { height: 40px; }
+.fitstl .tlaxis span { font-size: 22px; }
+.tllanes { gap: 12px; padding-top: 14px; border-left-width: 4px; }
