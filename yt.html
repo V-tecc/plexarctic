@@ -31,21 +31,36 @@ function onYouTubeIframeAPIReady() {
       cc_load_policy: cc ? 1 : 0, cc_lang_pref: cc || undefined, hl: hl || undefined },
     events: {
       onReady: function (e) { e.target.playVideo(); send({ yt: 'ready' }); },
-      onApiChange: function () {
-        /* pick the subtitle language; YouTube can translate the English subtitles when there are none in it */
-        if (!cc || !player.getOption) return;
-        try {
-          var list = player.getOption('captions', 'tracklist') || [];
-          var own = list.filter(function (x) { return x.languageCode === cc; })[0];
-          if (own) player.setOption('captions', 'track', own);
-          else if (list.length) player.setOption('captions', 'track', { languageCode: list[0].languageCode, translationLanguage: { languageCode: cc } });
-        } catch (err) {}
-      },
+      onApiChange: function () { pickCaptions(); },
       onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
       onError: function (e) { send({ yt: 'error', code: e.data }); }
     }
   });
 }
+/* subtitles: the wanted language if the video has it, otherwise YouTube's own translation of the English (or the
+   first) track. The caption list can arrive late, so this is tried again for a while; the result is sent to the app. */
+var ccDone = false, ccTries = 0;
+function pickCaptions() {
+  if (!cc || ccDone || !player || !player.getOption) return;
+  try {
+    if (player.loadModule) player.loadModule('captions');
+    var list = player.getOption('captions', 'tracklist') || [];
+    if (!list.length) return;
+    var own = list.filter(function (x) { return x.languageCode === cc || String(x.languageCode).indexOf(cc + '-') === 0; });
+    var real = own.filter(function (x) { return x.kind !== 'asr'; })[0] || own[0];
+    if (real) { player.setOption('captions', 'track', real); ccDone = true; send({ yt: 'cc', mode: 'own', lang: real.languageCode }); return; }
+    var en = list.filter(function (x) { return /^en/.test(x.languageCode) && x.kind !== 'asr'; })[0] || list.filter(function (x) { return x.kind !== 'asr'; })[0] || list[0];
+    player.setOption('captions', 'track', { languageCode: en.languageCode, translationLanguage: { languageCode: cc } });
+    ccDone = true;
+    send({ yt: 'cc', mode: 'translated', from: en.languageCode });
+  } catch (err) {}
+}
+setInterval(function () {
+  if (ccDone || !cc || !player || !player.getPlayerState || player.getPlayerState() !== 1) return;
+  ccTries++;
+  pickCaptions();
+  if (!ccDone && ccTries === 12) send({ yt: 'cc', mode: 'none' });
+}, 1000);
 window.addEventListener('message', function (e) {
   var d = e.data || {};
   if (!player || !d.cmd) return;
