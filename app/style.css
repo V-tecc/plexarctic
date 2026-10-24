@@ -1518,3 +1518,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abpage { height: 195px; width: 80px; }
 .abanner { height: 700px; }
 .absel { top: 284px; }
+/* actor banner: the name block starts at the top of the face; the film text moves up and is narrower (3 lines of summary) */
+.abwho { align-items: flex-start; }
+.abtx { padding-top: 8px; }
+.absel { top: 226px; width: 780px; }
+.absel p { -webkit-line-clamp: 3; max-width: 780px; }
+.abtx .eyebrow { margin-top: 0; }
