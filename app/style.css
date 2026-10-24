@@ -1483,3 +1483,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .absel p { font-size: 23px; line-height: 1.45; color: #E2E2E4; }
 .absel:empty { display: none; }
 .absel b { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* square corners on every tile, panel and banner (posters and buttons keep their small rounding) */
+.vtile, .vstrip, .vstrip .vsbadge, .abanner, .absel, .abpage, .mood, .songcardh, .spothero, .pick, .week, .head-tile, .spotlibs .head-tile,
+.tlbar, .soon, .dp, .calpanel, .sline, .vdrow, .vsrow, .vsdec .vdrow .vdbar, .vsdec .vdrow .vdbar i, .vdrow .vdbar, .vdrow .vdbar i, .pic, .status { border-radius: 0; }
