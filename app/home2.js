@@ -31,6 +31,7 @@ function actorBannerHTML(x, d) {
       '<img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="' + esc(m.title) + '"></div>').join('') +
     (pool.length > 1 ? '<div class="abnav"><span class="abdots">' + pool.map((_, i) => '<i class="' + (i === x.actorPos ? 'on' : '') + '"></i>').join('') + '</span>' +
       '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +
+    '<button type="button" class="btn ghostbtn f" data-key="ab-all" data-act="' + A(() => go(viewPerson, [a.name, a.who && a.who.thumb, null, t('home')])) + '">' + esc(t('abAll')) + '</button>' +
     '<button type="button" class="btn ghostbtn icon f" data-key="ab-set" aria-label="' + esc(t('pinTitle')) + '" data-act="' + A(() => abSettings(x, d)) + '">' + ICON.gear + '</button></div>' +
     '</div></section>';
 }
