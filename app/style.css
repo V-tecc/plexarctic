@@ -1137,3 +1137,43 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .pclear { position: absolute; right: 96px; bottom: calc(100% + 8px); max-width: 520px; max-height: 300px; width: auto; height: auto; object-fit: contain; pointer-events: none; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.5)); }
 /* clearart stands on the control panel's top edge, left of the "Ends" time */
 .pclear { bottom: 0; max-width: 560px; max-height: 300px; object-position: right bottom; }
+/* A–Z rail (library sorted by title) */
+.libbody { position: relative; }
+.azrail { position: absolute; top: 0; bottom: 24px; right: -82px; width: 58px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 4px 0; }
+.azrail .az { flex: 0 1 34px; min-height: 0; width: 46px; padding: 0; border: 0; background: transparent; color: var(--text3); font-size: 19px; font-weight: var(--w600); line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.azrail .az.none { color: var(--muted); opacity: 0.35; }
+.azrail .az.focus { background: var(--focus); color: var(--on-focus); opacity: 1; transform: scale(1.25); }
+#stage[data-accent="color"] .azrail .az.focus { background: var(--focus); color: var(--on-focus); }
+/* season picker styles for long shows */
+.tabsrow.compact .spick, .tabsrow.compact .sposters { grid-area: tabs; }
+.spick { display: flex; gap: 12px; align-items: center; }
+.spick .btn[disabled] { opacity: 0.35; }
+.seasonsheet .sgrid { display: grid; grid-template-columns: repeat(12, 64px); gap: 14px; }
+.sgrid .f { position: relative; width: 64px; height: 64px; padding: 0; border: 1px solid transparent; background: rgba(var(--surface-rgb), 0.9); color: var(--fg); font-size: 24px; font-weight: var(--w600); cursor: pointer; }
+.sgrid .f.wide { grid-column: span 2; width: auto; font-size: 20px; }
+.sgrid .f.on { border-color: var(--fg); }
+.sgrid .f.ghost { background: transparent; border: 1px dashed var(--line2); color: var(--muted); }
+.sgrid .f.focus { background: var(--focus); color: var(--on-focus); }
+.sgrid .f .sbar { position: absolute; left: 8px; right: 8px; bottom: 7px; height: 3px; background: rgba(127,127,127,0.35); display: block; }
+.sgrid .f .sbar b { display: block; height: 100%; background: currentColor; }
+.sposters { gap: 18px; padding-top: 6px; }
+.sposters .spost { flex: 0 0 132px; width: 132px; }
+.sposters .spost .img { width: 132px; height: 198px; }
+.sposters .spost .snum { align-self: end; justify-self: start; margin: 8px; padding: 2px 9px; background: rgba(0,0,0,0.7); color: #fff; font-size: 20px; }
+.sposters .spost.on .img { outline: 3px solid var(--fg); outline-offset: 3px; }
+.sposters .spost.ghost { opacity: 0.5; }
+.sposters .spost .bar { margin-top: 6px; }
+/* A–Z: the chosen letter grows, with a teal square in front of it */
+.azrail .az { position: relative; transition: font-size 120ms ease; }
+.azrail .az.focus, #stage[data-accent="color"] .azrail .az.focus { background: transparent; color: var(--fg); transform: none; font-size: 32px; font-weight: var(--w700); }
+.azrail .az.focus::before { content: ""; position: absolute; left: -14px; top: 50%; width: 10px; height: 10px; margin-top: -5px; background: var(--focus); }
+#stage:not([data-accent="color"]) .azrail .az.focus::before { background: var(--fg); }
+.dscroll { overflow-x: hidden; }
+.seasonsheet .sgrid { grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 16px; }
+.seasonsheet .sgrid .f { width: auto; height: 92px; font-size: 30px; }
+.seasonsheet .sgrid .f.wide { grid-column: span 2; font-size: 24px; }
+.seasonsheet .sgrid .f .sbar { left: 14px; right: 14px; bottom: 12px; height: 4px; }
+/* A–Z tweaks: lighter letters, a smaller square, a bigger chosen letter */
+.azrail .az { font-weight: var(--w400); }
+.azrail .az.focus, #stage[data-accent="color"] .azrail .az.focus { font-size: 38px; font-weight: var(--w500); }
+.azrail .az.focus::before { left: -12px; width: 7px; height: 7px; margin-top: -3.5px; }

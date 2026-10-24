@@ -175,7 +175,7 @@ async function artEditor(item, kindIn) {
   let m;
   try { m = ((await api('/library/metadata/' + item.ratingKey, { includeGuids: 1 })).Metadata || [])[0]; } catch (e) { m = null; }
   if (!m) { toast(t('notFound'), 4000); return; }
-  const kinds = m.type === 'episode' ? ['poster'] : m.type === 'season' ? ['poster', 'art'] : ['poster', 'art', 'logo'].concat(fanartKey() ? ['clear'] : []);
+  const kinds = m.type === 'episode' ? ['poster'] : m.type === 'season' ? ['poster', 'art'] : ['poster', 'art', 'logo', 'clear'];
   let kind = kinds.includes(kindIn) ? kindIn : 'poster';
   let busy = false, changed = false;
   const draw = async (focusKey) => {
@@ -216,8 +216,12 @@ async function artEditor(item, kindIn) {
     const body = k.local ? group(t('artFromFanart'), plex)
       : group(t('artOnServer'), plex) + group(t('artFromTmdb'), tm.filter((x) => !plex.some((p) => p.full && p.full.indexOf(x.id) >= 0))) + group(t('artFromFanart'), fa);
     const note = $('#artnote', el);
+    if (note && k.local && !fanartKey()) { note.outerHTML = '<p class="sheettext">' + esc(t('clearartHowTo')) + '</p>'; initFocus(focusKey || 'at-' + kind, el); return; }
     if (note) note.outerHTML = body ? '<p class="sheettext small">' + esc(k.local ? t('artClearNote') : t('artNote')) + '</p>' + body : '<p class="sheettext">' + esc(kind === 'logo' && !S.tmdb ? t('artNoLogos') : t('artNone')) + '</p>';
-    initFocus(focusKey || ('ao-plex' + Math.max(0, plex.findIndex((x) => x.selected))), el);
+    /* start at the top: the first picture (not the current one further down) */
+    const firstKey = plex.length ? 'ao-' + plex[0].src + '0' : tm.length ? 'ao-tmdb0' : fa.length ? 'ao-fanart0' : 'at-' + kind;
+    initFocus(focusKey || firstKey, el);
+    if (!focusKey) { const sc = $('.mbody', el) || el; sc.scrollTop = 0; el.scrollTop = 0; }
   };
   draw();
 }
