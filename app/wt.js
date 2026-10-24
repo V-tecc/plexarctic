@@ -233,7 +233,8 @@ async function wtHost(item, invitees) {
     } else wtPanel();
   } catch (e) { toast(wtErrText(e), 7000); }
 }
-async function wtStart(item) {
+async function wtStart(item, opts) {
+  opts = opts || {};
   if (!window.OWP) { toast(t('wtErrOther'), 5000); return; }
   let users = [];
   try { users = (await wtHomeUsers()).filter((u) => String(u.id) !== String(wtMyId())); } catch (e) { users = []; }
@@ -242,6 +243,7 @@ async function wtStart(item) {
   const draw = (msg, keep) => {
     gradSheet(openModal(sheetHeader(t('wtWho'), '') +
       '<p class="sheettext">' + esc(t('wtWhoNote')) + '</p>' +
+      (opts.fromPlayer ? '<p class="sheettext"><b>' + esc(t('wtFromHere', { t: tc((item.viewOffset || 0) / 1000) })) + '</b></p>' : '') +
       '<div class="optlist">' + users.map((u) => optionRow('wtu-' + u.id, u.title || u.username || '?', [], picked.has(String(u.id)), A(() => {
         const id = String(u.id);
         if (picked.has(id)) picked.delete(id); else picked.add(id);
