@@ -11,14 +11,32 @@ function songSession() { return 'song-' + Math.random().toString(36).slice(2, 12
 /* the sound from `at` (seconds) onwards, as one MPEG-TS clip */
 async function songClip(ratingKey, at, audioStreamID) {
   const session = songSession();
-  const master = pmsURL('/video/:/transcode/universal/start.m3u8', {
+  /* its own client name: a second transcode from the player's own name (while the film itself is being
+     transcoded) is refused by some servers with HTTP 400 */
+  const who = { 'X-Plex-Client-Identifier': clientId + '-song', 'X-Plex-Client-Profile-Name': 'Web', 'X-Plex-Session-Identifier': session };
+  const base = {
     hasMDE: 1, path: '/library/metadata/' + ratingKey, mediaIndex: 0, partIndex: 0, protocol: 'hls',
     fastSeek: 1, directPlay: 0, directStream: 0, directStreamAudio: 0,
     videoQuality: 60, maxVideoBitrate: 1500, videoResolution: '1280x720', audioBoost: 100,
     location: S.server.local ? 'lan' : 'wan', subtitles: 'none', audioStreamID: audioStreamID || null,
-    session: session, 'X-Plex-Session-Identifier': session
-  });
-  const stop = () => { fetch(pmsURL('/video/:/transcode/universal/stop', { session: session })).catch(() => {}); };
+    session: session
+  };
+  /* ask what the server will do first (newer servers want this), then start; if it still says no, try once
+     more without picking the audio track */
+  const startURL = async () => {
+    const tries = [base, Object.assign({}, base, { audioStreamID: null, directStreamAudio: 1 })];
+    let last = null;
+    for (const q of tries) {
+      const params = Object.assign({}, q, who);
+      try { await fetch(pmsURL('/video/:/transcode/universal/decision', params)); } catch (e) { /* only a hint */ }
+      const url = pmsURL('/video/:/transcode/universal/start.m3u8', params);
+      const r = await fetch(url);
+      if (r.ok) return { url: url, text: await r.text() };
+      last = r.status;
+    }
+    throw new Error('HTTP ' + last);
+  };
+  const stop = () => { fetch(pmsURL('/video/:/transcode/universal/stop', Object.assign({ session: session }, who))).catch(() => {}); };
   try {
     const abs = (u, base) => new URL(u, base).toString();
     const lines = async (url) => {
@@ -26,7 +44,9 @@ async function songClip(ratingKey, at, audioStreamID) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return (await r.text()).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
     };
-    const m = await lines(master);
+    const st0 = await startURL();
+    const master = st0.url;
+    const m = st0.text.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
     const variant = m.find((x) => !x.startsWith('#'));
     if (!variant) throw new Error('no stream');
     const listURL = abs(variant, master);
