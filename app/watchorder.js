@@ -227,7 +227,7 @@ function woLibraryItems(sec, items) {
     const first = members.slice().sort((a, b) => (a.year || 0) - (b.year || 0))[0];
     out.push({
       ratingKey: 'wo-' + pid, virtual: pid, type: 'show', title: p.name, year: first.year,
-      thumb: woPosterRef(pid, first.thumb), art: woArt(pid).art || first.art,
+      thumb: woPosterRef(pid, first.thumb), art: woArt(pid).art || woPresetArt(pid).art || first.art,
       addedAt: Math.max.apply(null, members.map((m) => m.addedAt || 0)), updatedAt: Math.max.apply(null, members.map((m) => m.updatedAt || 0)),
       Genre: first.Genre, contentRating: first.contentRating, summary: t('woSummary'),
       childCount: o && o.seasons || 0, leafCount: o ? o.keys.length : 0, viewedLeafCount: o && o.seen || 0
@@ -265,7 +265,7 @@ async function viewUniverse(pid, opts) {
       (r.Metadata || []).forEach((e) => live.set(String(e.ratingKey), e));
     } catch (e) { /* ignore */ }
   }
-  if (woArt(pid).art) heroArt = woArt(pid).art;
+  if (woArt(pid).art || woPresetArt(pid).art) heroArt = woArt(pid).art || woPresetArt(pid).art;
   if (!heroArt) { const f = WO_PRESETS[pid].shows.find((x) => o.shows[x.id] && o.shows[x.id].art); if (f) heroArt = o.shows[f.id].art; }
   if (seq !== viewSeq) return;
   /* every item, real or missing, with its TV-year season (seasons only go forward, so catching up stays in one) */
@@ -388,7 +388,8 @@ async function viewUniverse(pid, opts) {
 /* ---------- long press on the series: play, watched/unwatched, rebuild, artwork ---------- */
 function woArt(pid) { return store.get('woArt.' + (S.server ? S.server.id : '') + '.' + pid, {}) || {}; }
 function woArtSet(pid, kind, ref) { const a = woArt(pid); if (ref) a[kind] = ref; else delete a[kind]; store.set('woArt.' + S.server.id + '.' + pid, a); }
-function woPosterRef(pid, fallback) { return woArt(pid).poster || store.get('woPoster.' + pid, '') || fallback || ''; }
+function woPresetArt(pid) { return ((window.PRESET || {}).woArt || {})[pid] || {}; }
+function woPosterRef(pid, fallback) { const a = woArt(pid).poster; if (a === 'data-made') return store.get('woPoster.' + pid, '') || fallback || ''; return a || woPresetArt(pid).poster || store.get('woPoster.' + pid, '') || fallback || ''; }
 
 /* the next episode in the order (fresh watched state) */
 async function woNextUp(pid) {
@@ -456,8 +457,10 @@ async function woArtEditor(pid) {
     const tabs = '<div class="seg arttabs">' + ['poster', 'art'].map((x) => '<button type="button" class="f' + (x === kind ? ' on' : '') + '" data-key="at-' + x + '" data-act="' + A(() => { kind = x; draw('at-' + x); }) + '">' + esc(t(ART_KINDS[x].label)) + '</button>').join('') + '</div>';
     const el = openModal(sheetHeader(t('artChange'), p.name) + tabs + '<p class="sheettext" id="artnote">' + esc(t('loading')) + '</p>', focusKey || 'at-' + kind, true);
     el.classList.add('artsheet');
-    const cur = woArt(pid)[kind] || '';
+    const cur = woArt(pid)[kind] || woPresetArt(pid)[kind] || '';
     const groups = [];
+    const own = woPresetArt(pid)[kind];
+    if (own) groups.push({ label: t('woArtOwn'), list: [{ src: 'own', ref: own, thumb: own }] });
     if (kind === 'poster') groups.push({ label: t('woArtMade'), list: [{ src: 'made', ref: '', thumb: store.get('woPoster.' + pid, '') }].filter((x) => x.thumb) });
     for (const s of p.shows) {
       const sh = o.shows[s.id];
@@ -475,9 +478,10 @@ async function woArtEditor(pid) {
     let n = 0;
     const cell = (x) => {
       const key = 'ao-' + (n++);
-      const sel = x.src === 'made' ? !cur : x.ref === cur;
+      const sel = x.src === 'made' ? (!cur || cur === 'data-made') : x.ref === cur;
+      const ref = x.src === 'made' ? 'data-made' : x.ref;
       return '<button type="button" class="artopt ' + k.ratio + ' f' + (sel ? ' sel' : '') + '" data-key="' + key + '" data-act="' + A(() => {
-        woArtSet(pid, kind, x.ref);
+        woArtSet(pid, kind, ref);
         toast(t('artSaved'), 2500);
         draw(key);
       }) + '"><img loading="lazy" src="' + esc(/^(https?:|data:)/.test(x.thumb) ? x.thumb : (kind === 'art' ? imgURL(x.thumb, 480, 270) : imgURL(x.thumb, 240, 360))) + '" alt="">' +
