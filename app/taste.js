@@ -259,7 +259,8 @@ function vsStripHTML(st, movieSec, showSec) {
     '<span class="eyebrow">' + esc(year ? t('vsStripYear', { y: new Date().getFullYear() }) : t('vsStripAll')) + '</span>' +
     '<div class="vscells">' + cells.map((c) => '<div><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></div>').join('') + '</div>' +
     '<div class="vsnav"><span class="abdots"><i class="' + (year ? '' : 'on') + '"></i><i class="' + (year ? 'on' : '') + '"></i></span>' +
-    '<span class="vsok">' + esc(t('vsOkTo', { s: year ? t('vsShowAll') : t('vsShowYear') })) + ICON.next + '</span></div></div>';
+    '<span class="vsok">' + esc(year ? t('vsSwitchAll') : t('vsSwitchYear')) + ICON.next + '</span></div>' +
+    '<span class="vsbadge">' + esc(year ? t('vsBadgeYear', { y: new Date().getFullYear() }) : t('vsBadgeAll')) + '</span></div>';
 }
 
 /* the list behind a tile; going on from it and coming back lands on the tile again */

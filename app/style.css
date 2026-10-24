@@ -1450,3 +1450,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vsdec .vdrow .vdbar { height: 44px; border-radius: 6px; }
 .vsdec .vdrow .vdbar i { border-radius: 6px; }
 .vsdec .vdrow .vdn { font-size: 22px; }
+.vstrip .vsbadge { position: absolute; right: 36px; top: 26px; font-size: 18px; font-weight: var(--w600); letter-spacing: .04em; padding: 8px 14px; border-radius: 6px; background: rgba(17,17,19,.65); color: #F1F1EC; }
