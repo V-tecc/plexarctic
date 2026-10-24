@@ -1116,3 +1116,24 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .artopt.sel.focus { outline-color: var(--focus); }
 .artopt .artsel { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--fg); color: var(--bg); }
 .artopt .artlang { position: absolute; left: 8px; bottom: 8px; font-size: 13px; letter-spacing: .06em; padding: 3px 7px; background: rgba(0,0,0,0.65); color: #fff; }
+/* v0.40: shows with many seasons */
+.tabsrow.compact { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "head tools" "tabs tabs"; row-gap: 18px; align-items: end; }
+.tabsrow.compact .seasonhead { grid-area: head; display: flex; flex-direction: column; gap: 6px; }
+.tabsrow.compact .seasonhead b { font-size: 34px; font-weight: var(--w700); line-height: 1.1; }
+.tabsrow.compact .seasonhead .label { margin: 0; }
+.tabsrow.compact .tabtools { grid-area: tools; }
+.tabsrow.compact .tabs { grid-area: tabs; flex-wrap: nowrap; overflow-x: auto; gap: 10px; padding: 6px 4px 8px; margin: -6px -4px 0; scroll-padding: 0 60px; }
+.tabs.compact .f { position: relative; flex: 0 0 auto; width: 64px; height: 64px; padding: 0; font-size: 24px; font-weight: var(--w600); text-align: center; }
+.tabs.compact .f.wide { width: auto; padding: 0 20px; font-size: 20px; }
+.tabs.compact .f .sbar { position: absolute; left: 8px; right: 8px; bottom: 7px; height: 3px; background: rgba(127,127,127,0.35); display: block; }
+.tabs.compact .f .sbar b { display: block; height: 100%; background: currentColor; opacity: 0.85; }
+.tabs.compact .f { background: rgba(var(--surface-rgb), 0.55); border-color: transparent; }
+.tabs.compact .f.on { border-color: var(--fg); background: rgba(var(--surface-rgb), 0.9); }
+.tabs.compact .f.ghost { background: transparent; border: 1px dashed var(--line2); }
+.tabs.compact .f.on { color: var(--fg); }
+.tabs.compact .f.focus { background: var(--focus); color: var(--on-focus); border-color: var(--focus); }
+#stage[data-accent="color"] .tabs.compact .f.focus { background: var(--surface); color: var(--fg); }
+/* clearart above the player's controls, right side */
+.pclear { position: absolute; right: 96px; bottom: calc(100% + 8px); max-width: 520px; max-height: 300px; width: auto; height: auto; object-fit: contain; pointer-events: none; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.5)); }
+.pclear { transition: opacity 200ms ease; }
+#skipbtn:not([hidden]) ~ .pbottom .pclear { opacity: 0; }

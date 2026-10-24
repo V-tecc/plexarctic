@@ -111,7 +111,8 @@ function fillLogo(el) {
 const ART_KINDS = {
   poster: { list: 'posters', one: 'poster', lock: 'thumb.locked', label: 'artPoster', tmdb: 'posters', tw: 'w342', ratio: 'tall' },
   art: { list: 'arts', one: 'art', lock: 'art.locked', label: 'artBackground', tmdb: 'backdrops', tw: 'w780', ratio: 'wide' },
-  logo: { list: 'clearLogos', one: 'clearLogo', lock: 'clearLogo.locked', label: 'artLogo', tmdb: 'logos', tw: 'w500', ratio: 'logo' }
+  logo: { list: 'clearLogos', one: 'clearLogo', lock: 'clearLogo.locked', label: 'artLogo', tmdb: 'logos', tw: 'w500', ratio: 'logo' },
+  clear: { label: 'artClearart', ratio: 'logo', local: true }
 };
 const ART_TYPE = { movie: 1, show: 2, season: 3, episode: 4 };
 function artAllowedNow() { return !!(adminCheck && adminCheck.yes && adminCheck.key === (S.server && S.server.id) + '|' + (S.user ? S.user.id : 'owner')); }
@@ -147,6 +148,12 @@ async function artLock(m, kind) {
 }
 async function artSelect(m, kind, o, before) {
   const k = ART_KINDS[kind];
+  if (k.local) {
+    const picks = store.get('clearartPick', {}) || {};
+    picks[S.server.id + ':' + m.ratingKey] = o.full;
+    store.set('clearartPick', picks);
+    return;
+  }
   const base = '/library/metadata/' + m.ratingKey;
   if (o.src === 'plex') {
     const r = await fetch(artURL(base + '/' + k.one, { url: o.id }), { method: 'PUT' });
@@ -168,7 +175,7 @@ async function artEditor(item, kindIn) {
   let m;
   try { m = ((await api('/library/metadata/' + item.ratingKey, { includeGuids: 1 })).Metadata || [])[0]; } catch (e) { m = null; }
   if (!m) { toast(t('notFound'), 4000); return; }
-  const kinds = m.type === 'episode' ? ['poster'] : m.type === 'season' ? ['poster', 'art'] : ['poster', 'art', 'logo'];
+  const kinds = m.type === 'episode' ? ['poster'] : m.type === 'season' ? ['poster', 'art'] : ['poster', 'art', 'logo'].concat(fanartKey() ? ['clear'] : []);
   let kind = kinds.includes(kindIn) ? kindIn : 'poster';
   let busy = false, changed = false;
   const draw = async (focusKey) => {
@@ -180,9 +187,21 @@ async function artEditor(item, kindIn) {
     const el = openModal(head + tabs + '<p class="sheettext" id="artnote">' + esc(t('loading')) + '</p>', focusKey || 'at-' + kind, true);
     el.classList.add('artsheet');
     el._onclose = () => { if (changed) afterArt(m); };
-    let plex = [], tm = [];
-    try { plex = await artList(m.ratingKey, kind); } catch (e) { plex = []; }
-    try { tm = await artTmdb(m, kind); } catch (e) { tm = []; }
+    let plex = [], tm = [], fa = [];
+    if (k.local) {
+      /* clearart can't be stored on Plex: the choice is kept on this TV */
+      const v = await fanartFor(m.ratingKey).catch(() => null);
+      const picks = store.get('clearartPick', {}) || {};
+      const cur = picks[S.server.id + ':' + m.ratingKey] || await clearartFor(m.ratingKey).catch(() => '');
+      plex = fanartRank((v && v.clear) || []).map((x) => ({ src: 'clear', id: x.url, selected: x.url === cur, thumb: fanartPreview(x.url), full: x.url, lang: x.lang === '00' ? '' : x.lang }));
+    } else {
+      try { plex = await artList(m.ratingKey, kind); } catch (e) { plex = []; }
+      try { tm = await artTmdb(m, kind); } catch (e) { tm = []; }
+      if (kind === 'logo') {
+        const v = await fanartFor(m.ratingKey).catch(() => null);
+        fa = fanartRank((v && v.logos) || []).map((x) => ({ src: 'fanart', id: x.url, thumb: fanartPreview(x.url), full: x.url, lang: x.lang === '00' ? '' : x.lang }));
+      }
+    }
     if (!document.contains(el) || ART_KINDS[kind] !== k) return;
     const cell = (o, i) => '<button type="button" class="artopt ' + k.ratio + ' f' + (o.selected ? ' sel' : '') + '" data-key="ao-' + o.src + i + '" data-act="' + A(async () => {
       if (busy || o.selected) return;
@@ -192,11 +211,12 @@ async function artEditor(item, kindIn) {
       busy = false;
     }) + '"><img loading="lazy" src="' + esc(artThumb(o, kind)) + '" alt="">' +
       (o.selected ? '<i class="artsel">' + ICON.check + '</i>' : '') +
-      ((o.src === 'tmdb' && o.lang) ? '<span class="artlang">' + esc(o.lang.toUpperCase()) + '</span>' : '') + '</button>';
+      ((o.src !== 'plex' && o.lang) ? '<span class="artlang">' + esc(o.lang.toUpperCase()) + '</span>' : '') + '</button>';
     const group = (label, list) => list.length ? '<span class="label">' + esc(label) + '</span><div class="artgrid ' + k.ratio + '">' + list.map(cell).join('') + '</div>' : '';
-    const body = group(t('artOnServer'), plex) + group(t('artFromTmdb'), tm.filter((x) => !plex.some((p) => p.full && p.full.indexOf(x.id) >= 0)));
+    const body = k.local ? group(t('artFromFanart'), plex)
+      : group(t('artOnServer'), plex) + group(t('artFromTmdb'), tm.filter((x) => !plex.some((p) => p.full && p.full.indexOf(x.id) >= 0))) + group(t('artFromFanart'), fa);
     const note = $('#artnote', el);
-    if (note) note.outerHTML = body ? '<p class="sheettext small">' + esc(t('artNote')) + '</p>' + body : '<p class="sheettext">' + esc(kind === 'logo' && !S.tmdb ? t('artNoLogos') : t('artNone')) + '</p>';
+    if (note) note.outerHTML = body ? '<p class="sheettext small">' + esc(k.local ? t('artClearNote') : t('artNote')) + '</p>' + body : '<p class="sheettext">' + esc(kind === 'logo' && !S.tmdb ? t('artNoLogos') : t('artNone')) + '</p>';
     initFocus(focusKey || ('ao-plex' + Math.max(0, plex.findIndex((x) => x.selected))), el);
   };
   draw();
@@ -210,4 +230,87 @@ function afterArt(m) {
   } else if (current && current.fn !== viewPlayer) {
     setTimeout(() => { if (!modalOpen()) rerun(); }, 50);
   }
+}
+
+/* ---------- clearart (fanart.tv) ----------
+   Clearart is a transparent picture of the title's characters with its logo, made by the fanart.tv community.
+   It needs a free fanart.tv API key (Settings). Shown at the top right of the player's controls while they are up. */
+const FANART_TTL = 14 * 86400000;
+function fanartKey() { return S.fanartKey || ''; }
+function fanartFix(url, kind, id, type) {
+  if (!url) return '';
+  if (/^https?:/.test(url)) return url.replace(/^http:/, 'https:');
+  return 'https://assets.fanart.tv/fanart/' + kind + '/' + id + '/' + type + '/' + url;
+}
+function fanartPreview(url) { return url.replace('/fanart/', '/preview/'); }
+function idOf(m, ns) {
+  const x = ((m && m.Guid) || []).map((g) => new RegExp('^' + ns + '://(.+)$').exec(g.id || '')).find(Boolean);
+  return x ? x[1] : '';
+}
+const fanartWait = new Map();
+/* every picture fanart.tv has for a movie or show we can use: cleararts, character art, logos */
+async function fanartFor(key) {
+  if (!fanartKey() || !S.server) return null;
+  const ck = S.server.id + ':' + key;
+  const cache = store.get('fanartCache', {}) || {};
+  if (cache[ck] && Date.now() - cache[ck].at < FANART_TTL) return cache[ck].v;
+  if (fanartWait.has(ck)) return fanartWait.get(ck);
+  const p = (async () => {
+    let v = null;
+    try {
+      const m = ((await api('/library/metadata/' + key, { includeGuids: 1 })).Metadata || [])[0];
+      if (m && (m.type === 'movie' || m.type === 'show')) {
+        const kind = m.type === 'movie' ? 'movies' : 'tv';
+        const id = m.type === 'movie' ? (idOf(m, 'tmdb') || idOf(m, 'imdb')) : idOf(m, 'tvdb');
+        if (id) {
+          const r = await fetch('https://webservice.fanart.tv/v3/' + kind + '/' + encodeURIComponent(id) + '?api_key=' + encodeURIComponent(fanartKey()));
+          if (r.ok) {
+            const j = await r.json();
+            const take = (types) => types.reduce((out, ty) => out.concat((j[ty] || []).map((x) => ({ url: fanartFix(x.url, kind, id, ty), lang: x.lang || '', likes: +x.likes || 0, type: ty }))), []);
+            v = m.type === 'movie'
+              ? { clear: take(['hdmovieclearart', 'movieart']), logos: take(['hdmovielogo', 'movielogo']) }
+              : { clear: take(['hdclearart', 'clearart', 'characterart']), logos: take(['hdtvlogo', 'clearlogo']) };
+            ['clear', 'logos'].forEach((k) => { v[k] = v[k].slice(0, 24); });
+          } else if (r.status === 401 || r.status === 403) { v = { bad: true, clear: [], logos: [] }; }
+          else v = { clear: [], logos: [] };
+        }
+      }
+    } catch (e) { v = null; }
+    if (v && !v.bad) { const c = store.get('fanartCache', {}) || {}; c[ck] = { at: Date.now(), v: v }; const ks = Object.keys(c); if (ks.length > 300) ks.sort((a, b) => c[a].at - c[b].at).slice(0, ks.length - 300).forEach((k) => delete c[k]); store.set('fanartCache', c); }
+    fanartWait.delete(ck);
+    return v;
+  })();
+  fanartWait.set(ck, p);
+  return p;
+}
+function fanartRank(list) {
+  const ui = S.lang;
+  const r = (x) => (x.lang === ui ? 4 : x.lang === 'en' ? 3 : (x.lang === '00' || !x.lang) ? 2 : 0) + (/^hd/.test(x.type) ? 1 : 0);
+  return list.slice().sort((a, b) => (r(b) - r(a)) || (b.likes - a.likes));
+}
+/* the clearart to show: the one you picked for this title (on this TV), or the best match */
+async function clearartFor(key) {
+  if (S.clearart === 'off' || !fanartKey()) return '';
+  const picks = store.get('clearartPick', {}) || {};
+  const pick = picks[S.server.id + ':' + key];
+  if (pick) return pick;
+  const v = await fanartFor(key);
+  if (!v || !v.clear.length) return '';
+  const pref = fanartRank(v.clear.filter((x) => x.type !== 'characterart'));
+  return (pref[0] || fanartRank(v.clear)[0]).url;
+}
+/* the player: put the clearart at the top right of the controls (it shows and hides with them) */
+function playerClearart(m) {
+  const key = m.type === 'episode' ? m.grandparentRatingKey : m.type === 'movie' ? m.ratingKey : '';
+  if (!key) return;
+  const vs = viewSeq;
+  clearartFor(key).then((url) => {
+    const bottom = $('.pbottom', viewEl);
+    if (!url || vs !== viewSeq || !bottom || $('.pclear', bottom)) return;
+    const img = new Image();
+    img.className = 'pclear';
+    img.alt = '';
+    img.onload = () => { if (vs === viewSeq && document.contains(bottom)) bottom.appendChild(img); };
+    img.src = url;
+  });
 }

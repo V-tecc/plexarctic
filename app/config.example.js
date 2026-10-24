@@ -3,5 +3,6 @@
    config.js is not part of the published code (it can hold your own keys). */
 window.PRESET = {
   tmdb: '',    // your TMDB API key (https://www.themoviedb.org/settings/api) for Trending, trailers and the movie calendar
-  ytPage: ''   // address of your trailer page (see yt.html in this repository), e.g. https://<you>.github.io/plexarctic/yt.html
+  ytPage: '',
+  fanart: ''   /* your fanart.tv API key, for clearart */   // address of your trailer page (see yt.html in this repository), e.g. https://<you>.github.io/plexarctic/yt.html
 };
