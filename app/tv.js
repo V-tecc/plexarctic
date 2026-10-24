@@ -23,5 +23,24 @@
     ev.__tv = true;
     document.dispatchEvent(ev);
   }, true);
+  /* Samsung's own APIs (Smart Hub preview) */
+  try { var wa = document.createElement('script'); wa.src = '$WEBAPIS/webapis/webapis.js'; document.head.appendChild(wa); } catch (e) { /* not there */ }
+  /* a tile picked in the TV's Smart Hub row: kept until the app is ready to open it */
+  function readDeepLink() {
+    try {
+      var req = tizen.application.getCurrentApplication().getRequestedAppControl();
+      var data = (req && req.appControl && req.appControl.data) || [];
+      for (var i = 0; i < data.length; i++) {
+        if (data[i].key === 'PAYLOAD') {
+          var p = JSON.parse(data[i].value[0]);
+          var v = p && p.values != null ? p.values : p;
+          window.__deepLink = typeof v === 'string' ? JSON.parse(v) : v;
+          if (typeof window.onDeepLink === 'function') window.onDeepLink();
+        }
+      }
+    } catch (e) { /* no tile */ }
+  }
+  readDeepLink();
+  window.addEventListener('appcontrol', readDeepLink);
   window.tvExit = function () { try { tizen.application.getCurrentApplication().exit(); } catch (e) { /* ignore */ } };
 })();

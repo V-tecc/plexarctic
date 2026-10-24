@@ -344,3 +344,41 @@ function abPage(x, d) {
   const el = $('#abanner', viewEl);
   if (el) { el.outerHTML = actorBannerHTML(x, d); const b = $('[data-key="ab-page"]', viewEl); if (b) setFocus(b, true); }
 }
+
+
+/* ---------- Samsung TV: a row of posters on the TV's own home screen (Smart Hub preview) ----------
+   Continue watching and the newest in the library, for the profile that used the app last. Samsung allows
+   an update at most every 10 minutes; a tile opens the title here (or plays it). */
+function tvPreviewUpdate(d) {
+  try {
+    if (!window.IS_TV || !window.webapis || !webapis.preview || !d) return;
+    const last = store.get('tvPreviewAt', 0) || 0;
+    if (Date.now() - last < 10 * 60000) return;
+    const poster = (it) => imgURL(it.type === 'episode' ? (it.grandparentThumb || it.parentThumb || it.thumb) : it.thumb, 300, 450);
+    const tile = (it, play) => ({
+      title: it.type === 'episode' ? (it.grandparentTitle || it.title) : it.title,
+      subtitle: it.type === 'episode' ? epCode(it) : (it.year ? String(it.year) : ''),
+      image_ratio: '2by3', image_url: poster(it), is_playable: !!play,
+      action_data: JSON.stringify({ k: String(it.ratingKey), p: play ? 1 : 0 })
+    });
+    const cont = (d.deckAll || []).filter((it) => it.thumb || it.grandparentThumb).slice(0, 10).map((it) => tile(it, true));
+    const fresh = (d.raMAll || []).concat(d.raSAll || []).filter((it) => !it.viewCount)
+      .sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0)).slice(0, 10).map((it) => tile(it, false));
+    const sections = [];
+    if (cont.length) sections.push({ title: t('continue'), tiles: cont });
+    if (fresh.length) sections.push({ title: t('recent'), tiles: fresh });
+    if (!sections.length) return;
+    webapis.preview.setPreviewData(JSON.stringify({ sections: sections }),
+      () => { store.set('tvPreviewAt', Date.now()); },
+      (e) => { console.log('preview failed', e && e.message); });
+  } catch (e) { /* not supported on this TV */ }
+}
+/* open what was picked in the Smart Hub row */
+function tvDeepLinkGo() {
+  const l = window.__deepLink;
+  if (!l || !l.k || !S.server || !S.token) return false;
+  window.__deepLink = null;
+  try { if (l.p) go(viewPlayer, [l.k]); else go(viewDetails, [l.k]); } catch (e) { return false; }
+  return true;
+}
+window.onDeepLink = () => { if (current && current.fn === viewHome) tvDeepLinkGo(); };
