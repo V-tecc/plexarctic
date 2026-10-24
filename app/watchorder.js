@@ -227,7 +227,7 @@ function woLibraryItems(sec, items) {
     const first = members.slice().sort((a, b) => (a.year || 0) - (b.year || 0))[0];
     out.push({
       ratingKey: 'wo-' + pid, virtual: pid, type: 'show', title: p.name, year: first.year,
-      thumb: store.get('woPoster.' + pid, '') || first.thumb, art: first.art,
+      thumb: woPosterRef(pid, first.thumb), art: woArt(pid).art || first.art,
       addedAt: Math.max.apply(null, members.map((m) => m.addedAt || 0)), updatedAt: Math.max.apply(null, members.map((m) => m.updatedAt || 0)),
       Genre: first.Genre, contentRating: first.contentRating, summary: t('woSummary'),
       childCount: o && o.seasons || 0, leafCount: o ? o.keys.length : 0, viewedLeafCount: o && o.seen || 0
@@ -265,6 +265,7 @@ async function viewUniverse(pid, opts) {
       (r.Metadata || []).forEach((e) => live.set(String(e.ratingKey), e));
     } catch (e) { /* ignore */ }
   }
+  if (woArt(pid).art) heroArt = woArt(pid).art;
   if (!heroArt) { const f = WO_PRESETS[pid].shows.find((x) => o.shows[x.id] && o.shows[x.id].art); if (f) heroArt = o.shows[f.id].art; }
   if (seq !== viewSeq) return;
   /* every item, real or missing, with its TV-year season (seasons only go forward, so catching up stays in one) */
@@ -344,6 +345,7 @@ async function viewUniverse(pid, opts) {
     let actions = '';
     if (next) actions += '<button type="button" class="btn primary f" data-default data-key="playnext" data-act="' + A(() => go(viewPlayer, [next.e.ratingKey, next.e.viewOffset ? {} : { fromStart: true }])) + '">' + ICON.play + esc((next.e.viewOffset ? t('resume') : t('play')) + ' ' + woShort(next.it.s) + ' S' + next.it.se + ' E' + next.it.ep) + '</button>';
     actions += '<button type="button" class="btn f" data-key="worebuild" data-act="' + A(rebuild) + '">' + esc(t('woRebuild')) + '</button>';
+    actions += '<button type="button" class="btn icon f" data-key="wmore" aria-label="' + esc(t('woMore')) + '" data-act="' + A(() => woMenu({ virtual: pid, title: p.name, thumb: '', leafCount: mine.length, viewedLeafCount: seen })) + '">' + ICON.gear + '</button>';
     const tab = (y) => '<button type="button" class="f' + (y === state.year ? ' on' : '') + '" data-key="y-' + y + '" data-act="' + A(() => { state.year = y; redraw('y-' + y); }) + '">' + esc(woYearLabel(y)) + '</button>';
     const ev = S.epView;
     render('<div class="dscroll hide-scroll">' +
@@ -380,5 +382,112 @@ async function viewUniverse(pid, opts) {
       if (seq === viewSeq) { current.focusKey = 'worebuild'; run(); }
     } catch (e) { toast(t('woFailed') + ' (' + (e.message || e) + ')', 7000); say(t('woRebuild')); }
   }
+  draw();
+}
+
+/* ---------- long press on the series: play, watched/unwatched, rebuild, artwork ---------- */
+function woArt(pid) { return store.get('woArt.' + (S.server ? S.server.id : '') + '.' + pid, {}) || {}; }
+function woArtSet(pid, kind, ref) { const a = woArt(pid); if (ref) a[kind] = ref; else delete a[kind]; store.set('woArt.' + S.server.id + '.' + pid, a); }
+function woPosterRef(pid, fallback) { return woArt(pid).poster || store.get('woPoster.' + pid, '') || fallback || ''; }
+
+/* the next episode in the order (fresh watched state) */
+async function woNextUp(pid) {
+  const o = woStore(pid);
+  if (!o || !o.keys) return null;
+  const live = new Map();
+  for (const id of Object.keys(o.shows)) {
+    try { ((await api('/library/metadata/' + o.shows[id].key + '/allLeaves')).Metadata || []).forEach((e) => live.set(String(e.ratingKey), e)); } catch (e) { /* ignore */ }
+  }
+  const eps = o.keys.map((k) => live.get(k)).filter(Boolean);
+  return eps.find((e) => e.viewOffset) || eps.find((e) => !e.viewCount) || null;
+}
+async function woMarkAll(pid, seen) {
+  const o = woStore(pid);
+  if (!o) return;
+  toast(t('woMarking'), 3000);
+  for (const id of Object.keys(o.shows)) {
+    try { await fetch(pmsURL(seen ? '/:/scrobble' : '/:/unscrobble', { key: o.shows[id].key, identifier: 'com.plexapp.plugins.library' })); } catch (e) { /* ignore */ }
+  }
+  toast(seen ? t('markedWatched') : t('ctxResetDone'), 3000);
+  rerun();
+}
+function woMenu(it) {
+  const pid = it.virtual;
+  const o = woStore(pid);
+  const rows = [];
+  if (o) rows.push(optionRow('wm-next', it.viewedLeafCount ? t('playNextEp') : t('startWatching'), [], false, A(async () => {
+    closeModal(true);
+    const n = await woNextUp(pid);
+    if (n) go(viewPlayer, [n.ratingKey, n.viewOffset ? {} : { fromStart: true }]); else toast(t('woAllSeen'), 4000);
+  }), t('woInOrder')));
+  rows.push(optionRow('wm-open', t('ctxShow'), [], false, A(() => { closeModal(true); go(viewDetails, ['wo-' + pid]); })));
+  if (o) {
+    rows.push(optionRow('wm-seen', t('markWatched'), [], false, A(() => { closeModal(true); woMarkAll(pid, true); }), t('woAllShows')));
+    rows.push(optionRow('wm-unseen', t('markUnwatched'), [], false, A(() => woConfirmUnseen(pid)), t('woAllShows')));
+    rows.push(optionRow('wm-build', t('woRebuild'), [], false, A(async () => {
+      closeModal(true);
+      toast(t('woFinding'), 3000);
+      try { const r = await woBuild(pid, () => {}); toast(t('woBuilt', { n: r.n }), 5000); rerun(); } catch (e) { toast(t('woFailed') + ' (' + (e.message || e) + ')', 6000); }
+    }), t('woRebuildNote', { d: new Date(o.at).toLocaleDateString(lang().locale, { day: 'numeric', month: 'short' }) })));
+    rows.push(optionRow('wm-art', t('artChange'), [], false, A(() => { closeModal(true); woArtEditor(pid); }), t('woArtNote')));
+  }
+  const prevArt = modalArt;
+  modalArt = imgURL(woPosterRef(pid, it.thumb), 440, 660) || prevArt;
+  gradSheet(openModal(sheetHeader(it.title, it.leafCount ? t('woSeen', { a: it.viewedLeafCount || 0, b: it.leafCount }) : '') + '<div class="optlist">' + rows.join('') + '</div>', o ? 'wm-next' : 'wm-open'));
+  modalArt = prevArt;
+}
+/* every episode of every show unwatched: ask first, "No" is the default */
+function woConfirmUnseen(pid) {
+  gradSheet(openModal(sheetHeader(t('woUnseenQ', { s: WO_PRESETS[pid].name }), t('woAllShows')) + '<div class="optlist">' +
+    optionRow('wu-no', t('exitNo'), [], false, A(() => closeModal())) +
+    optionRow('wu-yes', t('woUnseenYes'), [], false, A(() => { closeModal(true); woMarkAll(pid, false); })) +
+    '</div>', 'wu-no'));
+}
+
+/* artwork: there is no Arrowverse on fanart.tv or TMDB, so the pictures come from the shows themselves (your
+   server's and TMDB's). The choice is kept on this TV, since the series exists only in this app. */
+async function woArtEditor(pid) {
+  const p = WO_PRESETS[pid];
+  const o = woStore(pid);
+  if (!o) return;
+  let kind = 'poster';
+  const draw = async (focusKey) => {
+    const k = ART_KINDS[kind];
+    const tabs = '<div class="seg arttabs">' + ['poster', 'art'].map((x) => '<button type="button" class="f' + (x === kind ? ' on' : '') + '" data-key="at-' + x + '" data-act="' + A(() => { kind = x; draw('at-' + x); }) + '">' + esc(t(ART_KINDS[x].label)) + '</button>').join('') + '</div>';
+    const el = openModal(sheetHeader(t('artChange'), p.name) + tabs + '<p class="sheettext" id="artnote">' + esc(t('loading')) + '</p>', focusKey || 'at-' + kind, true);
+    el.classList.add('artsheet');
+    const cur = woArt(pid)[kind] || '';
+    const groups = [];
+    if (kind === 'poster') groups.push({ label: t('woArtMade'), list: [{ src: 'made', ref: '', thumb: store.get('woPoster.' + pid, '') }].filter((x) => x.thumb) });
+    for (const s of p.shows) {
+      const sh = o.shows[s.id];
+      if (!sh) continue;
+      let list = [];
+      try { list = (await artList(sh.key, kind)).map((x) => ({ src: 'plex', ref: x.thumb, thumb: x.thumb })); } catch (e) { /* ignore */ }
+      try {
+        const tm = await artTmdb({ type: 'show', Guid: [{ id: 'tmdb://' + s.tmdb }] }, kind);
+        list = list.concat(tm.slice(0, 16).map((x) => ({ src: 'tmdb', ref: x.full, thumb: x.thumb, lang: x.lang })));
+      } catch (e) { /* ignore */ }
+      if (list.length) groups.push({ label: sh.title, list: list });
+      if (!document.contains(el)) return;
+    }
+    if (!document.contains(el) || ART_KINDS[kind] !== k) return;
+    let n = 0;
+    const cell = (x) => {
+      const key = 'ao-' + (n++);
+      const sel = x.src === 'made' ? !cur : x.ref === cur;
+      return '<button type="button" class="artopt ' + k.ratio + ' f' + (sel ? ' sel' : '') + '" data-key="' + key + '" data-act="' + A(() => {
+        woArtSet(pid, kind, x.ref);
+        toast(t('artSaved'), 2500);
+        draw(key);
+      }) + '"><img loading="lazy" src="' + esc(/^(https?:|data:)/.test(x.thumb) ? x.thumb : (kind === 'art' ? imgURL(x.thumb, 480, 270) : imgURL(x.thumb, 240, 360))) + '" alt="">' +
+        (sel ? '<i class="artsel">' + ICON.check + '</i>' : '') + (x.src === 'tmdb' && x.lang ? '<span class="artlang">' + esc(x.lang.toUpperCase()) + '</span>' : '') + '</button>';
+    };
+    const body = groups.filter((g) => g.list.length).map((g) => '<span class="label">' + esc(g.label) + '</span><div class="artgrid ' + k.ratio + '">' + g.list.map(cell).join('') + '</div>').join('');
+    const note = $('#artnote', el);
+    if (note) note.outerHTML = body ? '<p class="sheettext small">' + esc(t('woArtNote')) + '</p>' + body : '<p class="sheettext">' + esc(t('artNone')) + '</p>';
+    initFocus(focusKey || 'ao-0', el);
+    el._onclose = () => setTimeout(() => { if (!modalOpen()) rerun(); }, 50);
+  };
   draw();
 }
