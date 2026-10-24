@@ -28,7 +28,7 @@ function actorBannerHTML(x, d) {
     /* the face is a button: all their films */
     '<div class="abwho"><button type="button" class="abfacebtn f" data-key="ab-face" aria-label="' + esc(t('abAll')) + '" data-act="' + A(() => go(viewPerson, [a.name, a.who && a.who.thumb, null, t('home')])) + '">' +
     (a.who && a.who.thumb ? '<img class="abface" src="' + esc(imgURL(a.who.thumb, 400, 400)) + '" alt="">' : '<span class="abface ini">' + esc(ini) + '</span>') + '<span class="abfacehint">' + esc(t('abAll')) + '</span></button>' +
-    '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2>' + esc(t('abMore')) + '<br>' + esc(a.name) + '</h2>' +
+    '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2><span class="abmw">' + esc(t('abMore')) + '</span>' + esc(a.name) + '</h2>' +
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
     '<div class="abrow">' + items.map((m, i) => '<div class="abcard f" data-key="ab-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '" data-onfocus="' + A(() => abSelect(m)) + '">' +

@@ -1499,3 +1499,22 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abshade { background: linear-gradient(0deg, rgba(11,11,13,.95) 0%, rgba(11,11,13,0) 45%), linear-gradient(90deg, rgba(11,11,13,.9) 0%, rgba(11,11,13,.55) 45%, rgba(11,11,13,0) 75%); }
 .abanner { height: 860px; }
 .absel { top: 356px; }
+
+/* actor banner, compact: smaller "More with", name a bit smaller, smaller face and posters, so the next section peeks in */
+.abanner { height: 680px; }
+.abwho { top: 44px; gap: 34px; }
+.abface { width: 180px; height: 180px; font-size: 52px; }
+.abtx { gap: 6px; }
+.abtx h2 { font-size: 56px; line-height: 1.02; }
+.abtx h2 .abmw { display: block; font-size: 30px; font-weight: var(--w600); letter-spacing: -0.3px; color: #D8D8DA; margin-bottom: 4px; }
+.abtx .absub { font-size: 20px; }
+.absel { left: 270px; top: 262px; gap: 6px; }
+.absel .ablabel { font-size: 16px; }
+.absel b { font-size: 38px; }
+.absel .abmeta { font-size: 22px; }
+.absel p { font-size: 21px; }
+.abrow { bottom: 34px; }
+.abcard { width: 130px; height: 195px; }
+.abpage { height: 195px; width: 80px; }
+.abanner { height: 700px; }
+.absel { top: 284px; }
