@@ -1087,3 +1087,32 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .dscroll .dtitle { text-shadow: 0 0 12px rgba(var(--bg-rgb), 0.85), 0 0 4px rgba(var(--bg-rgb), 0.6); }
 /* extreme titles: shrink (by length), wrap, and stop at three lines with "…" so the page never gets pushed down */
 .dscroll .dtitle { max-width: 1320px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; padding: 0 16px 0.12em 0; }
+/* v0.39: title logos */
+.tlogo { display: block; max-width: 100%; height: auto; object-fit: contain; object-position: left bottom; }
+.dtitle.haslogo { margin-bottom: 8px; }
+.dtitle.haslogo .tlogo { max-width: 760px; max-height: 210px; }
+.dtitle.epname.haslogo .tlogo { max-height: 150px; }
+.spotin h2.haslogo { display: block; overflow: visible; }
+.spotin h2.haslogo .tlogo { max-width: 620px; max-height: 170px; }
+.player .ptitle.haslogo .tlogo { max-width: 640px; max-height: 170px; margin-bottom: 6px; }
+.tlogo { filter: drop-shadow(0 2px 10px rgba(0,0,0,0.45)); }
+#stage:not([data-theme="dark"]) .dscroll .tlogo.light, #stage:not([data-theme="dark"]) .spotin .tlogo.light { filter: brightness(0.16) drop-shadow(0 1px 1px rgba(255,255,255,0.4)); }
+#stage[data-theme="dark"] .tlogo.dark { filter: invert(1) brightness(0.95) drop-shadow(0 2px 10px rgba(0,0,0,0.45)); }
+.player .tlogo.dark { filter: invert(1) brightness(0.95); }
+/* the artwork picker */
+.artsheet .arttabs { margin: 4px 0 6px; }
+.artgrid { display: grid; gap: 18px; margin-bottom: 18px; }
+.artgrid.tall { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.artgrid.wide { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.artgrid.logo { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.artopt { position: relative; padding: 0; border: 0; background: var(--img); cursor: pointer; overflow: hidden; outline: 3px solid transparent; outline-offset: 3px; transition: transform 140ms ease; }
+.artopt img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.artopt.tall { height: 290px; }
+.artopt.wide { height: 230px; }
+.artopt.logo { height: 150px; background: repeating-conic-gradient(#2A2A2F 0% 25%, #222226 0% 50%) 0 0 / 22px 22px; }
+.artopt.logo img { object-fit: contain; padding: 14px; box-sizing: border-box; }
+.artopt.focus { outline-color: var(--focus); transform: scale(1.04); z-index: 1; }
+.artopt.sel { outline-color: var(--fg); }
+.artopt.sel.focus { outline-color: var(--focus); }
+.artopt .artsel { position: absolute; top: 8px; right: 8px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: var(--fg); color: var(--bg); }
+.artopt .artlang { position: absolute; left: 8px; bottom: 8px; font-size: 13px; letter-spacing: .06em; padding: 3px 7px; background: rgba(0,0,0,0.65); color: #fff; }

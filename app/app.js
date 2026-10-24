@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.38.3';
+const VERSION = '0.39.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -40,6 +40,7 @@ const S = {
   accent: store.get('accent', 'color'),
   showMissing: store.get('showMissing', false),
   calView: store.get('calView', 'week'),
+  titleStyle: store.get('titleStyle', 'logo'),   /* 'logo' (title logos where there is one) or 'text' */
   calMode: store.get('calMode', 'tv'),          /* 'tv' (your shows) or 'movies' (cinema releases) */
   calHidden: store.get('calHidden', []),        /* shows left out of the calendar */
   calExtra: store.get('calExtra', []),          /* shows added by hand: { id (TVmaze), name, image, year } */
@@ -602,6 +603,7 @@ Object.assign(ICON, {
   x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
   star: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 17l-5.8 3.3 1.4-6.4L2.7 9.5l6.5-.7z"></path></svg>',
   download: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>',
+  image: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"></rect><circle cx="9" cy="9.5" r="1.6"></circle><path d="M3.5 18l5.5-5.5 4 4 3-3 4.5 4.5"></path></svg>',
   film: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"></rect><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"></path></svg>',
   mic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>',
   sliders: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="M3 7h11M19 7h2M3 17h5M13 17h8"></path><path d="M14 4v6M8 14v6"></path></svg>'
@@ -811,6 +813,7 @@ function viewSettings() {
       store.set('font', f); rerun();
     }) + '"' + (f === 'custom' ? '' : ' style="font-family: \'' + esc(f.replace(' Bold', '')) + '\', sans-serif' + (f.endsWith('Bold') ? '; font-weight: 800' : '') + '"') + '>' + esc(f === 'Questrial' ? t('fontTheme') : f) + '</button>').join('') + '</div>') +
     row(t('homeLayout'), '<div class="seg">' + [['spotlight', t('spotlight')], ['list', t('list')], ['covers', t('covers')], ['fanart', t('fanart')]].map((x) => '<button type="button" class="f' + (S.homeMode === x[0] ? ' on' : '') + '" data-key="hm-' + x[0] + '" data-act="' + A(() => { S.homeMode = x[0]; store.set('homeMode', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('titleStyle'), '<div class="seg">' + [['logo', t('titleLogo')], ['text', t('titleText')]].map((x) => '<button type="button" class="f' + (S.titleStyle === x[0] ? ' on' : '') + '" data-key="ts-' + x[0] + '" data-act="' + A(() => { S.titleStyle = x[0]; store.set('titleStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { S.theme = x[0]; store.set('theme', x[0]); applyTheme(); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' +
       '<div class="seg">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { S.accent = x[0]; store.set('accent', x[0]); applyTheme(); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
     row(t('defQuality'), '<button type="button" class="btn f" data-key="q" data-act="' + A(() => pickQuality(S.quality, (id) => { S.quality = id; store.set('quality', id); closeModal(true); rerun(); })) + '">' + ICON.quality + esc(qLabel(S.quality)) + '</button>' +
@@ -945,6 +948,7 @@ function showMenu(it) {
   }), 'S1 E1'));
   rows.push(optionRow('cx-wt', t('wt'), [], false, A(() => { closeModal(true); wtStart(it); }), t('wtMenuNote')));
   rows.push(optionRow('cx-open', t('ctxShow'), [], false, A(() => { closeModal(true); go(viewDetails, [showKey]); })));
+  if (typeof artAllowedNow === 'function' && artAllowedNow()) rows.push(optionRow('cx-art', t('artChange'), [], false, A(() => { closeModal(true); artEditor({ ratingKey: showKey }); }), t('artMenuNote')));
   rows.push(optionRow('cx-seen', allSeen ? t('markUnwatched') : t('markWatched'), [], false, A(async () => {
     closeModal(true);
     try { await fetch(pmsURL(allSeen ? '/:/unscrobble' : '/:/scrobble', { key: showKey, identifier: 'com.plexapp.plugins.library' })); } catch (e) { /* ignore */ }
@@ -986,6 +990,7 @@ function itemMenu(it) {
     toast(t('ctxResetDone'), 3500);
     rerun();
   }), t('ctxResetSub')));
+  if (typeof artAllowedNow === 'function' && artAllowedNow()) rows.push(optionRow('cx-art', t('artChange'), [], false, A(() => { closeModal(true); artEditor(it); }), t('artMenuNote')));
   const prevArt = modalArt;
   modalArt = imgURL(posterOf(it), 440, 660) || prevArt;
   gradSheet(openModal(sheetHeader(ep ? (it.grandparentTitle || itemTitle(it)) : itemTitle(it), ep ? epCode(it) + (it.title ? ' · ' + it.title : '') : (it.year || '') + '') +
@@ -1335,7 +1340,7 @@ function spotHeroHTML(d) {
   return '<section class="spothero" id="spothero">' +
     (art ? '<img src="' + esc(imgURL(art, 1600, 900)) + '" alt="">' : '') + '<div class="fade"></div>' +
     '<div class="spotin"><span class="eyebrow">' + esc(t(h.kind)) + '</span>' +
-    '<h2>' + esc(ep ? it.grandparentTitle : it.title) + '</h2>' +
+    '<h2 data-logo="' + esc(ep ? it.grandparentRatingKey : it.ratingKey) + '">' + esc(ep ? it.grandparentTitle : it.title) + '</h2>' +
     (ep ? '<div class="smeta"><span>' + esc(meta.shift()) + '</span></div>' : '') +
     '<div class="smeta">' + meta.map((m) => '<span>' + esc(m) + '</span>').join('<span aria-hidden="true">·</span>') + '</div>' +
     (tags.length ? '<div class="tags">' + tagsHTML(tags) + '</div>' : '') +
@@ -3043,6 +3048,7 @@ async function viewDetails(ratingKey, opts) {
       }) + '">' + (seen ? '' : ICON.check) + esc(seen ? t('markUnwatched') : t('markWatched')) + '</button>';
     }
     if (!isEp) actions += '<button type="button" class="btn f" data-key="trailer" data-act="' + A(playTrailer) + '">' + ICON.film + esc(t('trailer')) + '</button>';
+    if (typeof artAllowedNow === 'function' && artAllowedNow()) actions += '<button type="button" class="btn icon f" data-key="artedit" aria-label="' + esc(t('artChange')) + '" data-act="' + A(() => artEditor(m)) + '">' + ICON.image + '</button>';
     const extrasBlock = extras.length ? '<h2 class="section-h">' + esc(t('extras')) + '</h2><div class="hrow hide-scroll">' + extras.map((x) => {
       const th = imgURL(x.thumb, 480, 270);
       return '<div class="card ep f" data-key="x-' + x.ratingKey + '" data-act="' + A(() => go(viewPlayer, [x.ratingKey, { fromStart: true }])) + '">' +
@@ -3076,7 +3082,7 @@ async function viewDetails(ratingKey, opts) {
         '<button type="button" class="linkbtn f" data-key="to-show" data-act="' + A(() => go(viewDetails, [m.grandparentRatingKey])) + '">' + esc(m.grandparentTitle) + '</button>' +
         '<span aria-hidden="true">·</span>' +
         '<button type="button" class="linkbtn f" data-key="to-season" data-act="' + A(() => go(viewDetails, [m.grandparentRatingKey, { season: m.parentIndex }])) + '">' + esc(m.parentTitle || t('seasonN', { n: m.parentIndex })) + '</button></div>' : '') +
-      '<h1 class="dtitle' + (isEp ? ' epname' : '') + (String(m.title || '').length > 70 ? ' tlong3' : String(m.title || '').length > 45 ? ' tlong2' : String(m.title || '').length > 28 ? ' tlong1' : '') + '">' + esc(m.title) + '</h1>' +
+      '<h1' + (isEp ? '' : ' data-logo="' + esc(m.ratingKey) + '"') + ' class="dtitle' + (isEp ? ' epname' : '') + (String(m.title || '').length > 70 ? ' tlong3' : String(m.title || '').length > 45 ? ' tlong2' : String(m.title || '').length > 28 ? ' tlong1' : '') + '">' + esc(m.title) + '</h1>' +
       '<div class="dmeta">' + meta.map((x) => '<span>' + esc(x) + '</span>').join('<span aria-hidden="true">·</span>') + '</div>' +
       '<div class="ratings">' + ratingsHTML(m) + (tags.length ? '<div class="tags">' + tagsHTML(tags) + '</div>' : '') + statusHTML() + '</div>' +
       (m.summary ? '<p class="summary">' + esc(m.summary) + '</p>' : '') +
@@ -3205,7 +3211,7 @@ async function viewPlayer(ratingKey, opts) {
     '<button type="button" class="skipbtn" id="skipbtn" hidden></button>' +
     '<div class="ptop"><span class="pcrumb">' + esc(crumbP) + '</span><button type="button" class="wtbadge" hidden data-act="' + A(() => wtPanel()) + '"></button>' + clockHTML(true) + '</div>' +
     '<div class="pbottom">' +
-    '<div class="prow"><div class="ptl"><h1 class="ptitle">' + esc(bigTitle) + '</h1><span class="psub">' + esc(bigSub) + '</span></div>' +
+    '<div class="prow"><div class="ptl"><h1 class="ptitle"' + (isEpP ? '' : ' data-logo="' + esc(m.ratingKey) + '"') + '>' + esc(bigTitle) + '</h1><span class="psub">' + esc(bigSub) + '</span></div>' +
     '<div class="ends"><b id="ends"></b><span id="ends2"></span></div></div>' +
     '<section class="panel">' +
     '<div class="tl"><span class="time" id="pos">0:00</span>' +
