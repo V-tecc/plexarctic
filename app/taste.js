@@ -84,3 +84,30 @@ function tasteRows(it) {
 }
 
 ICON.thumbDown = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.7a2 2 0 0 0-2 1.7l-1.4 9a2 2 0 0 0 2 2.3z"></path><path d="M17 2h2.7A2.3 2.3 0 0 1 22 4v7a2.3 2.3 0 0 1-2.3 2H17"></path></svg>';
+
+/* favourite actors: the full cast (top eight billed) of the films this profile watched most recently, from Plex's own
+   watch history. Casts are kept on this device so each film is only asked for once; a few new ones per visit. */
+async function tasteFavActors(movies, h) {
+  const watched = movies.filter((m) => m.viewCount).sort((a, b) => (b.lastViewedAt || 0) - (a.lastViewedAt || 0)).slice(0, 80);
+  const cache = store.get('castCache.' + S.server.id, {}) || {};
+  const missing = watched.filter((m) => !cache[m.ratingKey]).slice(0, 30);
+  for (let i = 0; i < missing.length; i += 6) {
+    await Promise.all(missing.slice(i, i + 6).map((m) => api('/library/metadata/' + m.ratingKey).then((r) => {
+      const full = (r.Metadata || [])[0];
+      cache[m.ratingKey] = ((full && full.Role) || []).slice(0, 8).map((x) => [x.tag, x.id || x.tagKey || '']);
+    }).catch(() => {})));
+  }
+  const ks = Object.keys(cache); if (ks.length > 1500) ks.slice(0, ks.length - 1500).forEach((k) => delete cache[k]);
+  try { store.set('castCache.' + S.server.id, cache); } catch (e) { /* full: carry on */ }
+  const count = new Map();
+  watched.forEach((m) => (cache[m.ratingKey] || (m.Role || []).map((x) => [x.tag, x.id || ''])).forEach(([name, id]) => {
+    const c = count.get(name) || { name: name, id: id, n: 0 };
+    c.n++; if (!c.id && id) c.id = id;
+    count.set(name, c);
+  }));
+  const x = tasteGet();
+  const favs = Array.from(count.values()).filter((c) => c.n >= 2 && c.id && (x.a[c.name] || 0) > -1).sort((a, b) => b.n - a.n);
+  /* the scoring uses these too */
+  if (h) favs.forEach((c) => h.actors.set(c.name, Math.max(h.actors.get(c.name) || 0, c.n)));
+  return favs;
+}
