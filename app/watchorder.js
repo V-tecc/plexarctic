@@ -3,8 +3,9 @@
    crossover, then move to the next show and do the same. When every show has reached the crossover, the crossover
    plays in its own order. Shows that are not in a crossover keep up by air date (everything they aired before the
    crossover comes first). After the last crossover, the rest plays season by season, by when each block aired.
-   The order is saved as a Plex playlist for the person watching (so other Plex apps see it too), and episodes
-   you play from it follow the order: "Next episode" at the credits goes to the next one in the list. */
+   It shows up in TV Shows as a series of its own ("Arrowverse"), with seasons by TV year, and with the episodes
+   you don't have mixed in when "Missing episodes" is on (from TVmaze, like a normal show). The order is also saved
+   as a Plex playlist for the person watching, and "Next episode" at the credits follows it. */
 'use strict';
 
 const WO_PRESETS = {
@@ -121,12 +122,34 @@ async function woBuild(pid, say) {
   say(t('woFinding'));
   const shows = await woFindShows(p);
   if (!Object.keys(shows).length) throw new Error(t('woNoShows'));
+  const today = new Date().toISOString().slice(0, 10);
   const eps = {};
-  for (const s of p.shows) if (shows[s.id]) { say(t('woReading', { s: shows[s.id].title })); eps[s.id] = await woEpisodes(shows[s.id]); }
+  let ghosts = 0;
+  for (const s of p.shows) {
+    if (!shows[s.id]) continue;
+    say(t('woReading', { s: shows[s.id].title }));
+    const lib = await woEpisodes(shows[s.id]);
+    /* the episodes you don't have (aired ones), so they get their place in the order too */
+    let tv = [];
+    try { const sh = await tvmFor(shows[s.id]); tv = (sh && sh._embedded && sh._embedded.episodes) || []; } catch (e) { /* ignore */ }
+    const have = new Set(lib.map((e) => e.parentIndex + ':' + e.index));
+    const gh = tv.filter((e) => e.season >= 1 && e.number && e.airdate && e.airdate <= today && !have.has(e.season + ':' + e.number)).map((e) => ({
+      ghost: true, parentIndex: e.season, index: e.number, title: e.name || '', originallyAvailableAt: e.airdate,
+      image: (e.image && (e.image.medium || e.image.original)) || '', summary: stripTags(e.summary).slice(0, 400)
+    }));
+    ghosts += gh.length;
+    eps[s.id] = lib.concat(gh).sort((a, b) => (a.parentIndex - b.parentIndex) || (a.index - b.index));
+  }
   const order = woOrder(p, eps);
-  const keys = order.map((x) => String(x.ep.ratingKey));
-  const crossover = {};
-  order.forEach((x) => { if (x.why) crossover[x.ep.ratingKey] = x.why; });
+  const items = order.map((x) => {
+    const e = x.ep;
+    const it = { s: x.show, se: e.parentIndex, ep: e.index, d: e.originallyAvailableAt || '' };
+    if (x.why) it.x = x.why;
+    if (e.ghost) it.g = { t: e.title, i: e.image, u: e.summary };
+    else it.k = String(e.ratingKey);
+    return it;
+  });
+  const keys = items.filter((x) => x.k).map((x) => x.k);
   /* the playlist: replace the old one */
   say(t('woPlaylist'));
   const title = p.name + ' · ' + t('woTitle');
@@ -148,12 +171,13 @@ async function woBuild(pid, say) {
     }
   } catch (e) { playlist = null; }
   const shown = {};
-  Object.keys(shows).forEach((id) => { shown[id] = { key: shows[id].ratingKey, title: shows[id].title }; });
-  woSave(pid, { at: Date.now(), keys: keys, crossover: crossover, shows: shown, playlist: playlist });
-  return { n: keys.length, playlist: playlist, missing: p.shows.filter((s) => !shows[s.id]).map((s) => s.titles[0]) };
+  Object.keys(shows).forEach((id) => { shown[id] = { key: shows[id].ratingKey, title: shows[id].title, thumb: shows[id].thumb || '', art: shows[id].art || '', addedAt: shows[id].addedAt || 0 }; });
+  woSave(pid, { v: 2, at: Date.now(), keys: keys, items: items, shows: shown, playlist: playlist, seen: old && old.seen || 0 });
+  woPosterMake(pid).catch(() => {});
+  return { n: keys.length, ghosts: ghosts, playlist: playlist, missing: p.shows.filter((s) => !shows[s.id]).map((s) => s.titles[0]) };
 }
 
-/* the player asks: does this episode belong to an order you're following? → the next one */
+/* the player asks: does this episode belong to an order? → the next one you have */
 function woNextKey(ratingKey) {
   for (const pid of Object.keys(WO_PRESETS)) {
     const o = woStore(pid);
@@ -164,72 +188,197 @@ function woNextKey(ratingKey) {
   return undefined;
 }
 
-/* fresh watched state for every episode in the order */
-async function woProgress(pid) {
+/* poster for the series card: the first four shows' posters as a 2×2 picture, kept on this device */
+async function woPosterMake(pid) {
   const o = woStore(pid);
-  const byKey = new Map();
-  for (const id of Object.keys(o.shows || {})) {
-    try { ((await api('/library/metadata/' + o.shows[id].key + '/allLeaves')).Metadata || []).forEach((e) => byKey.set(String(e.ratingKey), e)); } catch (e) { /* ignore */ }
+  if (!o) return;
+  const ids = WO_PRESETS[pid].shows.map((s) => s.id).filter((id) => o.shows[id] && o.shows[id].thumb).slice(0, 4);
+  if (!ids.length) return;
+  const load = (src) => new Promise((res, rej) => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = rej; im.src = src; });
+  const imgs = await Promise.all(ids.map((id) => load(imgURL(o.shows[id].thumb, 300, 450)).catch(() => null)));
+  const c = document.createElement('canvas'); c.width = 600; c.height = 900;
+  const g = c.getContext('2d');
+  g.fillStyle = '#111'; g.fillRect(0, 0, 600, 900);
+  const n = imgs.length;
+  imgs.forEach((im, i) => {
+    if (!im) return;
+    const w = n === 1 ? 600 : 300, h = n <= 2 ? 900 : 450;
+    const x = n === 1 ? 0 : (i % 2) * 300, y = n <= 2 ? 0 : Math.floor(i / 2) * 450;
+    g.drawImage(im, x, y, w, h);
+  });
+  const gr = g.createLinearGradient(0, 560, 0, 900);
+  gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,0.92)');
+  g.fillStyle = gr; g.fillRect(0, 560, 600, 340);
+  g.fillStyle = '#fff'; g.textAlign = 'center';
+  g.font = '700 70px Roboto, Arial, sans-serif';
+  g.fillText(WO_PRESETS[pid].name.toUpperCase(), 300, 850, 560);
+  g.fillStyle = '#2DD4BF'; g.fillRect(270, 868, 60, 5);
+  try { store.set('woPoster.' + pid, c.toDataURL('image/jpeg', 0.82)); } catch (e) { /* tainted picture or no room: the first show's poster is used */ }
+}
+
+/* the card in TV Shows: added when the library has at least one of the shows */
+function woLibraryItems(sec, items) {
+  const out = [];
+  for (const pid of Object.keys(WO_PRESETS)) {
+    const p = WO_PRESETS[pid];
+    const members = items.filter((m) => m.type === 'show' && p.shows.some((s) => woTitleMatch(s, m) || (tmdbIdOf(m) && tmdbIdOf(m) === s.tmdb)));
+    if (!members.length) continue;
+    const o = woStore(pid);
+    const first = members.slice().sort((a, b) => (a.year || 0) - (b.year || 0))[0];
+    out.push({
+      ratingKey: 'wo-' + pid, virtual: pid, type: 'show', title: p.name, year: first.year,
+      thumb: store.get('woPoster.' + pid, '') || first.thumb, art: first.art,
+      addedAt: Math.max.apply(null, members.map((m) => m.addedAt || 0)), updatedAt: Math.max.apply(null, members.map((m) => m.updatedAt || 0)),
+      Genre: first.Genre, contentRating: first.contentRating, summary: t('woSummary'),
+      childCount: o && o.seasons || 0, leafCount: o ? o.keys.length : 0, viewedLeafCount: o && o.seen || 0
+    });
   }
-  const items = o.keys.map((k) => byKey.get(k)).filter(Boolean);
-  const next = items.find((e) => e.viewOffset) || items.find((e) => !e.viewCount) || null;
-  return { items: items, next: next, seen: items.filter((e) => e.viewCount && !e.viewOffset).length };
+  return out;
 }
 
-function woLabel(e, o) {
-  return (e.grandparentTitle || '') + ' · ' + epCode(e) + (e.title ? ' · ' + e.title : '');
-}
+/* ---------- the series page ---------- */
+function woShort(id) { return { arrow: 'Arrow', flash: 'The Flash', supergirl: 'Supergirl', legends: 'Legends', batwoman: 'Batwoman' }[id] || id; }
+/* TV years: a season runs from August to July */
+function woYear(d) { if (!d) return 0; const y = +d.slice(0, 4), mo = +d.slice(5, 7); return mo >= 8 ? y : y - 1; }
+function woYearLabel(y) { return y + '–' + String((y + 1) % 100).padStart(2, '0'); }
 
-/* the sheet behind the button on the show page */
-async function woSheet(pid) {
+async function viewUniverse(pid, opts) {
+  opts = opts || {};
+  const seq = viewSeq;
   const p = WO_PRESETS[pid];
-  const o = woStore(pid);
-  if (!o) {
-    gradSheet(openModal(sheetHeader(t('woHeading', { s: p.name })) +
-      '<p class="sheettext">' + esc(t('woExplain')) + '</p><p class="sheettext small" id="wostat"></p>' +
-      '<div class="optlist">' + optionRow('wo-build', t('woBuild'), [], false, A(() => woRunBuild(pid))) + '</div>', 'wo-build'));
-    return;
+  if (!p) throw new Error(t('notFound'));
+  const shell = (msg) => render('<div class="screen"><div class="top"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(t('shows')) + '</button>' + clockHTML() + '</div><div class="empty" id="wobusy">' + esc(msg) + '</div></div>');
+  shell(t('loading'));
+  let o = woStore(pid);
+  if (!o || o.v !== 2) {
+    try { await woBuild(pid, (msg) => { const el = $('#wobusy'); if (el) el.textContent = msg; }); } catch (e) { const el = $('#wobusy'); if (el) el.textContent = t('woFailed') + ' (' + (e.message || e) + ')'; return; }
+    if (seq !== viewSeq) return;
+    o = woStore(pid);
   }
-  const el = gradSheet(openModal(sheetHeader(t('woHeading', { s: p.name }), t('woCounting')) + '<p class="sheettext small" id="wostat"></p><div class="optlist" id="wolist"></div>', null));
-  let pr;
-  try { pr = await woProgress(pid); } catch (e) { toast(t('woFailed') + ' (' + (e.message || e) + ')', 6000); return; }
-  if (!document.contains(el)) return;
-  const cnt = $('.shead .count', el); if (cnt) cnt.textContent = t('woSeen', { a: pr.seen, b: pr.items.length });
+  /* fresh watched state and pictures for everything you have */
+  const live = new Map();
+  let heroArt = '';
+  for (const id of Object.keys(o.shows)) {
+    try {
+      const r = await api('/library/metadata/' + o.shows[id].key + '/allLeaves');
+      if (!heroArt && r.art) heroArt = r.art;
+      (r.Metadata || []).forEach((e) => live.set(String(e.ratingKey), e));
+    } catch (e) { /* ignore */ }
+  }
+  if (!heroArt) { const f = WO_PRESETS[pid].shows.find((x) => o.shows[x.id] && o.shows[x.id].art); if (f) heroArt = o.shows[f.id].art; }
+  if (seq !== viewSeq) return;
+  /* every item, real or missing, with its TV-year season (seasons only go forward, so catching up stays in one) */
+  let yr = 0;
   const rows = [];
-  if (pr.next) {
-    const why = o.crossover[pr.next.ratingKey];
-    rows.push(optionRow('wo-next', (pr.next.viewOffset ? t('resume') : t('woNext')) + ': ' + woLabel(pr.next), why ? ['CROSSOVER'] : [], false,
-      A(() => { closeModal(true); go(viewPlayer, [pr.next.ratingKey, pr.next.viewOffset ? {} : { fromStart: true }]); }), why || ''));
+  o.items.forEach((it) => {
+    const e = it.k ? live.get(it.k) : null;
+    if (it.k && !e) return; /* removed from the library since the order was made */
+    yr = Math.max(yr, woYear(it.d) || yr);
+    rows.push({ it: it, e: e, ghost: !it.k, year: yr });
+  });
+  const years = Array.from(new Set(rows.map((r) => r.year))).filter(Boolean);
+  const mine = rows.filter((r) => !r.ghost);
+  const seen = mine.filter((r) => r.e.viewCount && !r.e.viewOffset).length;
+  const next = (mine.find((r) => r.e.viewOffset) || mine.find((r) => !r.e.viewCount) || null);
+  o.seen = seen; o.seasons = years.length; woSave(pid, o);
+  const state = { year: opts.year || (next ? next.year : years[0]) };
+  modalArt = null;
+
+  keyHandler = (e) => {
+    if (e.key !== 'Escape' || modalOpen() || !focused) return false;
+    if (focused.closest('.actions') || focused.dataset.key === 'crumb') return false;
+    const top = $('.actions [data-default]', viewEl) || $('.actions .f', viewEl);
+    if (!top) return false;
+    setFocus(top, true);
+    const sc = $('.dscroll', viewEl); if (sc) sc.scrollTop = 0;
+    return true;
+  };
+  const code = (r) => woShort(r.it.s) + ' · S' + r.it.se + ' E' + r.it.ep;
+  const title = (r) => r.ghost ? r.it.g.t : r.e.title;
+  const status = (r) => t('notInLibrary');
+  const openGhost = (r) => openModal(sheetHeader(code(r) + (title(r) ? ' · ' + title(r) : ''), status(r)) +
+    (r.it.g.i ? '<img class="sheetimg" src="' + esc(r.it.g.i) + '" alt="">' : '') +
+    '<div class="tags"><span class="tag">' + esc(status(r).toUpperCase()) + '</span>' + (r.it.x ? '<span class="tag">' + esc(r.it.x.toUpperCase()) + '</span>' : '') + '</div>' +
+    (r.it.g.u ? '<p class="sheettext">' + esc(r.it.g.u) + '</p>' : '') +
+    '<button type="button" class="btn f" data-default data-act="' + A(() => closeModal()) + '">' + ICON.back + esc(t('back')) + '</button>');
+  const act = (r) => A(() => (r.ghost ? openGhost(r) : go(viewDetails, [r.e.ratingKey])));
+  const key = (r) => (r.ghost ? 'g-' + r.it.s + '-' + r.it.se + '-' + r.it.ep : 'e-' + r.e.ratingKey);
+  const xTag = (r) => (r.it.x ? '<span class="woxtag">' + esc(r.it.x) + '</span>' : '');
+
+  const episodesHTML = () => {
+    const list = rows.filter((r) => r.year === state.year && (S.showMissing || !r.ghost));
+    if (!list.length) return '<div class="empty">' + esc(t('nothing')) + '</div>';
+    const v = S.epView;
+    if (v === 'list') {
+      return '<div class="eplist">' + list.map((r) => '<div class="eprow2 wo f' + (r.ghost ? ' ghost' : '') + (r.it.x ? ' wox' : '') + '" data-key="' + key(r) + '" data-act="' + act(r) + '">' +
+        '<div class="emain"><span class="num">' + esc(code(r)) + '</span><span class="et">' + esc(title(r)) + '</span>' + xTag(r) +
+        (r.ghost ? '<span class="tag">' + esc(status(r).toUpperCase()) + '</span>' : (progress(r.e) ? '<span class="mini"><i style="width: ' + progress(r.e) + '%"></i></span>' : '') +
+        '<span class="ed">' + esc(durText(r.e.duration)) + '</span><span class="ew">' + (r.e.viewCount && !r.e.viewOffset ? ICON.check : '') + '</span>') + '</div><div class="ex"></div></div>').join('') + '</div>';
+    }
+    if (v === 'detailed') {
+      return '<div class="eplist">' + list.map((r) => {
+        const th = r.ghost ? r.it.g.i : imgURL(r.e.thumb, 480, 270);
+        return '<div class="epdet f' + (r.ghost ? ' ghost' : '') + '" data-key="' + key(r) + '" data-act="' + act(r) + '">' +
+          '<div style="position: relative">' + (th ? '<img class="img" loading="lazy" src="' + esc(th) + '" alt="">' : '<div class="img"></div>') +
+          (!r.ghost && r.e.viewCount && !r.e.viewOffset ? '<span class="watched">' + ICON.check + '</span>' : '') + '</div>' +
+          '<div class="eptext"><b>' + esc(code(r) + ' · ' + title(r)) + '</b>' + xTag(r) +
+          (r.ghost ? '<span class="tags"><span class="tag">' + esc(status(r).toUpperCase()) + '</span></span>' : '<span class="count">' + esc([durText(r.e.duration), r.e.originallyAvailableAt ? t('aired', { d: r.e.originallyAvailableAt }) : ''].filter(Boolean).join(' · ')) + '</span>') +
+          '<p>' + esc(r.ghost ? r.it.g.u || '' : r.e.summary || '') + '</p></div></div>';
+      }).join('') + '</div>';
+    }
+    return '<div class="hrow hide-scroll">' + list.map((r) => {
+      const th = r.ghost ? r.it.g.i : imgURL(r.e.thumb, 480, 270);
+      const pct = r.ghost ? 0 : progress(r.e);
+      return '<div class="card ep f' + (r.ghost ? ' ghost' : '') + '" data-key="' + key(r) + '" data-act="' + act(r) + '">' +
+        '<div style="position: relative">' + (th ? '<img class="img" loading="lazy" src="' + esc(th) + '" alt="">' : '<div class="img"></div>') +
+        (r.ghost ? '<span class="ghosttag">' + esc(status(r)) + '</span>' : '') + (r.it.x ? '<span class="woxbadge">' + esc(r.it.x) + '</span>' : '') +
+        (!r.ghost && r.e.viewCount && !r.e.viewOffset ? '<span class="watched">' + ICON.check + '</span>' : '') + '</div>' +
+        (pct ? '<div class="bar"><i style="width: ' + pct + '%"></i></div>' : '') +
+        '<div class="t" style="font-size: 18px">' + esc(code(r)) + '</div><div class="s">' + esc(title(r)) + '</div></div>';
+    }).join('') + '</div>';
+  };
+
+  const draw = () => {
+    const ghostN = rows.filter((r) => r.ghost).length;
+    const meta = [woYearLabel(years[0]).slice(0, 4) + '–' + (years[years.length - 1] + 1), t('woNShows', { n: Object.keys(o.shows).length }), t('seasonsN', { n: years.length }), t('woSeen', { a: seen, b: mine.length })];
+    let actions = '';
+    if (next) actions += '<button type="button" class="btn primary f" data-default data-key="playnext" data-act="' + A(() => go(viewPlayer, [next.e.ratingKey, next.e.viewOffset ? {} : { fromStart: true }])) + '">' + ICON.play + esc((next.e.viewOffset ? t('resume') : t('play')) + ' ' + woShort(next.it.s) + ' S' + next.it.se + ' E' + next.it.ep) + '</button>';
+    actions += '<button type="button" class="btn f" data-key="worebuild" data-act="' + A(rebuild) + '">' + esc(t('woRebuild')) + '</button>';
+    const tab = (y) => '<button type="button" class="f' + (y === state.year ? ' on' : '') + '" data-key="y-' + y + '" data-act="' + A(() => { state.year = y; redraw('y-' + y); }) + '">' + esc(woYearLabel(y)) + '</button>';
+    const ev = S.epView;
+    render('<div class="dscroll hide-scroll">' +
+      '<div class="hero">' + (heroArt ? '<img src="' + esc(imgURL(heroArt, 1600, 900)) + '" alt="">' : '') + '</div>' +
+      '<div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(t('shows')) + '</button>' +
+      '<div style="display: flex; align-items: center; gap: 28px">' + clockHTML(!!heroArt, 'margin-left: 0') + '</div></div>' +
+      '<div style="position: relative; z-index: 2">' +
+      '<h1 class="dtitle">' + esc(p.name) + '</h1>' +
+      '<div class="dmeta">' + meta.map((x) => '<span>' + esc(x) + '</span>').join('<span aria-hidden="true">·</span>') + '</div>' +
+      '<p class="summary">' + esc(t('woSummary')) + (ghostN ? ' ' + esc(t('woGhosts', { n: ghostN })) : '') + '</p>' +
+      '<div class="actions">' + actions + '</div>' +
+      '<div class="tabsrow"><div class="tabs" data-nav-r="missing,ev-' + ev + '">' + years.map(tab).join('') + '</div>' +
+      '<div class="tabtools">' +
+      '<button type="button" class="chip f' + (S.showMissing ? ' on' : '') + '" data-key="missing" data-act="' + A(() => { S.showMissing = !S.showMissing; store.set('showMissing', S.showMissing); redraw('missing'); }) + '">' + (S.showMissing ? ICON.check : '') + esc(t('showMissing')) + '</button>' +
+      '<div class="seg">' + [['cards', t('cards')], ['list', t('list')], ['detailed', t('detailed')]].map((x) => '<button type="button" class="f' + (ev === x[0] ? ' on' : '') + '" data-key="ev-' + x[0] + '" data-act="' + A(() => { S.epView = x[0]; store.set('epView', x[0]); redraw('ev-' + x[0]); }) + '">' + esc(x[1]) + '</button>').join('') + '</div></div></div>' +
+      episodesHTML() +
+      '</div></div>');
+    initFocus();
+  };
+  const redraw = (focusKey) => {
+    const sc = $('.dscroll', viewEl);
+    const top = sc ? sc.scrollTop : 0;
+    current.focusKey = focusKey || (focused && focused.dataset.key);
+    draw();
+    const sc2 = $('.dscroll', viewEl);
+    if (sc2) sc2.scrollTop = top;
+  };
+  async function rebuild() {
+    const btn = $('[data-key="worebuild"]', viewEl);
+    const say = (msg) => { if (btn && document.contains(btn)) btn.textContent = msg; };
+    try {
+      const r = await woBuild(pid, say);
+      toast(t('woBuilt', { n: r.n }) + (r.missing.length ? ' ' + t('woMissing', { s: r.missing.join(', ') }) : '') + (r.playlist ? '' : ' ' + t('woNoPlaylist')), 7000);
+      if (seq === viewSeq) { current.focusKey = 'worebuild'; run(); }
+    } catch (e) { toast(t('woFailed') + ' (' + (e.message || e) + ')', 7000); say(t('woRebuild')); }
   }
-  rows.push(optionRow('wo-list', t('woShowList'), [], false, A(() => { closeModal(true); woListSheet(pid, pr); })));
-  rows.push(optionRow('wo-build', t('woRebuild'), [], false, A(() => woRunBuild(pid)), t('woRebuildNote', { d: new Date(o.at).toLocaleDateString(lang().locale, { day: 'numeric', month: 'short' }) })));
-  $('#wolist', el).innerHTML = rows.join('');
-  setFocus($('[data-key="' + (pr.next ? 'wo-next' : 'wo-list') + '"]', el));
-}
-async function woRunBuild(pid) {
-  const say = (msg) => { const s = $('#wostat'); if (s) s.textContent = msg; };
-  try {
-    const r = await woBuild(pid, say);
-    toast(t('woBuilt', { n: r.n }) + (r.missing.length ? ' ' + t('woMissing', { s: r.missing.join(', ') }) : '') + (r.playlist ? '' : ' ' + t('woNoPlaylist')), 7000);
-    closeModal(true);
-    woSheet(pid);
-  } catch (e) { say(t('woFailed') + ' (' + (e.message || e) + ')'); }
-}
-/* the whole list, crossovers marked, starting at where you are */
-function woListSheet(pid, pr) {
-  const o = woStore(pid);
-  const nextKey = pr.next ? String(pr.next.ratingKey) : '';
-  let lastShow = '';
-  const rows = pr.items.map((e, i) => {
-    const why = o.crossover[e.ratingKey];
-    const seen = e.viewCount && !e.viewOffset;
-    const head = e.grandparentTitle !== lastShow && !why;
-    lastShow = why ? '' : e.grandparentTitle;
-    return '<div class="worow f' + (why ? ' x' : '') + (seen ? ' seen' : '') + (head ? ' head' : '') + '" data-key="wl-' + e.ratingKey + '" data-act="' +
-      A(() => { closeModal(true); go(viewPlayer, [e.ratingKey, e.viewOffset ? {} : { fromStart: true }]); }) + '">' +
-      '<span class="n">' + (i + 1) + '</span><span class="chk">' + (seen ? ICON.check : '') + '</span>' +
-      '<span class="tx"><b>' + esc(e.grandparentTitle + ' · ' + epCode(e)) + '</b> ' + esc(e.title || '') + (why ? '<small>' + esc(why) + '</small>' : '') + '</span></div>';
-  }).join('');
-  gradSheet(openModal(sheetHeader(t('woHeading', { s: WO_PRESETS[pid].name }), t('woSeen', { a: pr.seen, b: pr.items.length })) +
-    '<div class="wolist">' + rows + '</div>', nextKey ? 'wl-' + nextKey : (pr.items[0] ? 'wl-' + pr.items[0].ratingKey : null)));
+  draw();
 }
