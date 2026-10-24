@@ -21,7 +21,11 @@ async function songClip(ratingKey, at, audioStreamID) {
   const stop = () => { fetch(pmsURL('/video/:/transcode/universal/stop', { session: session })).catch(() => {}); };
   try {
     const abs = (u, base) => new URL(u, base).toString();
-    const lines = async (url) => (await (await fetch(url)).text()).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    const lines = async (url) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return (await r.text()).split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    };
     const m = await lines(master);
     const variant = m.find((x) => !x.startsWith('#'));
     if (!variant) throw new Error('no stream');
@@ -42,7 +46,7 @@ async function songClip(ratingKey, at, audioStreamID) {
     const parts = [];
     for (const u of segs) {
       const r = await fetch(u);
-      if (!r.ok) break;
+      if (!r.ok) { if (!parts.length) throw new Error('segment HTTP ' + r.status); break; }
       parts.push(await r.arrayBuffer());
     }
     if (!parts.length) throw new Error('no sound');
@@ -51,13 +55,18 @@ async function songClip(ratingKey, at, audioStreamID) {
 }
 
 async function songLookup(ratingKey, at, audioStreamID) {
-  const clip = await songClip(ratingKey, at, audioStreamID);
+  let clip;
+  try { clip = await songClip(ratingKey, at, audioStreamID); } catch (e) { e.message = 'Plex: ' + (e.message || e); throw e; }
+  if (!clip.size || clip.size < 2000) throw new Error('Plex: clip ' + clip.size + ' B');
   const fd = new FormData();
   fd.append('api_token', songKey());
   fd.append('return', 'apple_music,spotify');
   fd.append('file', clip, 'clip.ts');
-  const r = await fetch('https://api.audd.io/', { method: 'POST', body: fd });
-  const j = await r.json();
+  let j;
+  try {
+    const r = await fetch('https://api.audd.io/', { method: 'POST', body: fd });
+    j = await r.json();
+  } catch (e) { throw new Error('AudD: ' + (e.message || e) + ' (' + Math.round(clip.size / 1024) + ' kB)'); }
   if (j.status === 'error') { const e = new Error((j.error && j.error.error_message) || 'AudD'); e.code = j.error && j.error.error_code; throw e; }
   return j.result || null;
 }
