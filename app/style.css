@@ -1370,3 +1370,27 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vtile .vface small { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .vtile.wide { min-height: 160px; }
 .vtile .vface b, .vtile .vface small { align-self: center !important; }
+/* bigger, shorter timeline */
+.fitstl .tlaxis span { font-size: 20px; }
+.tlbar { height: 70px; }
+.tlbar img { width: 47px; height: 70px; }
+.tlbar .tltx b { font-size: 25px; }
+.tlbar .tltx small { font-size: 18px; }
+.tlbar .tlendt { font-size: 23px; }
+.tllanes { gap: 10px; }
+/* watchlist row */
+.wlrow { gap: 20px; padding-bottom: 6px; }
+.wlrow .card { width: 196px; flex: none; }
+.wlrow .card.notown .img { opacity: .7; }
+/* watching now: how it's played */
+.spc .npinfo { color: #2DD4BF; }
+.spc .npinfo.tc { color: #F0A35E; }
+.sinfo { display: flex; flex-direction: column; gap: 14px; margin: 6px 0 22px; }
+.sihead { display: flex; flex-direction: column; gap: 4px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.sihead b { font-size: 24px; font-weight: var(--w600); }
+.sihead span { font-size: 19px; color: var(--muted); }
+.sirow { display: grid; grid-template-columns: 130px 1fr; gap: 16px; align-items: start; }
+.sirow .sil { font-size: 19px; color: var(--muted); padding-top: 2px; }
+.sirow .siv { display: flex; flex-direction: column; gap: 4px; }
+.sirow .siv b { font-size: 21px; font-weight: var(--w500); }
+.sirow .siv small { font-size: 18px; color: #2DD4BF; }
