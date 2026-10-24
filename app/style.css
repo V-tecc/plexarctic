@@ -1185,3 +1185,28 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .azrail .az.focus::before { position: static; display: inline-block; flex: none; margin: 0 5px 0 -10px; }
 .azrail .az.focus, #stage[data-accent="color"] .azrail .az.focus { font-size: 54px; position: relative; z-index: 2; }
 .azrail .az.focus { margin: 12px 0; }
+.tabsrow.compact .seasonnav { grid-area: tabs; min-width: 0; }
+.tabsrow.compact .seasonnav > .tabs { margin: -6px -4px 0; }
+/* A–Z wheel (replaces the straight rail) */
+.azrail { top: 0; bottom: 24px; right: -86px; width: 70px; display: block; padding: 0; }
+.azwheel { position: absolute; left: 0; right: 0; top: 50%; height: 0; padding: 0; border: 0; background: transparent; cursor: pointer; outline: none; }
+.azwheel .azl { position: absolute; left: 0; right: 0; top: 0; height: 40px; margin-top: -20px; display: flex; align-items: center; justify-content: center; font-family: 'Arctic Condensed', 'Roboto Condensed', sans-serif; font-size: 22px; font-weight: 400; line-height: 1; color: var(--text3); transition: transform 180ms ease, opacity 180ms ease, font-size 180ms ease; }
+.azwheel .azl.jump { transition: none; }
+.azwheel .azl.none { color: var(--muted); }
+.azwheel .azl.d0 { font-size: 54px; font-weight: 500; color: var(--fg); height: 60px; margin-top: -30px; }
+.azwheel .azl.d1 { opacity: 0.9; }
+.azwheel .azl.d2 { opacity: 0.75; }
+.azwheel .azl.d3 { opacity: 0.6; }
+.azwheel .azl.d4 { opacity: 0.46; }
+.azwheel .azl.d5 { opacity: 0.32; }
+.azwheel .azl.d6 { opacity: 0.2; }
+.azwheel .azl.d7 { opacity: 0.1; }
+.azwheel .azl.d8 { opacity: 0; }
+.azwheel .azl.none.d1, .azwheel .azl.none.d2, .azwheel .azl.none.d3 { opacity: 0.35; }
+.azwheel.focus .azl.d0::before { content: ""; display: inline-block; width: 5px; height: 5px; margin: 0 5px 0 -10px; background: var(--focus); }
+#stage:not([data-accent="color"]) .azwheel.focus .azl.d0::before { background: var(--fg); }
+.azwheel:not(.focus) .azl.d0 { font-size: 34px; }
+.azrail .azwheel, .azrail .azwheel.focus { position: absolute; display: block; left: 0; right: 0; width: auto; transform: none; background: transparent; box-shadow: none; }
+/* clearart a size smaller */
+.pclear { max-width: 400px; max-height: 210px; }
+.azrail .azwheel { position: absolute !important; left: 0 !important; right: 0 !important; width: auto !important; }

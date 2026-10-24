@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.41.4';
+const VERSION = '0.42.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -43,7 +43,7 @@ const S = {
   showMissing: store.get('showMissing', false),
   calView: store.get('calView', 'week'),
   titleStyle: store.get('titleStyle', 'logo'),
-  seasonStyle: store.get('seasonStyle', 'numbers'),   /* 'logo' (title logos where there is one) or 'text' */
+  seasonStyle: store.get('seasonStyle', 'picker'),   /* 'logo' (title logos where there is one) or 'text' */
   calMode: store.get('calMode', 'tv'),          /* 'tv' (your shows) or 'movies' (cinema releases) */
   calHidden: store.get('calHidden', []),        /* shows left out of the calendar */
   calExtra: store.get('calExtra', []),          /* shows added by hand: { id (TVmaze), name, image, year } */
@@ -2355,14 +2355,19 @@ async function viewLibrary(sec, coll, opts) {
       if (row[i]) setFocus(row[i]);
       return true;
     }
-    if (e.key === 'ArrowLeft' && focused && focused.classList.contains('az')) { activate(focused); return true; }
-    if (e.key === 'ArrowRight' && inBody && focused.closest('#lib') && !focused.classList.contains('az') && $('.azrail', viewEl)) {
+    if (focused && focused.classList.contains('azwheel')) {
+      if (e.key === 'ArrowUp') { azStep(-1); return true; }
+      if (e.key === 'ArrowDown') { azStep(1); return true; }
+      if (e.key === 'ArrowLeft') { activate(focused); return true; }
+      if (e.key === 'ArrowRight') return true;
+    }
+    if (e.key === 'ArrowRight' && inBody && focused.closest('#lib') && $('.azwheel', viewEl)) {
       const was = focused;
       move('r');
-      if (focused === was || focused.classList.contains('az')) {
+      if (focused === was || focused.classList.contains('azwheel')) {
         const it = list().find((x) => 'i-' + x.ratingKey === was.dataset.key);
-        const b = it && $('[data-key="az-' + (azLetter(it) === '#' ? 'num' : azLetter(it)) + '"]', viewEl);
-        if (b) setFocus(b);
+        if (it) azTurn(AZ.indexOf(azLetter(it)));
+        setFocus($('.azwheel', viewEl));
       }
       return true;
     }
@@ -2484,20 +2489,45 @@ async function viewLibrary(sec, coll, opts) {
     }
     return it ? $('[data-key="i-' + it.ratingKey + '"]', viewEl) : null;
   }
+  /* the A–Z wheel: one control; Up/Down turn it (it wraps around Z → # → A), the letter in the middle is the chosen one */
+  const AZ = '#abcdefghijklmnopqrstuvwxyz'.split('');
+  let azIdx = 0, azHave = new Set();
   function azRail(l) {
     const lib = $('#lib');
     if (!lib) return;
     const old = $('.azrail', lib); if (old) old.remove();
-    lib.classList.toggle('hasaz', st.sort.id === 'title' && l.length > 24);
-    if (st.sort.id !== 'title' || l.length <= 24) return;
-    const have = new Set(l.map(azLetter));
-    const letters = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    lib.insertAdjacentHTML('beforeend', '<nav class="azrail" aria-label="A–Z">' + letters.map((c) => {
-      const k = c.toLowerCase();
-      return '<button type="button" class="az f' + (have.has(k) ? '' : ' none') + '" data-key="az-' + (c === '#' ? 'num' : k) + '" data-nav-l="none"' +
-        ' data-onfocus="' + A(() => { const tg = azTarget(k); if (tg) tg.scrollIntoView({ block: 'center' }); }) + '"' +
-        ' data-act="' + A(() => { const tg = azTarget(k); if (tg) setFocus(tg); }) + '">' + c + '</button>';
-    }).join('') + '</nav>');
+    const on = st.sort.id === 'title' && l.length > 24;
+    lib.classList.toggle('hasaz', on);
+    if (!on) return;
+    azHave = new Set(l.map(azLetter));
+    lib.insertAdjacentHTML('beforeend', '<div class="azrail"><button type="button" class="azwheel f" data-key="az" aria-label="A–Z" data-act="' + A(() => { const tg = azTarget(AZ[azIdx]); if (tg) setFocus(tg); }) + '">' +
+      AZ.map((c, i) => '<span class="azl' + (azHave.has(c) ? '' : ' none') + '" data-i="' + i + '">' + (c === '#' ? '#' : c.toUpperCase()) + '</span>').join('') + '</button></div>');
+    azTurn(azIdx, true);
+  }
+  function azTurn(idx, instant) {
+    azIdx = (idx + AZ.length) % AZ.length;
+    const wheel = $('.azwheel', viewEl);
+    if (!wheel) return;
+    const half = Math.floor(AZ.length / 2);
+    $$('.azl', wheel).forEach((el) => {
+      const i = +el.dataset.i;
+      let off = i - azIdx;
+      if (off > half) off -= AZ.length;
+      if (off < -half) off += AZ.length;
+      const prev = el.dataset.off == null ? off : +el.dataset.off;
+      el.dataset.off = off;
+      const d = Math.abs(off);
+      /* a letter that wraps from one end to the other jumps instead of sliding across */
+      el.classList.toggle('jump', !!instant || Math.abs(off - prev) > 1);
+      el.className = el.className.replace(/ ?d\d+/g, '') + ' d' + Math.min(d, 8);
+      const y = off === 0 ? 0 : Math.sign(off) * (48 + (d - 1) * 40);
+      el.style.transform = 'translateY(' + y + 'px)';
+    });
+  }
+  function azStep(dir) {
+    azTurn(azIdx + dir);
+    const tg = azTarget(AZ[azIdx]);
+    if (tg) tg.scrollIntoView({ block: 'center' });
   }
   function finishFocus(focusKey) {
     if (focusKey) { initFocus(focusKey); return; }
@@ -3174,6 +3204,13 @@ async function viewDetails(ratingKey, opts) {
       }
       return '<div class="tabs compact hide-scroll">' + sl.map(tab).join('') + '</div>';
     };
+    /* the first thing in the season list (Down from Cards/List/Detailed lands here) */
+    const firstSeasonKey = (sl) => {
+      const st2 = S.seasonStyle || 'numbers';
+      if (st2 === 'picker') return 'sp-all';
+      const f = sl[0];
+      return f ? 's-' + (f.ghost ? 'g' + f.index : f.plex.ratingKey) : '';
+    };
     let seasonBlock = '';
     if (isShow) {
       const ev = S.epView;
@@ -3189,8 +3226,8 @@ async function viewDetails(ratingKey, opts) {
           (compact && pct ? '<i class="sbar"><b style="width: ' + pct + '%"></b></i>' : '') + '</button>';
       };
       seasonBlock = '<div class="tabsrow' + (compact ? ' compact' : '') + '">' + (compact ? '<div class="seasonhead"><span class="label">' + esc(t('seasonsLabel')) + '</span><b>' + esc(state.season ? (state.season.ghost ? t('seasonN', { n: state.season.index }) : state.season.title) : '') + '</b></div>' : '') +
-        seasonPickerHTML(sl, tab, compact, isOn) +
-        '<div class="tabtools">' +
+        (compact ? '<div class="seasonnav" data-nav-u="ev-' + S.epView + ',missing">' + seasonPickerHTML(sl, tab, compact, isOn) + '</div>' : seasonPickerHTML(sl, tab, compact, isOn)) +
+        '<div class="tabtools"' + (compact ? ' data-nav-d="' + firstSeasonKey(sl) + '"' : '') + '>' +
         '<button type="button" class="chip f' + (S.showMissing ? ' on' : '') + '" data-key="missing" data-act="' + A(toggleMissing) + '">' + (S.showMissing ? ICON.check : '') + esc(t('showMissing')) + '</button>' +
         '<div class="seg">' + [['cards', t('cards')], ['list', t('list')], ['detailed', t('detailed')]].map((o) => '<button type="button" class="f' + (ev === o[0] ? ' on' : '') + '" data-key="ev-' + o[0] + '" data-act="' + A(() => { S.epView = o[0]; store.set('epView', o[0]); redraw('ev-' + o[0]); }) + '">' + esc(o[1]) + '</button>').join('') + '</div></div></div>' +
         episodesHTML();
