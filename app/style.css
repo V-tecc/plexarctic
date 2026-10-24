@@ -1135,6 +1135,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 #stage[data-accent="color"] .tabs.compact .f.focus { background: var(--surface); color: var(--fg); }
 /* clearart above the player's controls, right side */
 .pclear { position: absolute; right: 96px; bottom: calc(100% + 8px); max-width: 520px; max-height: 300px; width: auto; height: auto; object-fit: contain; pointer-events: none; filter: drop-shadow(0 6px 18px rgba(0,0,0,0.5)); }
-/* the clearart moves up to make room while Skip intro / Skip credits shows, so both stay visible */
-.pclear { transition: transform 220ms ease; }
-#skipbtn:not([hidden]) ~ .pbottom .pclear { transform: translateY(-100px); max-height: 280px; }
+/* clearart stands on the control panel's top edge, left of the "Ends" time */
+.pclear { bottom: 0; max-width: 560px; max-height: 300px; object-position: right bottom; }
