@@ -186,13 +186,17 @@ function tasteStatsHTML(st, movieSec, showSec) {
 }
 
 /* the list behind a tile; going on from it and coming back lands on the tile again */
-function vsGo(fn, args) {
+/* what to open again when you come back to Home (the list you were in, at the row you picked) */
+let vsReopen = null;
+function vsGo(fn, args, reopen) {
   const tile = modalReturn && document.contains(modalReturn) ? modalReturn : null;
+  vsReopen = reopen && tile ? Object.assign({ tile: tile.dataset.key, row: focused && focused.dataset.key }, reopen) : null;
   closeModal(true);
   if (tile) setFocus(tile, true);
   go(fn, args);
 }
 function vsList(kind, st) {
+  const go2 = (fn, args) => vsGo(fn, args, { kind: kind });
   const A2 = st.all;
   const dec = (d) => String(d) + (S.lang === 'sv' ? '-talet' : 's');
   const face = (thumb, name) => thumb ? '<img class="vsimg round" src="' + esc(imgURL(thumb, 120, 120)) + '" alt="">' : '<span class="vsimg round ini">' + esc(String(name).split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>';
@@ -200,11 +204,11 @@ function vsList(kind, st) {
   const row = (i, key, img, title, sub, act) => '<div class="vsrow f" data-key="vl-' + key + '"' + (act ? ' data-act="' + A(act) + '"' : '') + '><span class="vrank">' + (i + 1) + '</span>' + img +
     '<span class="vstx"><b>' + esc(title) + '</b><small>' + esc(sub) + '</small></span></div>';
   let head = '', rows = [];
-  if (kind === 'actors') { head = t('vsActors'); rows = A2.actors.map((a, i) => row(i, i, face(a.thumb, a.name), a.name, tasteTitlesText(a), () => vsGo(viewPerson, [a.name, a.thumb]))); }
-  if (kind === 'directors') { head = t('vsDirectors'); rows = A2.directors.map((a, i) => row(i, i, face('', a.name), a.name, t('vsFilmsN', { n: a.n }), () => vsGo(viewPerson, [a.name, '']))); }
-  if (kind === 'shows') { head = t('vsTopShows'); rows = A2.shows.map((s, i) => row(i, i, poster(s.thumb), s.title, t('vsEpsOf', { a: s.viewedLeafCount, b: s.leafCount || '?' }), () => vsGo(viewDetails, [s.ratingKey]))); }
-  if (kind === 'movies') { head = t('vsTopMovies'); rows = A2.movies.map((m, i) => row(i, i, poster(m.thumb), m.title, [m.year, m.viewCount > 1 ? t('vsTimes', { n: m.viewCount }) : ''].filter(Boolean).join(' · '), () => vsGo(viewDetails, [m.ratingKey]))); }
-  if (kind === 'year') { head = t('vsThisYear', { y: new Date().getFullYear() }); rows = A2.year.slice(0, 30).map((m, i) => row(i, i, poster(m.thumb), m.title, new Date(m.lastViewedAt * 1000).toLocaleDateString(lang().locale, { day: 'numeric', month: 'short' }), () => vsGo(viewDetails, [m.ratingKey]))); }
+  if (kind === 'actors') { head = t('vsActors'); rows = A2.actors.map((a, i) => row(i, i, face(a.thumb, a.name), a.name, tasteTitlesText(a), () => go2(viewPerson, [a.name, a.thumb]))); }
+  if (kind === 'directors') { head = t('vsDirectors'); rows = A2.directors.map((a, i) => row(i, i, face('', a.name), a.name, t('vsFilmsN', { n: a.n }), () => go2(viewPerson, [a.name, '']))); }
+  if (kind === 'shows') { head = t('vsTopShows'); rows = A2.shows.map((s, i) => row(i, i, poster(s.thumb), s.title, t('vsEpsOf', { a: s.viewedLeafCount, b: s.leafCount || '?' }), () => go2(viewDetails, [s.ratingKey]))); }
+  if (kind === 'movies') { head = t('vsTopMovies'); rows = A2.movies.map((m, i) => row(i, i, poster(m.thumb), m.title, [m.year, m.viewCount > 1 ? t('vsTimes', { n: m.viewCount }) : ''].filter(Boolean).join(' · '), () => go2(viewDetails, [m.ratingKey]))); }
+  if (kind === 'year') { head = t('vsThisYear', { y: new Date().getFullYear() }); rows = A2.year.slice(0, 30).map((m, i) => row(i, i, poster(m.thumb), m.title, new Date(m.lastViewedAt * 1000).toLocaleDateString(lang().locale, { day: 'numeric', month: 'short' }), () => go2(viewDetails, [m.ratingKey]))); }
   if (kind === 'decades') { head = t('vsDecades'); rows = A2.decades.map((d, i) => row(i, i, '', dec(d.d), t('vsFilmsN', { n: d.n }), () => vsGenre(st, { decade: d.d }, dec(d.d)))); }
   if (kind === 'genres') { head = t('vsGenres'); rows = A2.genres.map((g, i) => row(i, i, '', g.name, g.pct + ' %', () => vsGenre(st, { genre: g.name }, g.name))); }
   gradSheet(openModal(sheetHeader(head, (S.user && S.user.title) || (S.account && S.account.title) || '') + '<div class="vslist">' + (rows.join('') || '<p class="sheettext">' + esc(t('nothing')) + '</p>') + '</div>', 'vl-0'));
@@ -219,7 +223,7 @@ function vsGenre(st, f, label) {
   const x = tasteGet();
   const unseen = st.moviesAll.filter((m) => !m.viewCount).concat((st.showsAll || []).filter((sh) => !sh.viewedLeafCount))
     .filter((m) => match(m) && !x.no[m.ratingKey]).sort((a, b) => r(b) - r(a)).slice(0, 8);
-  const card = (m, key) => '<div class="card f" data-key="' + key + '" data-act="' + A(() => vsGo(viewDetails, [m.ratingKey])) + '" data-ctx="' + A(() => itemMenu(m)) + '"><div class="imgwrap">' +
+  const card = (m, key) => '<div class="card f" data-key="' + key + '" data-act="' + A(() => vsGo(viewDetails, [m.ratingKey], { kind: 'genre', f: f, label: label })) + '" data-ctx="' + A(() => itemMenu(m)) + '"><div class="imgwrap">' +
     '<img class="img" loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt=""></div><span class="t">' + esc(m.title) + '</span><span class="s">' +
     esc([m.year, r(m) ? '★ ' + r(m).toFixed(1) : '', m.type === 'show' ? (m.viewedLeafCount ? t('vsEpsN', { n: m.viewedLeafCount }) : t('vsShowWord')) : m.viewCount > 1 ? t('vsTimes', { n: m.viewCount }) : ''].filter(Boolean).join(' · ')) + '</span></div>';
   const el = openModal(sheetHeader(label, (S.user && S.user.title) || (S.account && S.account.title) || '') +
@@ -227,4 +231,17 @@ function vsGenre(st, f, label) {
     '<span class="label">' + esc(t('vsUnseenBest')) + '</span><div class="grid8 vsrowcards">' + (unseen.map((m, i) => card(m, 'vg-u' + i)).join('') || '<p class="sheettext">' + esc(t('nothing')) + '</p>') + '</div>',
     seen.length ? 'vg-s0' : 'vg-u0', true);
   el.classList.add('vsgenre');
+}
+
+/* called by Home once the statistics are drawn again */
+function vsAfterHome(st) {
+  const r = vsReopen; vsReopen = null;
+  if (!r || !st) return false;
+  const tile = $('[data-key="' + r.tile + '"]', viewEl);
+  if (!tile) return false;
+  setFocus(tile, true);
+  if (r.kind === 'genre') vsGenre(st, r.f, r.label); else vsList(r.kind, st);
+  const row = r.row && $('.modal [data-key="' + r.row + '"]', viewEl);
+  if (row) setFocus(row, true);
+  return true;
 }
