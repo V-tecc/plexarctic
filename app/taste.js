@@ -286,9 +286,20 @@ function vsList(kind, st) {
   if (kind === 'shows') { head = t('vsTopShows'); rows = A2.shows.map((s, i) => row(i, i, poster(s.thumb), s.title, t('vsEpsOf', { a: s.viewedLeafCount, b: s.leafCount || '?' }), () => go2(viewDetails, [s.ratingKey]))); }
   if (kind === 'movies') { head = t('vsTopMovies'); rows = A2.movies.map((m, i) => row(i, i, poster(m.thumb), m.title, [m.year, m.viewCount > 1 ? t('vsTimes', { n: m.viewCount }) : ''].filter(Boolean).join(' · '), () => go2(viewDetails, [m.ratingKey]))); }
   if (kind === 'year') { head = t('vsThisYear', { y: new Date().getFullYear() }); rows = A2.year.slice(0, 30).map((m, i) => row(i, i, poster(m.thumb), m.title, new Date(m.lastViewedAt * 1000).toLocaleDateString(lang().locale, { day: 'numeric', month: 'short' }), () => go2(viewDetails, [m.ratingKey]))); }
-  if (kind === 'decades') { head = t('vsDecades'); rows = A2.decades.map((d, i) => row(i, i, '', dec(d.d), t('vsFilmsN', { n: d.n }), () => vsGenre(st, { decade: d.d }, dec(d.d)))); }
+  if (kind === 'decades') {
+    head = t('vsDecades');
+    /* the same coloured bars as on the tile, lying down, oldest first */
+    const dl = (st.decadesAll || []).slice();
+    const max = Math.max.apply(null, dl.map((x) => x[1]).concat([1]));
+    const topD = st.decade && st.decade.d;
+    rows = dl.map((x, i) => '<div class="vdrow f" data-key="vl-' + i + '" data-act="' + A(() => vsGenre(st, { decade: x[0] }, dec(x[0]))) + '">' +
+      '<span class="vdl">' + esc(dec(x[0])) + '</span><span class="vdbar"><i class="c' + (i % 3) + (x[0] === topD ? ' top' : '') + '" style="width: ' + Math.max(2, Math.round(x[1] / max * 100)) + '%"></i></span>' +
+      '<span class="vdn">' + esc(t('vsFilmsN', { n: x[1] })) + '</span></div>');
+  }
   if (kind === 'genres') { head = t('vsGenres'); rows = A2.genres.map((g, i) => row(i, i, '', g.name, g.pct + ' %', () => vsGenre(st, { genre: g.name }, g.name))); }
-  gradSheet(openModal(sheetHeader(head, (S.user && S.user.title) || (S.account && S.account.title) || '') + '<div class="vslist">' + (rows.join('') || '<p class="sheettext">' + esc(t('nothing')) + '</p>') + '</div>', 'vl-0'));
+  const wide = kind === 'decades';
+  const el = gradSheet(openModal(sheetHeader(head, (S.user && S.user.title) || (S.account && S.account.title) || '') + '<div class="vslist' + (wide ? ' vsdec' : '') + '">' + (rows.join('') || '<p class="sheettext">' + esc(t('nothing')) + '</p>') + '</div>', 'vl-0', wide));
+  if (wide && el) el.classList.add('vsdecsheet');
 }
 /* a genre (or decade): what you've watched most of it, and what you haven't seen, best rated first */
 function vsGenre(st, f, label) {

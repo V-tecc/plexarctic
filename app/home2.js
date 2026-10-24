@@ -82,7 +82,31 @@ function fitsTimelineHTML(x) {
       '<img loading="lazy" src="' + esc(imgURL(m.thumb, 80, 120)) + '" alt="">' +
       '<span class="tltx"><b>' + esc(m.title) + '</b><small>' + esc([durText(m.duration), rateOf(m) ? '★ ' + rateOf(m).toFixed(1) : ''].filter(Boolean).join(' · ')) + '</small></span>' +
       '<span class="tlendt">' + esc(hhmm(new Date(now + m.duration))) + '</span></div>').join('') +
-    '</div></section>';
+    '</div>' +
+    '<div class="tlfoot"><button type="button" class="btn ghostbtn f" data-key="fit-more" data-act="' + A(() => fitsOthers(x)) + '">' + ICON.next + esc(t('fitsOthers')) + '</button>' +
+    '<span>' + esc(t('fitsCount', { n: (x.fitsPool || x.fits).length })) + '</span></div>' +
+    '</section>';
+}
+/* another four films that fit, picked to your taste but different each time */
+function fitsOthers(x) {
+  const pool = (x.fitsPool || x.fits).filter((m) => !x.fits.slice(0, 4).includes(m));
+  if (!pool.length) return;
+  const picks = [];
+  for (let i = 0; i < 4 && pool.length; i++) { const m = tastePick(pool, x.taste); if (!m) break; picks.push(m); pool.splice(pool.indexOf(m), 1); }
+  x.fits = picks.concat(x.fits.filter((m) => !picks.includes(m)));
+  const sec = $('.fitstl', viewEl);
+  if (sec) { sec.outerHTML = fitsTimelineHTML(x); const b = $('[data-key="fit-more"]', viewEl); if (b) setFocus(b, true); }
+}
+
+/* ---------- songs you've found with "What's this song?" ---------- */
+function songsHomeHTML() {
+  const list = (store.get('songHistory', []) || []).slice(0, 8);
+  if (!list.length) return '';
+  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('songHistory')) + '</h2><span>' + esc(t('songHomeSub')) + '</span></div><div class="songhome">' +
+    list.map((s, i) => '<div class="songcardh f" data-key="sgh-' + i + '" data-act="' + A(() => go(viewPlayer, [s.key, { at: s.at }])) + '" data-ctx="' + A(() => songHistorySheet()) + '">' +
+      (s.art ? '<img src="' + esc(s.art) + '" alt="">' : '<span class="songph">' + ICON.music + '</span>') +
+      '<span class="sgtx"><b>' + esc(s.title) + '</b><span>' + esc(s.artist) + '</span><small>' + esc(s.from + ' · ' + tc(s.at)) + '</small></span></div>').join('') +
+    '</div><button type="button" class="btn ghostbtn f" data-key="sgh-all" data-act="' + A(() => songHistorySheet()) + '">' + ICON.music + esc(t('songHomeAll')) + '</button></section>';
 }
 
 /* ---------- "What are you in the mood for?": your top genres as tiles ---------- */
