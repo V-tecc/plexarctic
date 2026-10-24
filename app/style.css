@@ -1295,3 +1295,78 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vsrow.focus { background: var(--surface); box-shadow: inset 0 0 0 2px var(--focus); }
 .vsgenre .vsrowcards { margin: 6px 0 26px; }
 .hubhead .vsprog { margin-left: auto; font-size: 15px; color: var(--muted); }
+/* ---------- Home: favourite actor banner ---------- */
+.abanner { position: relative; margin-top: 44px; height: 620px; border-radius: 10px; overflow: hidden; background: #0B0B0D; color: #F1F1EC; }
+.abanner .abart { position: absolute; right: 0; top: 0; width: 72%; height: 100%; object-fit: cover; transition: opacity 220ms ease; -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 30%, #000 62%); mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 30%, #000 62%); }
+.abanner .abart.swap { opacity: 0; }
+.abanner .abshade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(11,11,13,.95) 0%, rgba(11,11,13,0) 50%), radial-gradient(ellipse 48% 42% at 88% 20%, rgba(11,11,13,.78) 0%, rgba(11,11,13,0) 100%); }
+.abwho { position: absolute; left: 56px; top: 50px; display: flex; gap: 40px; align-items: center; max-width: 900px; }
+.abface { width: 230px; height: 230px; border-radius: 50%; object-fit: cover; flex: none; background: #2A2A2E; display: flex; align-items: center; justify-content: center; font-size: 64px; font-weight: var(--w700); -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 60%, transparent 72%); mask-image: radial-gradient(circle at 50% 45%, #000 60%, transparent 72%); }
+.abtx { display: flex; flex-direction: column; gap: 10px; }
+.abtx .eyebrow { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; color: #C4A5F5; }
+.abtx h2 { margin: 0; font-size: 70px; font-weight: var(--w700); line-height: 1; letter-spacing: -1.5px; }
+.abtx .absub { font-size: 22px; color: #C9C9CC; }
+.absel { position: absolute; right: 56px; top: 56px; width: 560px; text-align: right; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; text-shadow: 0 2px 12px rgba(0,0,0,.6); }
+.absel .ablabel { font-size: 15px; letter-spacing: .14em; text-transform: uppercase; color: #2DD4BF; }
+.absel b { font-size: 38px; font-weight: var(--w700); }
+.absel .abmeta { font-size: 20px; color: #E2E2E4; }
+.absel p { margin: 0; font-size: 18px; line-height: 1.45; color: #C9C9CC; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.abrow { position: absolute; left: 56px; right: 56px; bottom: 40px; display: flex; gap: 22px; align-items: flex-end; }
+.abcard { width: 150px; height: 225px; border-radius: 6px; overflow: hidden; flex: none; cursor: pointer; transition: transform 140ms ease; transform-origin: bottom center; }
+.abcard img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.abcard.focus { transform: scale(1.08); box-shadow: 0 0 0 4px var(--focus), 0 18px 40px rgba(0,0,0,.6); }
+.abnav { margin-left: auto; display: flex; gap: 18px; align-items: center; }
+.abdots { display: flex; gap: 8px; align-items: center; }
+.abdots i { width: 16px; height: 4px; border-radius: 2px; background: rgba(241,241,236,.35); }
+.abdots i.on { width: 34px; background: #F1F1EC; }
+.abnav .btn.busy { opacity: .5; }
+/* ---------- Home: "Fits before" timeline ---------- */
+.fitstl .tlaxis { position: relative; height: 34px; border-bottom: 1px solid var(--line); margin-right: 64px; }
+.tlaxis span { position: absolute; bottom: 8px; font-size: 17px; color: var(--muted); white-space: nowrap; }
+.tlaxis .tltick { transform: translateX(-50%); }
+.tlaxis .tlnow { left: 0; color: #2DD4BF; font-weight: var(--w700); }
+.tlaxis .tlend { right: -4px; transform: translateX(50%); color: var(--fg); font-weight: var(--w700); }
+.tllanes { position: relative; display: flex; flex-direction: column; gap: 8px; padding-top: 10px; margin-right: 64px; border-left: 3px solid #2DD4BF; }
+.tllanes .tlgrid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); opacity: .6; }
+.tllanes .tlendline { position: absolute; top: 0; bottom: 0; right: 0; border-left: 2px dashed var(--fg); opacity: .5; }
+.tlbar { position: relative; height: 54px; min-width: 260px; border-radius: 0 8px 8px 0; background: var(--surface); display: flex; align-items: center; gap: 14px; overflow: hidden; cursor: pointer; }
+.tlbar img { width: 36px; height: 54px; object-fit: cover; flex: none; }
+.tlbar .tltx { display: flex; align-items: baseline; gap: 12px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.tlbar .tltx b { font-size: 20px; font-weight: var(--w600); overflow: hidden; text-overflow: ellipsis; }
+.tlbar .tltx small { font-size: 15px; color: var(--muted); }
+.tlbar .tlendt { margin-left: auto; padding: 0 16px; font-size: 18px; font-weight: var(--w700); color: var(--fg); flex: none; }
+.tlbar.focus { background: rgba(45,212,191,0.16); box-shadow: inset 0 0 0 3px var(--focus); }
+.tlbar.focus .tlendt { color: #2DD4BF; }
+/* ---------- Home: mood tiles ---------- */
+.moods { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.mood { position: relative; height: 210px; border-radius: 10px; overflow: hidden; cursor: pointer; color: #F1F1EC; }
+.mood .mart3 { position: absolute; inset: 0; display: flex; }
+.mood .mart3 img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: cover; opacity: .55; }
+.mood .mshade { position: absolute; inset: 0; }
+.mood.m0 { background: #123430; } .mood.m0 .mshade { background: linear-gradient(0deg, rgba(10,40,36,.96) 0%, rgba(10,40,36,.2) 72%); }
+.mood.m1 { background: #241F3D; } .mood.m1 .mshade { background: linear-gradient(0deg, rgba(30,24,58,.96) 0%, rgba(30,24,58,.2) 72%); }
+.mood.m2 { background: #3A2418; } .mood.m2 .mshade { background: linear-gradient(0deg, rgba(56,32,18,.96) 0%, rgba(56,32,18,.2) 72%); }
+.mood.m3 { background: #1F2A3D; } .mood.m3 .mshade { background: linear-gradient(0deg, rgba(24,34,56,.96) 0%, rgba(24,34,56,.2) 72%); }
+.mood .mtx { position: absolute; left: 24px; right: 24px; bottom: 20px; display: flex; flex-direction: column; gap: 4px; }
+.mood .mtx b { font-size: 32px; font-weight: var(--w700); }
+.mood .mtx small { font-size: 17px; opacity: .85; }
+.mood.focus { box-shadow: 0 0 0 4px var(--focus); }
+/* ---------- statistics: strip, bigger faces, genre split ---------- */
+.vstrip { position: relative; height: 230px; border-radius: 10px; overflow: hidden; background: #17171A; color: #F1F1EC; padding: 30px 44px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+.vstrip .vsart { position: absolute; right: 0; top: 0; width: 55%; height: 100%; object-fit: cover; opacity: .5; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 60%); mask-image: linear-gradient(90deg, transparent 0%, #000 60%); }
+.vstrip .eyebrow { position: relative; font-size: 16px; letter-spacing: .14em; text-transform: uppercase; color: #C4A5F5; }
+.vstrip .vscells { position: relative; display: flex; gap: 72px; align-items: flex-end; }
+.vstrip .vscells div { display: flex; flex-direction: column; gap: 4px; }
+.vstrip .vscells b { font-size: 70px; font-weight: var(--w300, 300); line-height: .95; }
+.vstrip .vscells span { font-size: 19px; color: #C9C9CC; }
+.vstrip .vsnav { position: absolute; right: 36px; bottom: 26px; display: flex; gap: 16px; align-items: center; }
+.vtile .vsplit { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #2E2E33; z-index: 1; margin: 4px 0 2px; }
+.vtile .vsplit i.g0 { background: #2DD4BF; } .vtile .vsplit i.g1 { background: #8B7FD9; } .vtile .vsplit i.g2 { background: #E08A5B; }
+.vtile.wide .vfaces { gap: 10px; }
+.vtile .vface { display: flex !important; flex-direction: column; align-items: center; text-align: center; gap: 4px; position: relative; }
+.vtile .vface img, .vtile .vface .ini { width: 104px !important; height: 104px !important; margin-bottom: 4px; }
+.vtile .vface .vrank { position: absolute !important; left: 8px; top: 0; width: 34px !important; height: 34px !important; border-radius: 50% !important; background: #F1F1EC !important; color: #111113 !important; font-size: 18px !important; font-weight: 700 !important; display: flex !important; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,.5); }
+.vtile .vface b { max-width: 100%; font-size: 19px !important; }
+.vtile .vface small { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vtile.wide { min-height: 160px; }
+.vtile .vface b, .vtile .vface small { align-self: center !important; }

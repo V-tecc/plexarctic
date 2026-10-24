@@ -214,15 +214,41 @@ function tasteStatsHTML(st, movieSec, showSec) {
   tile('movies', '', '<span class="vl">' + esc(t('vsMovies')) + '</span><b>' + nf(st.movies) + '</b><small>' + esc(t('vsHours', { n: nf(st.hours) })) + '</small>', () => vsList('movies', st));
   tile('eps', '', '<span class="vl">' + esc(t('vsEpisodes')) + '</span><b>' + nf(st.eps) + '</b><small>' + esc(t('vsShowsN', { n: nf(st.showsN) })) + '</small>', () => vsList('shows', st));
   if (st.actors.length) tile('actors', 'wide', '<span class="vl">' + esc(t('vsActors')) + '</span><div class="vfaces">' + st.actors.map((a, i) =>
-    '<div class="vface"><span class="vrank">' + (i + 1) + '</span>' + (a.thumb ? '<img src="' + esc(imgURL(a.thumb, 160, 160)) + '" alt="">' : '<span class="ini">' + esc(a.name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>') +
+    '<div class="vface"><span class="vrank">' + (i + 1) + '</span>' + (a.thumb ? '<img src="' + esc(imgURL(a.thumb, 240, 240)) + '" alt="">' : '<span class="ini">' + esc(a.name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>') +
     '<b>' + esc(a.name) + '</b><small>' + esc(tasteTitlesText(a)) + '</small></div>').join('') + '</div>', () => vsList('actors', st));
-  if (st.genres.length) tile('genre', '', '<span class="vl">' + esc(t('vsGenre')) + '</span><b class="vtext">' + esc(st.genres[0].name) + '</b><small>' + esc(st.genres.map((g) => g.name + ' ' + g.pct + ' %').join(' · ')) + '</small>', () => vsList('genres', st));
+  if (st.genres.length) tile('genre', '', '<span class="vl">' + esc(t('vsGenre')) + '</span><b class="vtext">' + esc(st.genres[0].name) + '</b>' +
+    '<span class="vsplit">' + st.genres.map((g, i) => '<i class="g' + i + '" style="width: ' + g.pct + '%"></i>').join('') + '</span>' +
+    '<small>' + esc(st.genres.map((g) => g.name + ' ' + g.pct + ' %').join(' · ')) + '</small>', () => vsList('genres', st));
   if (st.show) tile('show', 'withart', (st.show.art ? '<img class="vart" src="' + esc(imgURL(st.show.art, 640, 360)) + '" alt="">' : '') + '<span class="vl">' + esc(t('vsTopShow')) + '</span><b class="vtext">' + esc(st.show.title) + '</b><small>' + esc(t('vsEpsN', { n: st.show.viewedLeafCount })) + '</small>', () => vsList('shows', st));
   if (st.director) tile('dir', '', '<span class="vl">' + esc(t('vsDirector')) + '</span><b class="vtext">' + esc(st.director.name) + '</b><small>' + esc(t('vsFilmsN', { n: st.director.n })) + '</small>', () => vsList('directors', st));
   if (st.decade) tile('decade', '', '<span class="vl">' + esc(t('vsDecade')) + '</span><b>' + esc(String(st.decade.d) + (S.lang === 'sv' ? '-talet' : 's')) + '</b><small>' + esc(t('vsFilmsN', { n: st.decade.n })) + '</small>', () => vsList('decades', st));
   tile('year', '', '<span class="vl">' + esc(t('vsThisYear', { y: new Date().getFullYear() })) + '</span><b>' + nf(st.thisYear) + '</b><small>' + esc(t('vsMoviesShort')) + '</small>', () => vsList('year', st));
   if (st.rewatch) tile('re', 'withart', (st.rewatch.art ? '<img class="vart" src="' + esc(imgURL(st.rewatch.art, 640, 360)) + '" alt="">' : '') + '<span class="vl">' + esc(t('vsRewatched')) + '</span><b class="vtext">' + esc(st.rewatch.title) + '</b><small>' + esc(t('vsTimes', { n: st.rewatch.viewCount })) + '</small>', () => vsList('movies', st));
-  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('vsTitle')) + '</h2><span>' + esc(t('vsSub', { s: (S.user && S.user.title) || (S.account && S.account.title) || '' })) + '</span><span class="vsprog" id="vsprog"></span></div><div class="vtiles">' + tiles.join('') + '</div></section>';
+  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('vsTitle')) + '</h2><span>' + esc(t('vsSub', { s: (S.user && S.user.title) || (S.account && S.account.title) || '' })) + '</span><span class="vsprog" id="vsprog"></span></div>' + vsStripHTML(st) + '<div class="vtiles">' + tiles.join('') + '</div></section>';
+}
+
+/* the wide strip above the tiles: all time, or this year (switched like the actor banner) */
+let vsStripPage = 0;
+function vsStripHTML(st) {
+  const nf = (n) => Number(n).toLocaleString(lang().locale);
+  const yearList = (st.all && st.all.year) || [];
+  const yh = Math.round(yearList.reduce((n, m) => n + (m.duration || 0), 0) / 3600000);
+  const yg = new Map(); yearList.forEach((m) => (m.Genre || []).forEach((g) => yg.set(g.tag, (yg.get(g.tag) || 0) + 1)));
+  const ytop = Array.from(yg.entries()).sort((a, b) => b[1] - a[1])[0];
+  const pages = [
+    { eyebrow: t('vsStripAll'), cells: [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShows', { n: nf(st.eps) })], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')], [nf(st.thisYear), t('vsStripThisYear')]] },
+    { eyebrow: t('vsStripYear', { y: new Date().getFullYear() }), cells: [[nf(yearList.length), t('vsMoviesShort')], ['≈ ' + nf(yh) + ' h', t('vsStripHours')], [ytop ? ytop[0] : '–', t('vsGenre')]] }
+  ];
+  const p = pages[vsStripPage % pages.length];
+  const art = (st.rewatch && st.rewatch.art) || (st.show && st.show.art) || '';
+  return '<div class="vstrip" id="vsstrip">' + (art ? '<img class="vsart" src="' + esc(imgURL(art, 1400, 400)) + '" alt="">' : '') +
+    '<span class="eyebrow">' + esc(p.eyebrow) + '</span>' +
+    '<div class="vscells">' + p.cells.map((c) => '<div><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></div>').join('') + '</div>' +
+    '<div class="vsnav"><span class="abdots">' + pages.map((_, i) => '<i class="' + (i === vsStripPage % pages.length ? 'on' : '') + '"></i>').join('') + '</span>' +
+    '<button type="button" class="btn ghostbtn f" data-key="vs-strip" data-act="' + A(() => {
+      vsStripPage = (vsStripPage + 1) % pages.length;
+      const el = $('#vsstrip', viewEl); if (el) { el.outerHTML = vsStripHTML(st); const b = $('[data-key="vs-strip"]', viewEl); if (b) setFocus(b, true); }
+    }) + '">' + esc(vsStripPage % pages.length === 0 ? t('vsShowYear') : t('vsShowAll')) + ICON.next + '</button></div></div>';
 }
 
 /* the list behind a tile; going on from it and coming back lands on the tile again */
