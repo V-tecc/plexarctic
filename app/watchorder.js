@@ -17,7 +17,9 @@ const WO_PRESETS = {
       { id: 'flash', tmdb: 60735, titles: ['The Flash'], year: 2014 },
       { id: 'supergirl', tmdb: 62688, titles: ['Supergirl'], year: 2015 },
       { id: 'legends', tmdb: 62643, titles: ["DC's Legends of Tomorrow", 'Legends of Tomorrow'], year: 2016 },
-      { id: 'batwoman', tmdb: 89247, titles: ['Batwoman'], year: 2019 }
+      { id: 'blacklightning', tmdb: 71663, titles: ['Black Lightning'], year: 2018 },
+      { id: 'batwoman', tmdb: 89247, titles: ['Batwoman'], year: 2019 },
+      { id: 'supermanlois', tmdb: 95057, titles: ['Superman & Lois', 'Superman and Lois'], year: 2021 }
     ],
     /* crossovers in the order they aired; parts in the order they play: [show, season, episode] */
     events: [
@@ -27,7 +29,7 @@ const WO_PRESETS = {
       { name: 'Duet', date: '2017-03-20', parts: [['supergirl', 2, 16], ['flash', 3, 17]] },
       { name: 'Crisis on Earth-X', date: '2017-11-27', parts: [['supergirl', 3, 8], ['arrow', 6, 8], ['flash', 4, 8], ['legends', 3, 8]] },
       { name: 'Elseworlds', date: '2018-12-09', parts: [['flash', 5, 9], ['arrow', 7, 9], ['supergirl', 4, 9]] },
-      { name: 'Crisis on Infinite Earths', date: '2019-12-08', parts: [['supergirl', 5, 9], ['batwoman', 1, 9], ['flash', 6, 9], ['arrow', 8, 8], ['legends', 5, 1]] }
+      { name: 'Crisis on Infinite Earths', date: '2019-12-08', parts: [['supergirl', 5, 9], ['batwoman', 1, 9], ['blacklightning', 3, 9], ['flash', 6, 9], ['arrow', 8, 8], ['legends', 5, 1]] }
     ]
   }
 };
@@ -172,7 +174,7 @@ async function woBuild(pid, say) {
   } catch (e) { playlist = null; }
   const shown = {};
   Object.keys(shows).forEach((id) => { shown[id] = { key: shows[id].ratingKey, title: shows[id].title, thumb: shows[id].thumb || '', art: shows[id].art || '', addedAt: shows[id].addedAt || 0 }; });
-  woSave(pid, { v: 2, at: Date.now(), keys: keys, items: items, shows: shown, playlist: playlist, seen: old && old.seen || 0 });
+  woSave(pid, { v: 3, at: Date.now(), keys: keys, items: items, shows: shown, playlist: playlist, seen: old && old.seen || 0 });
   woPosterMake(pid).catch(() => {});
   return { n: keys.length, ghosts: ghosts, playlist: playlist, missing: p.shows.filter((s) => !shows[s.id]).map((s) => s.titles[0]) };
 }
@@ -237,7 +239,7 @@ function woLibraryItems(sec, items) {
 }
 
 /* ---------- the series page ---------- */
-function woShort(id) { return { arrow: 'Arrow', flash: 'The Flash', supergirl: 'Supergirl', legends: 'Legends', batwoman: 'Batwoman' }[id] || id; }
+function woShort(id) { return { arrow: 'Arrow', flash: 'The Flash', supergirl: 'Supergirl', legends: 'Legends', blacklightning: 'Black Lightning', batwoman: 'Batwoman', supermanlois: 'Superman & Lois' }[id] || id; }
 /* TV years: a season runs from August to July */
 function woYear(d) { if (!d) return 0; const y = +d.slice(0, 4), mo = +d.slice(5, 7); return mo >= 8 ? y : y - 1; }
 function woYearLabel(y) { return y + '–' + String((y + 1) % 100).padStart(2, '0'); }
@@ -250,7 +252,7 @@ async function viewUniverse(pid, opts) {
   const shell = (msg) => render('<div class="screen"><div class="top"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(t('shows')) + '</button>' + clockHTML() + '</div><div class="empty" id="wobusy">' + esc(msg) + '</div></div>');
   shell(t('loading'));
   let o = woStore(pid);
-  if (!o || o.v !== 2) {
+  if (!o || o.v !== 3) {
     try { await woBuild(pid, (msg) => { const el = $('#wobusy'); if (el) el.textContent = msg; }); } catch (e) { const el = $('#wobusy'); if (el) el.textContent = t('woFailed') + ' (' + (e.message || e) + ')'; return; }
     if (seq !== viewSeq) return;
     o = woStore(pid);

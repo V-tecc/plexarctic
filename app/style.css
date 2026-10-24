@@ -1255,3 +1255,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .woxbadge { position: absolute; left: 10px; top: 10px; padding: 4px 9px; border-radius: 4px; background: #2DD4BF; color: #04211d; font-size: 13px; font-weight: var(--w700); letter-spacing: 0.04em; text-transform: uppercase; max-width: calc(100% - 20px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eprow2.wo .num { width: 250px; flex: none; white-space: nowrap; font-size: 21px; }
 .eprow2.wo .et { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip .chipstar { display: inline-flex; color: #F5C518; margin-right: 6px; } .chip .chipstar svg { width: 18px; height: 18px; fill: currentColor; }
