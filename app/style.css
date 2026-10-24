@@ -1262,3 +1262,24 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .pick .actions .btn { flex: none; }
 .pick .actions .btn.icon { width: 70px; }
 .spothero .actions .btn.icon { flex: none; }
+/* Home: the profile's own statistics as small tiles */
+.vtiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.vtile { position: relative; overflow: hidden; min-height: 138px; padding: 18px 22px; border-radius: 10px; background: var(--surface); display: flex; flex-direction: column; gap: 6px; justify-content: flex-end; }
+.vtile.wide { grid-column: span 2; justify-content: flex-start; }
+.vtile .vl { position: absolute; left: 22px; top: 16px; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); z-index: 1; }
+.vtile.wide .vl { position: static; margin-bottom: 10px; }
+.vtile b { font-size: 44px; font-weight: var(--w300, 300); line-height: 1.05; z-index: 1; }
+.vtile b.vtext { font-size: 26px; font-weight: var(--w600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vtile small { font-size: 17px; color: var(--muted); z-index: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vtile.withart .vart { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; }
+.vtile.withart::after { content: ""; position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,0.75), rgba(0,0,0,0.1)); }
+.vtile.withart b, .vtile.withart small, .vtile.withart .vl { color: #F1F1EC; }
+.vtile.withart small { opacity: 0.8; }
+.vfaces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 6px; }
+.vface { min-width: 0; }
+.vface { display: grid; grid-template-columns: 56px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 14px; align-items: center; position: relative; }
+.vface img, .vface .ini { grid-row: span 2; width: 56px; height: 56px; border-radius: 50%; object-fit: cover; background: var(--img); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: var(--w600); }
+.vface b { font-size: 19px !important; font-weight: var(--w600) !important; line-height: 1.2 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: end; }
+.vface small { font-size: 15px !important; align-self: start; }
+.vface .vrank { position: absolute; left: -6px; top: -6px; width: 24px; height: 24px; border-radius: 50%; background: #2DD4BF; color: #04211d; font-size: 13px; font-weight: var(--w700); display: flex; align-items: center; justify-content: center; z-index: 2; }
+.vtile.focus { box-shadow: inset 0 0 0 3px var(--focus); }
