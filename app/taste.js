@@ -373,8 +373,7 @@ function vsStripHTML(st, movieSec, showSec) {
     '<span class="eyebrow">' + esc(vsModeLabel(mode, 'vsStrip')) + '</span>' +
     '<div class="vscells">' + cells.map((c) => '<div><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></div>').join('') + '</div>' +
     '<div class="vsnav"><span class="abdots">' + VS_MODES.map((m) => '<i class="' + (m === mode ? 'on' : '') + '"></i>').join('') + '</span>' +
-    '<span class="vsok">' + esc(vsModeLabel(nextMode, 'vsSwitch')) + ICON.next + '</span></div>' +
-    '<span class="vsbadge">' + esc(vsModeLabel(mode, 'vsBadge')) + '</span></div>';
+    '<span class="vsok">' + esc(vsModeLabel(mode, 'vsBadge')) + '</span></div></div>';
 }
 
 /* the list behind a tile; going on from it and coming back lands on the tile again */

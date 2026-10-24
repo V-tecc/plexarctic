@@ -22,6 +22,12 @@ function abRowHTML(a) {
   return next.map((m) => '<div class="abcard"><img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt=""></div>').join('') +
     '<span class="abpos">' + esc((a.sel + 1) + ' / ' + a.items.length) + '</span>';
 }
+/* ‹ only once you've moved on, › not on the last film */
+function abArrows(a) {
+  const el = $('#abarrows'); if (!el || !a) return;
+  el.classList.toggle('nol', a.sel <= 0);
+  el.classList.toggle('nor', a.sel >= a.items.length - 1);
+}
 function abShow(dir) {
   const a = abCur && abCur.actor;
   if (!a) return false;
@@ -31,6 +37,7 @@ function abShow(dir) {
   const m = a.items[n];
   const big = $('#abbig'); if (big) { const im = $('img', big); if (im) im.src = imgURL(m.thumb, 400, 600); }
   const row = $('#abrowc'); if (row) row.innerHTML = abRowHTML(a);
+  abArrows(a);
   abSelect(m);
   return true;
 }
@@ -68,7 +75,7 @@ function actorBannerHTML(x, d) {
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
     (first ? '<div class="abbig f" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
-      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""></div><span class="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
+      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""></div><span class="abarrows' + (a.sel <= 0 ? ' nol' : '') + (a.sel >= a.items.length - 1 ? ' nor' : '') + '" id="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
     '<div class="abrow"><div class="abrowc" id="abrowc">' + abRowHTML(a) + '</div>' +
     (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +
       '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +

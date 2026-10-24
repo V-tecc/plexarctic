@@ -1569,3 +1569,13 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abarrows { bottom: 40px; height: 288px; justify-content: space-between; align-items: flex-end; gap: 0; padding: 0 0 8px; box-sizing: border-box; z-index: 2; }
 .abarrows i { width: 40px; height: 40px; line-height: 38px; text-align: center; font-size: 34px; background: rgba(11,11,13,.72); margin: 0 8px; }
 .abarrows { z-index: 6; }
+/* ‹ › as teal tabs flush in the big poster's bottom corners, part of the focus frame; only while it's focused */
+.abarrows { left: 52px; width: 200px; height: 296px; bottom: 36px; padding: 0; }
+.abarrows i { margin: 0; width: 44px; height: 44px; line-height: 42px; font-size: 34px; background: #2DD4BF; color: #FFFFFF; opacity: 0; }
+.abbig.focus + .abarrows i { opacity: 1; }
+.abarrows.nol i:first-child, .abarrows.nor i:last-child { visibility: hidden; }
+/* stats strip: no corner label; the white button says what you're looking at; the heading top-left and larger */
+.vstrip .vsbadge { display: none; }
+.vstrip .eyebrow { position: absolute; left: 44px; top: 28px; font-size: 21px; }
+.vstrip .eyebrow { margin: 0; }
+.vstrip { justify-content: flex-end; }
