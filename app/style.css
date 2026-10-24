@@ -1533,3 +1533,16 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abcard.sel:not(.focus) { box-shadow: 0 0 0 3px rgba(241,241,236,.8); }
 .abbig { position: absolute; left: 56px; bottom: 34px; width: 192px; height: 288px; object-fit: cover; box-shadow: 0 18px 40px rgba(0,0,0,.6); }
 .abrow { left: 270px; }
+/* the chosen film stays in the big spot; Right/Left slide the films along */
+.abbig { cursor: pointer; overflow: hidden; background: var(--img); transition: box-shadow 140ms ease; }
+.abbig img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.abbig.focus { box-shadow: 0 0 0 4px var(--focus), 0 18px 40px rgba(0,0,0,.6); }
+.abbig .abarrows { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); padding: 4px 14px; background: rgba(11,11,13,.8); color: #F1F1EC; font-size: 22px; font-weight: var(--w700); letter-spacing: 8px; opacity: 0; transition: opacity 140ms ease; }
+.abbig.focus .abarrows { opacity: 1; }
+.abrowc { display: flex; gap: 22px; align-items: flex-end; }
+.abrowc .abcard { cursor: default; opacity: .85; }
+.abrowc .abpos { align-self: center; font-size: 18px; color: #C9C9CC; margin-left: 4px; white-space: nowrap; }
+.abanner { overflow: hidden; overflow: clip; }
+.abanner .abbig, .abanner .abbig.f.focus { position: absolute; top: auto; bottom: 34px; left: 56px; }
+.abanner .abbig { position: absolute !important; }
+.abnav .abcount { white-space: nowrap; }

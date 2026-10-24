@@ -13,19 +13,51 @@ function abSelect(m) {
   const art = $('#abart'); const sel = $('#absel');
   if (art && m.art) { const src = imgURL(m.art, 1600, 900); if (art.getAttribute('src') !== src) { art.classList.add('swap'); setTimeout(() => { art.src = src; art.classList.remove('swap'); }, 160); } }
   if (sel) sel.innerHTML = abSelHTML(m);
-  /* the chosen film's poster, big, under the face; the small one keeps a mark */
-  const big = $('#abbig');
-  if (big && m.thumb) big.src = imgURL(m.thumb, 400, 600);
-  if (focused && focused.classList.contains('abcard')) { document.querySelectorAll('.abcard.sel').forEach((c) => c.classList.remove('sel')); focused.classList.add('sel'); }
 }
+/* The chosen film is the big poster under the face and stays in that spot: Right / Left slide the films along,
+   the small posters after it are the ones coming up. */
+let abCur = null;
+function abRowHTML(a) {
+  const next = a.items.slice(a.sel + 1, a.sel + 7);
+  return next.map((m) => '<div class="abcard"><img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt=""></div>').join('') +
+    '<span class="abpos">' + esc((a.sel + 1) + ' / ' + a.items.length) + '</span>';
+}
+function abShow(dir) {
+  const a = abCur && abCur.actor;
+  if (!a) return false;
+  const n = Math.max(0, Math.min(a.items.length - 1, a.sel + dir));
+  if (n === a.sel) return false;
+  a.sel = n;
+  const m = a.items[n];
+  const big = $('#abbig'); if (big) { const im = $('img', big); if (im) im.src = imgURL(m.thumb, 400, 600); }
+  const row = $('#abrowc'); if (row) row.innerHTML = abRowHTML(a);
+  abSelect(m);
+  return true;
+}
+document.addEventListener('keydown', (e) => {
+  if (!focused || modalOpen()) return;
+  const k = focused.dataset.key;
+  /* up from the big poster to the face, down from the face to the poster */
+  const jump = (key) => { const el = $('[data-key="' + key + '"]', viewEl); if (el) { setFocus(el); e.preventDefault(); e.stopImmediatePropagation(); } };
+  if (k === 'ab-big' && e.key === 'ArrowUp') return jump('ab-face');
+  if (k === 'ab-face' && e.key === 'ArrowDown') return jump('ab-big');
+  if (k === 'ab-face' && e.key === 'ArrowRight') return jump($('[data-key="ab-next"]', viewEl) ? 'ab-next' : 'ab-set');
+  if (k === 'ab-next' && e.key === 'ArrowLeft') return jump('ab-big');
+  if (k !== 'ab-big') return;
+  const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+    if (abShow(e.key === 'ArrowRight' ? 1 : -1)) { e.preventDefault(); e.stopImmediatePropagation(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); e.stopImmediatePropagation(); }
+  }
+}, true);
 function actorBannerHTML(x, d) {
   const a = x.actor;
-  const page = a.page || 0;
-  const items = a.items.slice(page * 6, page * 6 + 6);
-  const more = a.items.length > 6;
-  const first = items[0];
+  a.sel = Math.min(a.sel || 0, Math.max(0, a.items.length - 1));
+  abCur = x;
+  const first = a.items[a.sel];
   const pool = x.actorPool || [];
   const ini = a.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
+  const cur = () => a.items[a.sel];
   return '<section class="abanner" id="abanner">' +
     '<img class="abart" id="abart" src="' + esc(first && first.art ? imgURL(first.art, 1600, 900) : '') + '" alt="">' +
     '<div class="abshade"></div>' +
@@ -35,10 +67,9 @@ function actorBannerHTML(x, d) {
     '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2><span class="abmw">' + esc(t('abMore')) + '</span>' + esc(a.name) + '</h2>' +
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
-    (first && first.thumb ? '<img class="abbig" id="abbig" src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt="">' : '') +
-    '<div class="abrow">' + items.map((m, i) => '<div class="abcard f' + (i === 0 ? ' sel' : '') + '" data-key="ab-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '" data-onfocus="' + A(() => abSelect(m)) + '">' +
-      '<img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="' + esc(m.title) + '"></div>').join('') +
-    (more ? '<button type="button" class="abpage f" data-key="ab-page" aria-label="' + esc(t('abMoreFilms')) + '" data-act="' + A(() => abPage(x, d)) + '">' + ICON.next + '<small>' + esc((page * 6 + items.length) + ' / ' + a.items.length) + '</small></button>' : '') +
+    (first ? '<div class="abbig f" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
+      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""><span class="abarrows">‹ ›</span></div>' : '') +
+    '<div class="abrow"><div class="abrowc" id="abrowc">' + abRowHTML(a) + '</div>' +
     (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +
       '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +
     '<button type="button" class="btn ghostbtn icon f" data-key="ab-set" aria-label="' + esc(t('pinTitle')) + '" data-act="' + A(() => abSettings(x, d)) + '">' + ICON.gear + '</button></div>' +
