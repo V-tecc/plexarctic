@@ -1451,3 +1451,13 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vsdec .vdrow .vdbar i { border-radius: 6px; }
 .vsdec .vdrow .vdn { font-size: 22px; }
 .vstrip .vsbadge { position: absolute; right: 36px; top: 26px; font-size: 18px; font-weight: var(--w600); letter-spacing: .04em; padding: 8px 14px; border-radius: 6px; background: rgba(17,17,19,.65); color: #F1F1EC; }
+/* actor banner: the face opens all their films; ">" pages through more */
+.abfacebtn { position: relative; padding: 0; border: 0; background: none; border-radius: 50%; cursor: pointer; flex: none; color: inherit; }
+.abfacebtn .abfacehint { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); white-space: nowrap; font-size: 16px; font-weight: var(--w600); padding: 5px 12px; border-radius: 6px; background: rgba(17,17,19,.8); opacity: 0; transition: opacity 140ms ease; }
+.abfacebtn.focus { box-shadow: 0 0 0 4px var(--focus); }
+.abfacebtn.focus .abfacehint { opacity: 1; }
+.abpage { width: 90px; height: 225px; flex: none; border: 0; border-radius: 6px; background: rgba(28,28,31,.8); color: #F1F1EC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+.abpage svg { width: 34px; height: 34px; }
+.abpage small { font-size: 15px; color: #C9C9CC; }
+.abpage.focus { background: #F1F1EC; color: #111113; } .abpage.focus small { color: #4A4A4F; }
+.abnav .abcount { font-size: 17px; color: #C9C9CC; }

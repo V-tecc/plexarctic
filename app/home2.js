@@ -16,22 +16,26 @@ function abSelect(m) {
 }
 function actorBannerHTML(x, d) {
   const a = x.actor;
-  const items = a.items.slice(0, 6);
+  const page = a.page || 0;
+  const items = a.items.slice(page * 6, page * 6 + 6);
+  const more = a.items.length > 6;
   const first = items[0];
   const pool = x.actorPool || [];
   const ini = a.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
   return '<section class="abanner" id="abanner">' +
     '<img class="abart" id="abart" src="' + esc(first && first.art ? imgURL(first.art, 1600, 900) : '') + '" alt="">' +
     '<div class="abshade"></div>' +
-    '<div class="abwho">' + (a.who && a.who.thumb ? '<img class="abface" src="' + esc(imgURL(a.who.thumb, 400, 400)) + '" alt="">' : '<span class="abface ini">' + esc(ini) + '</span>') +
+    /* the face is a button: all their films */
+    '<div class="abwho"><button type="button" class="abfacebtn f" data-key="ab-face" aria-label="' + esc(t('abAll')) + '" data-act="' + A(() => go(viewPerson, [a.name, a.who && a.who.thumb, null, t('home')])) + '">' +
+    (a.who && a.who.thumb ? '<img class="abface" src="' + esc(imgURL(a.who.thumb, 400, 400)) + '" alt="">' : '<span class="abface ini">' + esc(ini) + '</span>') + '<span class="abfacehint">' + esc(t('abAll')) + '</span></button>' +
     '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2>' + esc(t('abMore')) + '<br>' + esc(a.name) + '</h2>' +
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
     '<div class="abrow">' + items.map((m, i) => '<div class="abcard f" data-key="ab-' + i + '" data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '" data-onfocus="' + A(() => abSelect(m)) + '">' +
       '<img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="' + esc(m.title) + '"></div>').join('') +
-    (pool.length > 1 ? '<div class="abnav"><span class="abdots">' + pool.map((_, i) => '<i class="' + (i === x.actorPos ? 'on' : '') + '"></i>').join('') + '</span>' +
+    (more ? '<button type="button" class="abpage f" data-key="ab-page" aria-label="' + esc(t('abMoreFilms')) + '" data-act="' + A(() => abPage(x, d)) + '">' + ICON.next + '<small>' + esc((page * 6 + items.length) + ' / ' + a.items.length) + '</small></button>' : '') +
+    (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +
       '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +
-    '<button type="button" class="btn ghostbtn f" data-key="ab-all" data-act="' + A(() => go(viewPerson, [a.name, a.who && a.who.thumb, null, t('home')])) + '">' + esc(t('abAll')) + '</button>' +
     '<button type="button" class="btn ghostbtn icon f" data-key="ab-set" aria-label="' + esc(t('pinTitle')) + '" data-act="' + A(() => abSettings(x, d)) + '">' + ICON.gear + '</button></div>' +
     '</div></section>';
 }
@@ -50,7 +54,7 @@ async function abNext(x, d) {
       try { list = (await api('/library/sections/' + d.movieSec.key + '/all', { type: 1, actor: f.id, unwatched: 1 })).Metadata || []; } catch (e) { list = []; }
       list = tasteSort(list, x.taste);
       if (list.length >= 2) {
-        x.actor = { name: f.name, n: f.n, who: f, items: list.slice(0, 8) };
+        x.actor = { name: f.name, n: f.n, who: f, items: list.slice(0, 60) };
         x.actorPos = pos;
         const el = $('#abanner', viewEl);
         if (el) { el.outerHTML = actorBannerHTML(x, d); const b = $('[data-key="ab-next"]', viewEl); if (b) setFocus(b, true); }
@@ -288,3 +292,12 @@ ICON.bookmark = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" str
 ICON.bookmarkOn = '<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"></path></svg>';
 /* know the Watchlist on other pages too (the button on a title's page) */
 setTimeout(() => { if (S.server && S.token) wlLoad().catch(() => {}); }, 4000);
+
+/* the next six films with this actor (round again after the last ones) */
+function abPage(x, d) {
+  const a = x.actor;
+  const pages = Math.ceil(a.items.length / 6);
+  a.page = ((a.page || 0) + 1) % pages;
+  const el = $('#abanner', viewEl);
+  if (el) { el.outerHTML = actorBannerHTML(x, d); const b = $('[data-key="ab-page"]', viewEl); if (b) setFocus(b, true); }
+}
