@@ -1184,3 +1184,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .azrail .az.focus::before { left: 0; width: 5px; height: 5px; margin-top: -2.5px; }
 .azrail .az.focus::before { position: static; display: inline-block; flex: none; margin: 0 5px 0 -10px; }
 .azrail .az.focus, #stage[data-accent="color"] .azrail .az.focus { font-size: 54px; position: relative; z-index: 2; }
+.azrail .az.focus { margin: 12px 0; }
