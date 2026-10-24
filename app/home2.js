@@ -208,7 +208,12 @@ async function wlToggle(it) {
     if (on) WL.ids.delete(id); else WL.ids.add(id);
     WL.at = 0;
     toast(t(on ? 'wlRemoved' : 'wlAdded', { s: it.title || '' }), 3500);
-    if (current && current.fn === viewHome) rerun();
+    if (current && current.fn === viewHome) {
+      /* stay where you were: the card you held OK on (the next one moves into its place) */
+      const keep = modalReturn && document.contains(modalReturn) ? modalReturn : focused;
+      current.focusKey = (keep && keep.dataset.key) || null;
+      run();
+    }
   } catch (e) { toast(t('wlFailed') + (e.status ? ' (' + e.status + ')' : ''), 6000); }
 }
 /* the row for hold-OK menus on movies and shows */
