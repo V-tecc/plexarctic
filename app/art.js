@@ -275,7 +275,10 @@ async function fanartFor(key) {
               ? { clear: take(['hdmovieclearart', 'movieart']), logos: take(['hdmovielogo', 'movielogo']) }
               : { clear: take(['hdclearart', 'clearart', 'characterart']), logos: take(['hdtvlogo', 'clearlogo']) };
             ['clear', 'logos'].forEach((k) => { v[k] = v[k].slice(0, 24); });
-          } else if (r.status === 401 || r.status === 403) { v = { bad: true, clear: [], logos: [] }; }
+          } else if (r.status === 401 || r.status === 403) {
+            v = { bad: true, clear: [], logos: [] };
+            if (!fanartFor.warned) { fanartFor.warned = true; toast(t('fanartBadKey'), 7000); }
+          }
           else v = { clear: [], logos: [] };
         }
       }
