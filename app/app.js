@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.42.0';
+const VERSION = '0.43.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -35,6 +35,7 @@ const S = {
   ytPage: store.get('ytPage', '') || ((window.PRESET && window.PRESET.ytPage) || ''),
   fanartKey: store.get('fanartKey', '') || ((window.PRESET && window.PRESET.fanart) || ''),
   clearart: store.get('clearart', 'on'),
+  auddKey: store.get('auddKey', '') || ((window.PRESET && window.PRESET.audd) || ''),
   font: store.get('font', 'Questrial'),
   forceDirect: store.get('forceDirect', false),
   account: store.get('account', null),
@@ -43,7 +44,8 @@ const S = {
   showMissing: store.get('showMissing', false),
   calView: store.get('calView', 'week'),
   titleStyle: store.get('titleStyle', 'logo'),
-  seasonStyle: store.get('seasonStyle', 'picker'),   /* 'logo' (title logos where there is one) or 'text' */
+  seasonStyle: store.get('seasonStyle', 'picker'),
+  trailerSrc: store.get('trailerSrc', 'youtube'),   /* 'logo' (title logos where there is one) or 'text' */
   calMode: store.get('calMode', 'tv'),          /* 'tv' (your shows) or 'movies' (cinema releases) */
   calHidden: store.get('calHidden', []),        /* shows left out of the calendar */
   calExtra: store.get('calExtra', []),          /* shows added by hand: { id (TVmaze), name, image, year } */
@@ -335,9 +337,17 @@ function go(fn, args) {
 }
 function replaceView(fn, args) { current = { fn: fn, args: args || [] }; stack.length = 0; run(); }
 function back() {
-  if (!stack.length) { if (window.IS_TV && window.tvExit) window.tvExit(); return; }
+  if (!stack.length) { confirmExit(); return; }
   current = stack.pop();
   run();
+}
+/* Back on the home screen asks before leaving the app; "No" is selected */
+function confirmExit() {
+  if (modalOpen()) return;
+  gradSheet(openModal(sheetHeader(t('exitTitle'), '') + '<div class="optlist">' +
+    optionRow('ex-no', t('exitNo'), [], false, A(() => closeModal())) +
+    optionRow('ex-yes', t('exitYes'), [], false, A(() => { closeModal(true); if (window.tvExit) window.tvExit(); else toast(t('exitPc'), 3000); })) +
+    '</div>', 'ex-no'));
 }
 function rerun() { current.focusKey = focused && focused.dataset.key; run(); }
 function run() {
@@ -463,7 +473,8 @@ function activate(el) {
 function openModal(html, preferKey, full) {
   const had = modalOpen();
   closeModal(true);
-  if (!had) modalReturn = focused;
+  /* keep where to come back to when one popup replaces another (e.g. movie info → its trailer) */
+  if (!had) modalReturn = (focused && document.contains(focused)) ? focused : (modalReturn && document.contains(modalReturn) ? modalReturn : focused);
   const el = document.createElement('aside');
   const art = !full && modalArt;
   el.className = 'side modal hide-scroll' + (full ? ' full' : '') + (art ? ' withart' : '');
@@ -607,6 +618,7 @@ Object.assign(ICON, {
   x: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>',
   star: '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.8l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 17l-5.8 3.3 1.4-6.4L2.7 9.5l6.5-.7z"></path></svg>',
   download: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>',
+  music: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></svg>',
   image: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="1"></rect><circle cx="9" cy="9.5" r="1.6"></circle><path d="M3.5 18l5.5-5.5 4 4 3-3 4.5 4.5"></path></svg>',
   film: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"></rect><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"></path></svg>',
   mic: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>',
@@ -828,6 +840,10 @@ function viewSettings() {
       '<button type="button" class="btn f" data-key="fanartsave" data-act="' + A(() => { S.fanartKey = $('#fanartkey').value.trim(); store.set('fanartKey', S.fanartKey); store.del('fanartCache'); toast(t('save') + ' ✓', 2000); rerun(); }) + '">' + esc(t('save')) + '</button>') +
     row(t('clearartSetting'), '<div class="seg">' + [['on', t('clearartOn')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (S.clearart === x[0] ? ' on' : '') + '" data-key="ca-' + x[0] + '" data-act="' + A(() => { S.clearart = x[0]; store.set('clearart', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
       (S.fanartKey ? '' : '<span class="sval">' + esc(t('clearartNeedsKey')) + '</span>')) +
+    row(t('auddKeyLabel'), '<input class="input f" id="auddkey" data-key="auddkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.auddKey) + '">' +
+      '<button type="button" class="btn f" data-key="auddsave" data-act="' + A(() => { S.auddKey = $('#auddkey').value.trim(); store.set('auddKey', S.auddKey); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>' +
+      '<button type="button" class="btn f" data-key="songhist" data-act="' + A(songHistorySheet) + '">' + ICON.music + esc(t('songHistory')) + '</button>') +
+    row(t('trailerSrc'), '<div class="seg">' + [['youtube', t('trailerYt')], ['plex', t('trailerPlex')]].map((x) => '<button type="button" class="f' + (S.trailerSrc === x[0] ? ' on' : '') + '" data-key="tr-' + x[0] + '" data-act="' + A(() => { S.trailerSrc = x[0]; store.set('trailerSrc', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('ytPage'), '<input class="input f" id="ytpage" data-key="ytpage" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="https://…github.io/…/yt.html" value="' + esc(S.ytPage) + '">' +
       '<button type="button" class="btn f" data-key="ytsave" data-act="' + A(() => { S.ytPage = $('#ytpage').value.trim(); store.set('ytPage', S.ytPage); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
     row(t('wt'), '<button type="button" class="btn f" data-key="wtjoin" data-act="' + A(() => wtPanel()) + '">' + ICON.people + esc(t('wtJoinCode')) + '</button>') +
@@ -2121,7 +2137,7 @@ async function viewCalendar() {
     dp.innerHTML = '<span class="label">' + esc(date.toLocaleDateString(lang().locale, { weekday: 'long' })) + '</span><h2>' + esc(date.toLocaleDateString(lang().locale, { day: 'numeric', month: 'long', year: 'numeric' })) + '</h2>' +
       (list.length ? '<span class="count">' + esc(t('calPanelHint')) + '</span>' + list.map((x, i) => {
         const future = Date.parse(x.ep.airstamp) > Date.now();
-        const tag = x.ep.owned ? t('inLibrary') : x.movie ? (future ? t('inCinemasFrom') : t('inCinemas')) : future ? t('upcoming') : t('notYetInLibrary');
+        const tag = x.ep.owned ? t('inLibrary') : x.movie ? t('inCinemas') : future ? t('upcoming') : t('notYetInLibrary');
         const th = imgURL(x.show.plex.thumb, 120, 180);
         /* An episode you have opens the episode; otherwise Enter goes to the show (or an info sheet). */
         const act = A(() => openX(x));
@@ -3292,8 +3308,9 @@ async function viewDetails(ratingKey, opts) {
   }
   /* Trailer: the library's own trailer if there is one, otherwise the official trailer from TMDB (YouTube). */
   async function playTrailer() {
-    if (localTrailer) return go(viewPlayer, [localTrailer.ratingKey, { fromStart: true }]);
     const tmdbId = ((m.Guid || []).map((g) => /^tmdb:\/\/(\d+)/.exec(g.id || '')).find(Boolean) || [])[1];
+    /* "YouTube first" gives trailers with subtitles in your language; Plex's own trailers have none */
+    if (localTrailer && !(S.trailerSrc === 'youtube' && S.tmdb && tmdbId)) return go(viewPlayer, [localTrailer.ratingKey, { fromStart: true }]);
     return tmdbTrailer(isShow, tmdbId, m.title);
   }
   const pickSeason = async (s) => {
@@ -3400,6 +3417,7 @@ async function viewPlayer(ratingKey, opts) {
     '<button type="button" class="pbtn f" data-key="aud" data-act="' + A(openAudio) + '"><span class="lbl">' + esc(t('audio')) + '</span><span id="audLabel"></span></button>' +
     '<button type="button" class="pbtn f" data-key="qual" data-act="' + A(openQuality) + '"><span class="lbl">' + esc(t('quality')) + '</span><span id="qualLabel"></span></button>' +
     '<button type="button" class="pbtn f" data-key="wt" data-act="' + A(() => { wtPanel(); pl.classList.remove('idle'); }) + '">' + ICON.people + '<span class="lbl">' + esc(t('wtShort')) + '</span></button>' +
+    (S.auddKey ? '<button type="button" class="pbtn f" data-key="song" data-act="' + A(() => { songFind(pl, m, position(), st.audioId); }) + '">' + ICON.music + '<span class="lbl">' + esc(t('songBtn')) + '</span></button>' : '') +
     '<button type="button" class="pbtn muted f" id="hint" data-key="hint" data-act="' + A(() => { setInfo(!st.info); if (st.info) setFocus($('#more'), true); }) + '"></button>' +
     '</div>' +
     '<div class="info" id="info" hidden>' +
@@ -3570,7 +3588,7 @@ async function viewPlayer(ratingKey, opts) {
     clearTimeout(st.idleTimer);
     st.idleTimer = setTimeout(() => {
       if (!vid.paused && !st.info && !modalOpen() && seq === viewSeq) pl.classList.add('idle');
-    }, ms || 3200);
+    }, ms || 2600);
   }
   function setInfo(on) {
     st.info = on;

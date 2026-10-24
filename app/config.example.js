@@ -4,5 +4,6 @@
 window.PRESET = {
   tmdb: '',    // your TMDB API key (https://www.themoviedb.org/settings/api) for Trending, trailers and the movie calendar
   ytPage: '',  // address of your trailer page (see yt.html in this repository), e.g. https://<you>.github.io/plexarctic/yt.html
-  fanart: ''   // your fanart.tv API key (https://fanart.tv/get-an-api-key/) for clearart and more logos
+  fanart: '',  // your fanart.tv API key (https://fanart.tv/get-an-api-key/) for clearart and more logos
+  audd: ''     // your AudD API token (https://dashboard.audd.io) for "What's this song?" in the player
 };

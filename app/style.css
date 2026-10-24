@@ -1210,3 +1210,21 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* clearart a size smaller */
 .pclear { max-width: 400px; max-height: 210px; }
 .azrail .azwheel { position: absolute !important; left: 0 !important; right: 0 !important; width: auto !important; }
+.calitem .tag { white-space: normal; }
+/* "What's this song?" card in the player */
+.songcard { position: absolute; left: 96px; top: 150px; z-index: 6; display: flex; align-items: center; gap: 20px; max-width: 760px; padding: 18px 26px 18px 18px; background: rgba(20,20,23,0.88); color: #fff; box-shadow: 0 18px 40px rgba(0,0,0,0.5); transition: opacity 400ms ease, transform 400ms ease; }
+.songcard.out { opacity: 0; transform: translateY(-12px); }
+.songcard img, .songcard .songph { width: 104px; height: 104px; object-fit: cover; flex: none; background: #2a2a2f; display: flex; align-items: center; justify-content: center; }
+.songtx { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.songtx b { font-size: 30px; font-weight: var(--w700); line-height: 1.15; }
+.songtx span { font-size: 21px; opacity: 0.8; }
+.songtx .label { font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: #2DD4BF; opacity: 1; }
+.songwave { display: flex; align-items: flex-end; gap: 5px; height: 40px; padding: 0 8px; }
+.songwave i { width: 7px; background: #2DD4BF; animation: songbar 900ms ease-in-out infinite; }
+.songwave i:nth-child(2) { animation-delay: 150ms; } .songwave i:nth-child(3) { animation-delay: 300ms; } .songwave i:nth-child(4) { animation-delay: 450ms; }
+@keyframes songbar { 0%, 100% { height: 10px; } 50% { height: 40px; } }
+.songlist { display: flex; flex-direction: column; gap: 6px; }
+.songrow { display: flex; align-items: center; gap: 18px; padding: 10px; cursor: pointer; }
+.songrow img, .songrow .songph { width: 72px; height: 72px; object-fit: cover; flex: none; background: var(--img); display: flex; align-items: center; justify-content: center; }
+.songrow .songtx b { font-size: 22px; } .songrow .songtx span { font-size: 18px; } .songrow .songtx small { font-size: 15px; color: var(--muted); }
+.songrow.focus { background: var(--surface); box-shadow: inset 0 0 0 2px var(--focus); }
