@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>PLEX:arctic trailer</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  #p { width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+/* Trailer page for PLEX:arctic. The TV app shows this page in a frame; because this page has a normal
+   web address, YouTube agrees to play here. The app sends simple commands (play/pause, skip). */
+var id = new URLSearchParams(location.search).get('v') || '';
+var player = null;
+function send(msg) { try { parent.postMessage(msg, '*'); } catch (e) {} }
+var tag = document.createElement('script');
+tag.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(tag);
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('p', {
+    videoId: id,
+    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin },
+    events: {
+      onReady: function (e) { e.target.playVideo(); send({ yt: 'ready' }); },
+      onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
+      onError: function (e) { send({ yt: 'error', code: e.data }); }
+    }
+  });
+}
+window.addEventListener('message', function (e) {
+  var d = e.data || {};
+  if (!player || !d.cmd) return;
+  if (d.cmd === 'toggle') { if (player.getPlayerState() === 1) player.pauseVideo(); else player.playVideo(); }
+  if (d.cmd === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + d.by), true);
+});
+setInterval(function () {
+  if (player && player.getCurrentTime) send({ yt: 'time', t: player.getCurrentTime(), d: player.getDuration() });
+}, 1000);
+</script>
+</body>
+</html>
