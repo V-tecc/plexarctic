@@ -17,14 +17,16 @@ async function tasteMark(it, dir) {
   const x = tasteGet();
   const key = String(m.ratingKey);
   const prev = x.yes[key] ? 1 : x.no[key] ? -1 : 0;
-  if (prev === dir) { toast(t(dir > 0 ? 'tasteAlreadyMore' : 'tasteAlreadyLess'), 3000); return; }
+  /* picking the same one again takes it back */
+  const undo = prev === dir;
+  if (undo) dir = 0;
   const step = dir - prev; /* switching from "less" to "more" undoes the first one too */
   (m.Genre || []).forEach((g) => { x.g[g.tag] = clampT((x.g[g.tag] || 0) + step, -6, 6); });
   (m.Role || []).slice(0, 4).forEach((r) => { x.a[r.tag] = clampT((x.a[r.tag] || 0) + step * 0.6, -4, 4); });
   delete x.yes[key]; delete x.no[key];
-  if (dir > 0) x.yes[key] = Date.now(); else x.no[key] = Date.now();
+  if (dir > 0) x.yes[key] = Date.now(); else if (dir < 0) x.no[key] = Date.now();
   tasteSave(x);
-  toast(t(dir > 0 ? 'tasteMoreDone' : 'tasteLessDone', { s: m.title }), 4000);
+  toast(undo ? t('tasteUndone', { s: m.title }) : t(dir > 0 ? 'tasteMoreDone' : 'tasteLessDone', { s: m.title }), 4000);
   if (current && current.fn === viewHome) { spot.pick = null; rerun(); }
 }
 function tasteReset() { store.set(userKey('taste'), null); toast(t('tasteResetDone'), 3000); }
@@ -78,8 +80,8 @@ function tasteRows(it) {
   const x = tasteGet();
   const k = String(it.ratingKey);
   return [
-    optionRow('cx-more', t('tasteMore'), [], !!x.yes[k], A(() => { closeModal(true); tasteMark(it, 1); }), t('tasteMoreSub')),
-    optionRow('cx-less', t('tasteLess'), [], !!x.no[k], A(() => { closeModal(true); tasteMark(it, -1); }), t('tasteLessSub'))
+    optionRow('cx-more', t('tasteMore'), [], !!x.yes[k], A(() => { closeModal(true); tasteMark(it, 1); }), x.yes[k] ? t('tasteOnSub') : t('tasteMoreSub')),
+    optionRow('cx-less', t('tasteLess'), [], !!x.no[k], A(() => { closeModal(true); tasteMark(it, -1); }), x.no[k] ? t('tasteOnSub') : t('tasteLessSub'))
   ];
 }
 

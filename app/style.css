@@ -1462,3 +1462,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abpage.focus { background: #F1F1EC; color: #111113; } .abpage.focus small { color: #4A4A4F; }
 .abnav .abcount { font-size: 17px; color: #C9C9CC; }
 .tlfoot { padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-right: 64px; }
+
+/* cover picker: show the whole poster (2:3) and backdrop (16:9) instead of cropping them to a fixed height */
+.artopt.tall, .artopt.wide { height: 0; }
+.artopt.tall { padding-top: 150%; }
+.artopt.wide { padding-top: 56.25%; }
+.artopt.tall > img, .artopt.wide > img { position: absolute; left: 0; top: 0; }
