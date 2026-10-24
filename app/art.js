@@ -98,11 +98,28 @@ function fillLogo(el) {
     img.src = url;
   });
 }
+/* logos on cards (fanart view) are only looked up once the card comes into view */
+let logoSeen = null;
+function lazyLogo(el) {
+  if (S.titleStyle === 'text') return;
+  if (!logoSeen && 'IntersectionObserver' in window) {
+    logoSeen = new IntersectionObserver((list) => list.forEach((en) => {
+      if (!en.isIntersecting) return;
+      logoSeen.unobserve(en.target);
+      en.target.setAttribute('data-logo', en.target.getAttribute('data-logo-lazy'));
+      en.target.removeAttribute('data-logo-lazy');
+      fillLogo(en.target);
+    }), { rootMargin: '400px 0px' });
+  }
+  if (logoSeen) logoSeen.observe(el);
+}
 (function () {
   const scan = (root) => {
     if (root.nodeType !== 1) return;
     if (root.hasAttribute('data-logo')) fillLogo(root);
     root.querySelectorAll('[data-logo]').forEach(fillLogo);
+    if (root.hasAttribute('data-logo-lazy')) lazyLogo(root);
+    root.querySelectorAll('[data-logo-lazy]').forEach(lazyLogo);
   };
   try { new MutationObserver((list) => list.forEach((m) => m.addedNodes.forEach(scan))).observe(document.body, { childList: true, subtree: true }); } catch (e) { /* ignore */ }
 })();
