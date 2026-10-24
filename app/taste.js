@@ -171,13 +171,84 @@ function tasteTitlesText(c) {
 }
 
 /* ---------- the profile's own statistics (Home → Your viewing) ---------- */
+/* This month / this year come from the server's own watch history for this profile, so only what this profile
+   played in the period counts (episodes counted one by one), not a show's all-time total. */
+const vsHistCache = {};
+function vsFrom(mode) {
+  const now = new Date();
+  return Math.floor((mode === 'month' ? new Date(now.getFullYear(), now.getMonth(), 1) : new Date(now.getFullYear(), 0, 1)).getTime() / 1000);
+}
+async function vsAccountIds() {
+  /* the owner is account 1 on their own server; everyone else by their Plex id, or by name as a fallback */
+  if (!S.user || S.user.admin) return [1];
+  const ids = [Number(S.user.id)];
+  try {
+    const accts = ((await getJSON(ownerURL('/accounts'))).MediaContainer || {}).Account || [];
+    const nm = String(S.user.title || '').toLowerCase();
+    accts.forEach((a) => { if (String(a.name || '').toLowerCase() === nm && ids.indexOf(Number(a.id)) < 0) ids.push(Number(a.id)); });
+  } catch (e) { /* only the id */ }
+  return ids;
+}
+async function vsPrep(mode) {
+  if (!mode || mode === 'all') return null;
+  const key = mode + '|' + (S.server && S.server.id) + '|' + (S.user ? S.user.id : 'owner');
+  const c = vsHistCache[key];
+  if (c && Date.now() - c.at < 5 * 60000) return c.list;
+  const from = vsFrom(mode);
+  const ids = await vsAccountIds();
+  let list = [];
+  for (const id of ids) {
+    for (let start = 0; start < 20000; start += 2000) {
+      const r = await getJSON(ownerURL('/status/sessions/history/all', { 'viewedAt>': from, accountID: id, sort: 'viewedAt:desc', 'X-Plex-Container-Start': start, 'X-Plex-Container-Size': 2000 }));
+      const page = ((r.MediaContainer || {}).Metadata) || [];
+      list = list.concat(page.filter((x) => Number(x.accountID) === id && (x.viewedAt || 0) >= from));
+      if (page.length < 2000) break;
+    }
+    if (list.length) break;
+  }
+  vsHistCache[key] = { at: Date.now(), list: list, mode: mode };
+  return list;
+}
+function vsHistCached(mode) {
+  const c = vsHistCache[mode + '|' + (S.server && S.server.id) + '|' + (S.user ? S.user.id : 'owner')];
+  return c ? c.list : null;
+}
+/* the period's plays turned into titles shaped like the library ones (viewCount / viewedLeafCount for that period) */
+function vsPeriodTitles(movies, shows, hist) {
+  const rk = (x) => String(x || '').replace(/^\/library\/metadata\//, '');
+  const mv = new Map(movies.map((m) => [String(m.ratingKey), m]));
+  const sh = new Map((shows || []).map((x) => [String(x.ratingKey), x]));
+  const pm = new Map(), ps = new Map();
+  hist.forEach((e) => {
+    if (e.type === 'movie') {
+      const m = mv.get(rk(e.ratingKey || e.key)); if (!m) return;
+      const c = pm.get(m.ratingKey) || Object.assign({}, m, { viewCount: 0, lastViewedAt: 0 });
+      c.viewCount++; c.lastViewedAt = Math.max(c.lastViewedAt, e.viewedAt || 0); pm.set(m.ratingKey, c);
+    } else if (e.type === 'episode') {
+      const s = sh.get(rk(e.grandparentRatingKey || e.grandparentKey)); if (!s) return;
+      const c = ps.get(s.ratingKey) || Object.assign({}, s, { viewedLeafCount: 0, lastViewedAt: 0, _eps: new Set() });
+      const ek = rk(e.ratingKey || e.key) || (e.parentIndex + 'x' + e.index);
+      if (!c._eps.has(ek)) { c._eps.add(ek); c.viewedLeafCount++; }
+      c.lastViewedAt = Math.max(c.lastViewedAt, e.viewedAt || 0); ps.set(s.ratingKey, c);
+    }
+  });
+  return { movies: Array.from(pm.values()), shows: Array.from(ps.values()) };
+}
 function tasteStats(movies, shows, h, mode) {
+  const hist = mode && mode !== 'all' ? vsHistCached(mode) : null;
+  if (!hist) return tasteStatsCore(movies, shows, h, mode);
+  const p = vsPeriodTitles(movies, shows || [], hist);
+  const st = tasteStatsCore(p.movies, p.shows, h, 'period');
+  st.mode = mode; st.moviesAll = movies; st.showsAll = shows || [];
+  return st;
+}
+function tasteStatsCore(movies, shows, h, mode) {
   const yearStart = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
   const now = new Date();
   const from = mode === 'month' ? new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000 : mode === 'year' ? yearStart : 0;
   const inYear = (m) => !from || (m.lastViewedAt || 0) >= from;
   const seen = movies.filter((m) => m.viewCount && inYear(m));
-  if (!from && !seen.length && !(shows || []).some((s) => s.viewedLeafCount)) return null;
+  if ((!mode || mode === 'all') && !seen.length && !(shows || []).some((s) => s.viewedLeafCount)) return null;
   const top = (map, n) => Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, n);
   const byWatch = (a, b) => ((b.viewCount || 0) - (a.viewCount || 0)) || ((b.lastViewedAt || 0) - (a.lastViewedAt || 0));
   const genres = new Map(), dirs = new Map(), decades = new Map();
@@ -201,7 +272,7 @@ function tasteStats(movies, shows, h, mode) {
     genres: top(genres, 3).map((g) => ({ name: g[0], pct: Math.round(g[1] / (genreTotal || 1) * 100) })),
     director: top(dirs, 1).map((d) => ({ name: d[0], n: d[1] }))[0] || null,
     decade: top(decades, 1).map((d) => ({ d: d[0], n: d[1] }))[0] || null,
-    actors: ranked.filter((c) => c.n >= 2).slice(0, 3),
+    actors: ranked.filter((c) => c.n >= (mode && mode !== 'all' ? 1 : 2)).slice(0, 3),
     mode: mode || 'all',
     decadesAll: Array.from(decades.entries()).sort((a, b) => a[0] - b[0]),
     show: sh[0] || null, rewatch: re,
@@ -225,14 +296,21 @@ function tasteStatsHTML(st, movieSec, showSec) {
   const tile = (key, cls, inner, act) => tiles.push('<div class="vtile f ' + cls + '" data-key="vs-' + key + '"' + (act ? ' data-act="' + A(act) + '"' : '') + '>' + inner + '</div>');
   tile('movies', '', '<span class="vl">' + esc(t('vsMovies')) + '</span><b>' + nf(st.movies) + '</b><small>' + esc(t('vsHours', { n: nf(st.hours) })) + '</small>', () => vsList('movies', st));
   tile('eps', '', '<span class="vl">' + esc(t('vsEpisodes')) + '</span><b>' + nf(st.eps) + '</b><small>' + esc(t('vsShowsN', { n: nf(st.showsN) })) + '</small>', () => vsList('shows', st));
+  /* every view has the same tiles; an empty one shows a dash */
+  const none = (label) => '<span class="vl">' + esc(label) + '</span><b class="vtext">–</b><small>' + esc(t('vsNoneYet')) + '</small>';
+  if (!st.actors.length) tile('actors', 'wide', none(t('vsActors')), null);
   if (st.actors.length) tile('actors', 'wide', '<span class="vl">' + esc(t('vsActors')) + '</span><div class="vfaces">' + st.actors.map((a, i) =>
     '<div class="vface"><span class="vrank">' + (i + 1) + '</span>' + (a.thumb ? '<img src="' + esc(imgURL(a.thumb, 240, 240)) + '" alt="">' : '<span class="ini">' + esc(a.name.split(' ').map((w) => w[0]).join('').slice(0, 2)) + '</span>') +
     '<b>' + esc(a.name) + '</b><small>' + esc(tasteTitlesText(a)) + '</small></div>').join('') + '</div>', () => vsList('actors', st));
+  if (!st.genres.length) tile('genre', '', none(t('vsGenre')), null);
   if (st.genres.length) tile('genre', '', '<span class="vl">' + esc(t('vsGenre')) + '</span><b class="vtext">' + esc(st.genres[0].name) + '</b>' +
     '<span class="vsplit">' + st.genres.map((g, i) => '<i class="g' + i + '" style="width: ' + g.pct + '%"></i>').join('') + '</span>' +
     '<small>' + esc(st.genres.map((g) => g.name + ' ' + g.pct + ' %').join(' · ')) + '</small>', () => vsList('genres', st));
+  if (!st.show) tile('show', '', none(t('vsTopShow')), null);
   if (st.show) tile('show', 'withart', (st.show.art ? '<img class="vart" src="' + esc(imgURL(st.show.art, 640, 360)) + '" alt="">' : '') + '<span class="vl">' + esc(t('vsTopShow')) + '</span><b class="vtext">' + esc(st.show.title) + '</b><small>' + esc(t('vsEpsN', { n: st.show.viewedLeafCount })) + '</small>', () => vsList('shows', st));
+  if (!st.director) tile('dir', '', none(t('vsDirector')), null);
   if (st.director) tile('dir', '', '<span class="vl">' + esc(t('vsDirector')) + '</span><b class="vtext">' + esc(st.director.name) + '</b><small>' + esc(t('vsFilmsN', { n: st.director.n })) + '</small>', () => vsList('directors', st));
+  if (!st.decade) tile('decade', '', none(t('vsDecade')), null);
   if (st.decade) {
     const dl = st.decadesAll.filter((x) => x[0] >= 1930).slice(-8);
     const max = Math.max.apply(null, dl.map((x) => x[1]).concat([1]));
@@ -241,6 +319,7 @@ function tasteStatsHTML(st, movieSec, showSec) {
       '<small><b class="vdt">' + esc(String(st.decade.d) + (S.lang === 'sv' ? '-talet' : 's')) + '</b> · ' + esc(t('vsFilmsN', { n: st.decade.n })) + '</small>', () => vsList('decades', st));
   }
   tile('year', '', '<span class="vl">' + esc(t('vsThisYear', { y: new Date().getFullYear() })) + '</span><b>' + nf(st.thisYear) + '</b><small>' + esc(t('vsMoviesShort')) + '</small>', () => vsList('year', st));
+  if (!st.rewatch) tile('re', '', none(t('vsRewatched')), null);
   if (st.rewatch) tile('re', 'withart', (st.rewatch.art ? '<img class="vart" src="' + esc(imgURL(st.rewatch.art, 640, 360)) + '" alt="">' : '') + '<span class="vl">' + esc(t('vsRewatched')) + '</span><b class="vtext">' + esc(st.rewatch.title) + '</b><small>' + esc(t('vsTimes', { n: st.rewatch.viewCount })) + '</small>', () => vsList('movies', st));
   return '<section class="hub vssection" id="vssection"><div class="hubhead"><h2>' + esc(t('vsTitle')) + '</h2><span>' + esc(t('vsSub', { s: (S.user && S.user.title) || (S.account && S.account.title) || '' })) + '</span><span class="vsprog" id="vsprog"></span></div>' + vsStripHTML(st, movieSec, showSec) + '<div class="vtiles">' + (tiles.join('') || '<p class="sheettext">' + esc(t('nothing')) + '</p>') + '</div></section>';
 }
@@ -263,8 +342,10 @@ function vsStripHTML(st, movieSec, showSec) {
     ? [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShowsYear')], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')], [st.genres[0] ? st.genres[0].name : '–', t('vsGenre')]]
     : [[nf(st.movies), t('vsMoviesShort')], [nf(st.showsN), t('vsStripShowsOnly')], [nf(st.eps), t('vsStripEps')], ['≈ ' + nf(st.hours) + ' h', t('vsStripHours')]];
   const art = (st.rewatch && st.rewatch.art) || (st.show && st.show.art) || '';
-  return '<div class="vstrip f" id="vsstrip" data-key="vs-strip" data-act="' + A(() => {
+  return '<div class="vstrip f" id="vsstrip" data-key="vs-strip" data-act="' + A(async () => {
     vsMode = nextMode;
+    const strip = $('#vsstrip', viewEl); if (strip) strip.classList.add('loading');
+    try { await vsPrep(vsMode); } catch (e) { /* falls back to the library's own dates */ }
     const next = tasteStats(st.moviesAll, st.showsAll, st.h, vsMode);
     const sec = $('#vssection', viewEl);
     if (sec && next) { sec.outerHTML = tasteStatsHTML(next, movieSec, showSec); const b = $('[data-key="vs-strip"]', viewEl); if (b) setFocus(b, true); }

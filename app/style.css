@@ -1468,3 +1468,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .artopt.tall { padding-top: 150%; }
 .artopt.wide { padding-top: 56.25%; }
 .artopt.tall > img, .artopt.wide > img { position: absolute; left: 0; top: 0; }
+.vstrip.loading .vscells { opacity: .35; transition: opacity 120ms; }

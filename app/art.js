@@ -213,6 +213,19 @@ async function artEditor(item, kindIn) {
     const el = openModal(head + tabs + '<p class="sheettext" id="artnote">' + esc(t('loading')) + '</p>', focusKey || 'at-' + kind, true);
     el.classList.add('artsheet');
     el._onclose = () => { if (changed) afterArt(m); };
+    /* Back from further down the pictures goes up to the tabs first; from the top it closes */
+    el._backTop = () => {
+      if (!focused || !el.contains(focused) || focused.closest('.arttabs')) return false;
+      const firstCell = $('.artopt', el);
+      const sc = $('.mbody', el) || el;
+      if (firstCell && focused.classList.contains('artopt') && focused.offsetTop === firstCell.offsetTop && (sc.scrollTop < 40 && el.scrollTop < 40)) return false;
+      const tab = $('[data-key="at-' + kind + '"]', el);
+      if (!tab) return false;
+      sc.scrollTop = 0; el.scrollTop = 0;
+      setFocus(tab, true);
+      sc.scrollTop = 0; el.scrollTop = 0;
+      return true;
+    };
     let plex = [], tm = [], fa = [];
     if (k.local) {
       /* clearart can't be stored on Plex: the choice is kept on this TV */
