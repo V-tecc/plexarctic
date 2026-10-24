@@ -1546,3 +1546,18 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abbig, .abanner .abbig.f.focus { position: absolute; top: auto; bottom: 34px; left: 56px; }
 .abanner .abbig { position: absolute !important; }
 .abnav .abcount { white-space: nowrap; }
+
+/* actor banner: more room after the big poster; the text lines up with the small posters again */
+.abanner .abbig { bottom: 66px; }
+.abwho { gap: 52px; }
+.absel { left: 288px; }
+.abrow { left: 288px; }
+/* ‹ › under the big poster */
+.abbig .abarrows { display: none; }
+.abarrows { position: absolute; left: 56px; bottom: 18px; width: 192px; display: flex; justify-content: center; gap: 46px; pointer-events: none; }
+.abarrows i { font-style: normal; font-size: 40px; line-height: 34px; font-weight: var(--w700); color: #2DD4BF; opacity: .45; transition: opacity 140ms ease; }
+.abbig.focus + .abarrows i { opacity: 1; }
+/* stats strip: four cells with a smaller second line */
+.vstrip .vscells { gap: 64px; }
+.vstrip .vscells b { font-size: 64px; }
+.abanner .abbig, .abanner .abbig.f.focus { bottom: 66px; }

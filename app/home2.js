@@ -68,7 +68,7 @@ function actorBannerHTML(x, d) {
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
     (first ? '<div class="abbig f" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
-      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""><span class="abarrows">‹ ›</span></div>' : '') +
+      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""></div><span class="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
     '<div class="abrow"><div class="abrowc" id="abrowc">' + abRowHTML(a) + '</div>' +
     (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +
       '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +
