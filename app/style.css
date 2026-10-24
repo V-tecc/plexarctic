@@ -1561,3 +1561,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vstrip .vscells { gap: 64px; }
 .vstrip .vscells b { font-size: 64px; }
 .abanner .abbig, .abanner .abbig.f.focus { bottom: 66px; }
+/* small and big posters share the bottom line; the arrows sit below it */
+.abrow { bottom: 66px; }
