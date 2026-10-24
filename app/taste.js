@@ -87,36 +87,76 @@ ICON.thumbDown = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" st
 
 /* favourite actors: the full cast (top eight billed) of the films this profile watched most recently, from Plex's own
    watch history. Casts are kept on this device so each film is only asked for once; a few new ones per visit. */
+/* Casts: every film and show this profile has watched counts. Plex's library list already names the top three billed
+   actors of each title, so the numbers are there straight away; the full cast (top eight) is then read in the
+   background, once per title, and kept on this device (names only, plus pictures for the people who come up). */
+function castStore() {
+  const k = 'castCache2.' + S.server.id;
+  try { localStorage.removeItem('pp.castCache.' + S.server.id); } catch (e) { /* the old, smaller cache */ }
+  return { k: k, c: store.get(k, {}) || {}, thumbs: store.get('castThumbs.' + S.server.id, {}) || {} };
+}
+function tasteWatchedTitles(movies, shows) {
+  return movies.filter((m) => m.viewCount).map((m) => ({ it: m, show: false }))
+    .concat((shows || []).filter((sh) => sh.viewedLeafCount).map((sh) => ({ it: sh, show: true })));
+}
 async function tasteFavActors(movies, h, shows) {
-  /* a show counts as more than one film the more of it you've watched (up to three) */
-  const showW = (sh) => 1 + Math.min(2, (sh.viewedLeafCount || 0) / 12);
-  const watched = movies.filter((m) => m.viewCount).sort((a, b) => (b.lastViewedAt || 0) - (a.lastViewedAt || 0)).slice(0, 80).map((m) => ({ it: m, w: 1, show: false }));
-  const seenShows = (shows || []).filter((sh) => sh.viewedLeafCount).sort((a, b) => (b.viewedLeafCount || 0) - (a.viewedLeafCount || 0)).slice(0, 40).map((sh) => ({ it: sh, w: showW(sh), show: true }));
-  const all = watched.concat(seenShows);
-  const cache = store.get('castCache.' + S.server.id, {}) || {};
-  /* casts saved before pictures were kept are asked for again once */
-  const missing = all.filter((x) => !cache[x.it.ratingKey] || (cache[x.it.ratingKey].length && cache[x.it.ratingKey][0].length < 3)).slice(0, 36);
-  for (let i = 0; i < missing.length; i += 6) {
-    await Promise.all(missing.slice(i, i + 6).map((x) => api('/library/metadata/' + x.it.ratingKey).then((r) => {
-      const full = (r.Metadata || [])[0];
-      cache[x.it.ratingKey] = ((full && full.Role) || []).slice(0, 8).map((y) => [y.tag, y.id || y.tagKey || '', y.thumb || '']);
-    }).catch(() => {})));
-  }
-  const ks = Object.keys(cache); if (ks.length > 1500) ks.slice(0, ks.length - 1500).forEach((k) => delete cache[k]);
-  try { store.set('castCache.' + S.server.id, cache); } catch (e) { /* full: carry on */ }
+  const all = tasteWatchedTitles(movies, shows);
+  const cs = castStore();
   const count = new Map();
-  all.forEach((x) => (cache[x.it.ratingKey] || (x.it.Role || []).map((y) => [y.tag, y.id || '', y.thumb || ''])).forEach(([name, id, thumb]) => {
-    const c = count.get(name) || { name: name, id: id, thumb: thumb || '', n: 0, films: 0, shows: 0, score: 0 };
-    c.n++; c.score += x.w; if (x.show) c.shows++; else c.films++;
-    if (!c.id && id) c.id = id; if (!c.thumb && thumb) c.thumb = thumb;
-    count.set(name, c);
-  }));
-  const x = tasteGet();
-  const ranked = Array.from(count.values()).sort((a, b) => (b.score - a.score) || (b.n - a.n));
-  const favs = ranked.filter((c) => (c.n >= 2 || c.score >= 2) && c.id && (x.a[c.name] || 0) > -1);
-  /* the scoring uses these too */
-  if (h) { favs.forEach((c) => h.actors.set(c.name, Math.max(h.actors.get(c.name) || 0, Math.round(c.score)))); h.favs = favs; h.actorAll = ranked.slice(0, 10); }
+  all.forEach((x) => {
+    const cast = cs.c[x.it.ratingKey] || (x.it.Role || []).slice(0, 3).map((y) => [y.tag, y.id || '']);
+    const seenHere = new Set();
+    cast.forEach(([name, id, thumb]) => {
+      if (seenHere.has(name)) return; seenHere.add(name);
+      const c = count.get(name) || { name: name, id: id, thumb: cs.thumbs[name] || thumb || '', n: 0, films: 0, shows: 0, eps: 0 };
+      c.n++; if (x.show) { c.shows++; c.eps += x.it.viewedLeafCount || 0; } else c.films++;
+      if (!c.id && id) c.id = id; if (!c.thumb && (cs.thumbs[name] || thumb)) c.thumb = cs.thumbs[name] || thumb;
+      count.set(name, c);
+    });
+  });
+  const tx = tasteGet();
+  /* ranked by how many of your titles they're in; episodes watched break ties */
+  const ranked = Array.from(count.values()).sort((a, b) => (b.n - a.n) || (b.eps - a.eps));
+  const favs = ranked.filter((c) => c.n >= 2 && c.id && (tx.a[c.name] || 0) > -1);
+  if (h) { favs.slice(0, 200).forEach((c) => h.actors.set(c.name, Math.max(h.actors.get(c.name) || 0, c.n))); h.favs = favs; h.actorAll = ranked.slice(0, 10); }
   return favs;
+}
+/* the background read of full casts; onDone gets called when there were new ones */
+let castScanBusy = false;
+async function tasteCastScan(movies, shows, onProgress, onDone) {
+  if (castScanBusy || !S.server) return;
+  const server = S.server.id;
+  const cs = castStore();
+  const todo = tasteWatchedTitles(movies, shows).filter((x) => !cs.c[x.it.ratingKey]);
+  if (!todo.length) return;
+  castScanBusy = true;
+  const seenCount = new Map();
+  let done = 0, lastSave = 0;
+  const save = () => {
+    /* pictures only for people who come up in two or more titles, to keep it small */
+    Object.values(cs.c).forEach((cast) => cast.forEach(([name]) => seenCount.set(name, (seenCount.get(name) || 0) + 1)));
+    const thumbs = {};
+    Object.keys(cs.thumbs).forEach((n) => { if ((seenCount.get(n) || 0) >= 2) thumbs[n] = cs.thumbs[n]; });
+    seenCount.clear();
+    try { store.set(cs.k, cs.c); store.set('castThumbs.' + server, thumbs); } catch (e) { /* full: keep going in memory */ }
+  };
+  try {
+    for (let i = 0; i < todo.length; i += 6) {
+      if (!S.server || S.server.id !== server) break;
+      await Promise.all(todo.slice(i, i + 6).map((x) => api('/library/metadata/' + x.it.ratingKey).then((r) => {
+        const full = (r.Metadata || [])[0];
+        const roles = ((full && full.Role) || []).slice(0, 8);
+        cs.c[x.it.ratingKey] = roles.map((y) => [y.tag, y.id || y.tagKey || '']);
+        roles.forEach((y) => { if (y.thumb && !cs.thumbs[y.tag]) cs.thumbs[y.tag] = y.thumb; });
+      }).catch(() => { cs.c[x.it.ratingKey] = cs.c[x.it.ratingKey] || []; })));
+      done = Math.min(todo.length, i + 6);
+      if (onProgress) onProgress(done, todo.length);
+      if (done - lastSave >= 120) { lastSave = done; save(); }
+      await sleep(60);
+    }
+    save();
+  } finally { castScanBusy = false; }
+  if (onDone) onDone();
 }
 /* "4 films · 2 shows" */
 function tasteTitlesText(c) {
@@ -182,7 +222,7 @@ function tasteStatsHTML(st, movieSec, showSec) {
   if (st.decade) tile('decade', '', '<span class="vl">' + esc(t('vsDecade')) + '</span><b>' + esc(String(st.decade.d) + (S.lang === 'sv' ? '-talet' : 's')) + '</b><small>' + esc(t('vsFilmsN', { n: st.decade.n })) + '</small>', () => vsList('decades', st));
   tile('year', '', '<span class="vl">' + esc(t('vsThisYear', { y: new Date().getFullYear() })) + '</span><b>' + nf(st.thisYear) + '</b><small>' + esc(t('vsMoviesShort')) + '</small>', () => vsList('year', st));
   if (st.rewatch) tile('re', 'withart', (st.rewatch.art ? '<img class="vart" src="' + esc(imgURL(st.rewatch.art, 640, 360)) + '" alt="">' : '') + '<span class="vl">' + esc(t('vsRewatched')) + '</span><b class="vtext">' + esc(st.rewatch.title) + '</b><small>' + esc(t('vsTimes', { n: st.rewatch.viewCount })) + '</small>', () => vsList('movies', st));
-  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('vsTitle')) + '</h2><span>' + esc(t('vsSub', { s: (S.user && S.user.title) || (S.account && S.account.title) || '' })) + '</span></div><div class="vtiles">' + tiles.join('') + '</div></section>';
+  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('vsTitle')) + '</h2><span>' + esc(t('vsSub', { s: (S.user && S.user.title) || (S.account && S.account.title) || '' })) + '</span><span class="vsprog" id="vsprog"></span></div><div class="vtiles">' + tiles.join('') + '</div></section>';
 }
 
 /* the list behind a tile; going on from it and coming back lands on the tile again */

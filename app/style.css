@@ -1294,3 +1294,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .vsrow .vstx small { font-size: 16px; color: var(--muted); }
 .vsrow.focus { background: var(--surface); box-shadow: inset 0 0 0 2px var(--focus); }
 .vsgenre .vsrowcards { margin: 6px 0 26px; }
+.hubhead .vsprog { margin-left: auto; font-size: 15px; color: var(--muted); }
