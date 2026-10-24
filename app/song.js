@@ -14,7 +14,7 @@ async function songClip(ratingKey, at, audioStreamID) {
   const master = pmsURL('/video/:/transcode/universal/start.m3u8', {
     hasMDE: 1, path: '/library/metadata/' + ratingKey, mediaIndex: 0, partIndex: 0, protocol: 'hls',
     offset: Math.max(0, Math.floor(at)), fastSeek: 1, directPlay: 0, directStream: 0, directStreamAudio: 0,
-    videoQuality: 10, maxVideoBitrate: 160, videoResolution: '320x180', audioBoost: 100,
+    videoQuality: 60, maxVideoBitrate: 1500, videoResolution: '1280x720', audioBoost: 100,
     location: S.server.local ? 'lan' : 'wan', subtitles: 'none', audioStreamID: audioStreamID || null,
     session: session, 'X-Plex-Session-Identifier': session
   });
@@ -43,13 +43,21 @@ async function songClip(ratingKey, at, audioStreamID) {
       if (!segs.length) await sleep(700);
     }
     if (!segs.length) throw new Error('no sound');
-    const parts = [];
+    /* a piece that isn't ready yet can come back empty: wait and ask again */
+    const parts = [], sizes = [];
     for (const u of segs) {
-      const r = await fetch(u);
-      if (!r.ok) { if (!parts.length) throw new Error('segment HTTP ' + r.status); break; }
-      parts.push(await r.arrayBuffer());
+      let buf = null;
+      for (let k = 0; k < 15; k++) {
+        const r = await fetch(u);
+        if (!r.ok) { if (k < 14) { await sleep(600); continue; } if (!parts.length) throw new Error('segment HTTP ' + r.status); break; }
+        buf = await r.arrayBuffer();
+        if (buf.byteLength > 4000) break;
+        await sleep(600);
+      }
+      if (buf && buf.byteLength) { parts.push(buf); sizes.push(buf.byteLength); }
     }
     if (!parts.length) throw new Error('no sound');
+    songClip.last = segs.length + ' pieces: ' + sizes.map((x) => Math.round(x / 1024) + 'k').join(' ');
     return new Blob(parts, { type: 'video/mp2t' });
   } finally { stop(); }
 }
@@ -57,7 +65,7 @@ async function songClip(ratingKey, at, audioStreamID) {
 async function songLookup(ratingKey, at, audioStreamID) {
   let clip;
   try { clip = await songClip(ratingKey, at, audioStreamID); } catch (e) { e.message = 'Plex: ' + (e.message || e); throw e; }
-  if (!clip.size || clip.size < 2000) throw new Error('Plex: clip ' + clip.size + ' B');
+  if (!clip.size || clip.size < 20000) throw new Error('Plex: clip ' + clip.size + ' B · ' + (songClip.last || ''));
   const fd = new FormData();
   fd.append('api_token', songKey());
   fd.append('return', 'apple_music,spotify');
