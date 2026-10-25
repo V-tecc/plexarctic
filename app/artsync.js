@@ -153,7 +153,24 @@ async function asBackupExisting(onStep) {
   for (const sec of secs) {
     let items = [];
     try { items = (await api('/library/sections/' + sec.key + '/all', { type: sec.type === 'movie' ? 1 : 2, includeGuids: 1 })).Metadata || []; } catch (e) { items = []; }
-    const locked = items.filter((m) => (m.Field || []).some((f) => f.locked && lockOf[f.name]));
+    let locked = items.filter((m) => (m.Field || []).some((f) => f.locked && lockOf[f.name]));
+    /* some servers leave the locks out of the list: then ask title by title (a few at a time) */
+    if (!locked.length && items.length && !items.some((m) => m.Field)) {
+      locked = [];
+      let next = 0, seen = 0;
+      const worker = async () => {
+        while (next < items.length) {
+          const m0 = items[next++];
+          try {
+            const m = ((await api('/library/metadata/' + m0.ratingKey, { includeGuids: 1 })).Metadata || [])[0];
+            if (m && (m.Field || []).some((f) => f.locked && lockOf[f.name])) locked.push(m);
+          } catch (e) { /* next */ }
+          seen++;
+          if (onStep && seen % 10 === 0) onStep(seen, items.length, sec.title);
+        }
+      };
+      await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
+    }
     for (let i = 0; i < locked.length; i++) {
       const m = locked[i];
       if (onStep) onStep(i + 1, locked.length, m.title);
