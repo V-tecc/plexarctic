@@ -5,6 +5,7 @@ window.PRESET = {
   tmdb: '',    // your TMDB API key (https://www.themoviedb.org/settings/api) for Trending, trailers and the movie calendar
   ytPage: '',  // address of your trailer page (see yt.html in this repository), e.g. https://<you>.github.io/plexarctic/yt.html
   fanart: '',  // your fanart.tv API key (https://fanart.tv/get-an-api-key/) for clearart and more logos
+  ghToken: '', // optional: a GitHub token with only the "gist" scope; keeps an off-site copy of your artwork choices in a private gist
   audd: '',    // your AudD API token (https://dashboard.audd.io) for "What's this song?" in the player
   // your own poster and background for the Arrowverse series, as files next to the app (e.g. in a local/ folder):
   // woArt: { arrowverse: { poster: 'local/arrowverse-poster.jpg', art: 'local/arrowverse-art.jpg' } }

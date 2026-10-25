@@ -101,15 +101,70 @@ function asMerge(a, b) {
   return out;
 }
 let asPushTimer = null;
-function asPushSoon() { /* nothing to send: the list is saved on this TV as it changes */ }
+function asPushSoon() { if (!ghToken()) return; clearTimeout(asPushTimer); asPushTimer = setTimeout(() => asSync().catch(() => {}), 20000); }
 
 /* both ways: what the account has and what this TV has, newest choice wins */
+/* ---- off-site copy: a private GitHub Gist (when a GitHub token is set) ----
+   One secret gist, "PLEX:arctic backup", one file per profile. GitHub keeps every earlier version too.
+   Every TV reads it at start and merges it in (so a new TV gets the list, clearart included), and writes
+   it back a little after a change. */
+const GH_DESC = 'PLEX:arctic backup';
+function ghToken() { return store.get('ghToken', '') || (window.PRESET && window.PRESET.ghToken) || ''; }
+function ghFile() { return 'plexarctic-artwork-' + String(S.user ? S.user.id : 'owner').replace(/[^a-z0-9_-]/gi, '') + '.json'; }
+async function gh(path, method, body) {
+  const r = await fetch('https://api.github.com' + path, {
+    method: method || 'GET',
+    headers: { Authorization: 'Bearer ' + ghToken(), Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!r.ok) { const e = new Error('GitHub ' + r.status); e.status = r.status; throw e; }
+  return r.status === 204 ? null : r.json();
+}
+async function ghGist() {
+  const id = store.get('ghGistId', '');
+  if (id) { try { return await gh('/gists/' + id); } catch (e) { if (e.status !== 404) throw e; } }
+  for (let page = 1; page <= 10; page++) {
+    const list = await gh('/gists?per_page=100&page=' + page);
+    const hit = (list || []).find((g) => g.description === GH_DESC);
+    if (hit) { store.set('ghGistId', hit.id); return gh('/gists/' + hit.id); }
+    if (!list || list.length < 100) break;
+  }
+  return null;
+}
+async function ghPull() {
+  const g = await ghGist();
+  const f = g && g.files && g.files[ghFile()];
+  if (!f) return null;
+  let txt = f.content;
+  if (f.truncated || !txt) txt = await (await fetch(f.raw_url)).text();
+  return JSON.parse(txt);
+}
+async function ghPush(d) {
+  const content = JSON.stringify({ v: 2, app: 'PLEX:arctic', what: 'artwork choices', saved: new Date().toISOString(),
+    user: (S.user && S.user.title) || (S.account && S.account.title) || '', items: d.items }, null, 1);
+  const files = {}; files[ghFile()] = { content: content };
+  let id = store.get('ghGistId', '');
+  if (!id) { const g = await ghGist(); if (g) id = g.id; }
+  if (id) { try { await gh('/gists/' + id, 'PATCH', { files: files }); return; } catch (e) { if (e.status !== 404) throw e; store.del('ghGistId'); } }
+  const g = await gh('/gists', 'POST', { description: GH_DESC, public: false, files: files });
+  store.set('ghGistId', g.id);
+}
+
 async function asSync() {
   if (!S.token) return;
   await asLoad();
-  /* Plex has no place in the account for a list like this (plex.tv answers 404), so it stays on each TV
-     and in the backup file; covers, backgrounds and logos themselves are on the server for every TV anyway */
-  asState = { cloud: false, at: Date.now(), msg: '' };
+  if (ghToken()) {
+    try {
+      const remote = await ghPull();
+      const merged = asMerge(asLocal(), remote || { items: {} });
+      asSaveLocal(merged);
+      if (!remote || JSON.stringify(merged.items) !== JSON.stringify(remote.items || {})) await ghPush(merged);
+      store.set(userKey('ghAt'), Date.now());
+      asState = { cloud: true, at: Date.now(), msg: '' };
+    } catch (e) {
+      asState = { cloud: false, at: Date.now(), msg: (e && e.message) || String(e) };
+    }
+  } else asState = { cloud: false, at: Date.now(), msg: '' };
   asApplyClearart(asLocal()).catch(() => {});
   return asState;
 }
@@ -359,6 +414,26 @@ function asSettingsHTML() {
       '<button type="button" class="btn ghostbtn f" data-key="asdown" data-act="' + A(asDownload) + '">' + esc(t('asDownload')) + '</button>' +
       '<button type="button" class="btn ghostbtn f" data-key="asup" data-act="' + A(asUpload) + '">' + esc(t('asUpload')) + '</button>') +
     '<span class="sval" id="asprog"></span>';
+}
+
+/* the GitHub row in Settings (admin tools) */
+function ghSettingsHTML() {
+  const tok = ghToken();
+  const at = store.get(userKey('ghAt'), 0);
+  const status = !tok ? t('ghOff') : asState.cloud ? t('ghOk', { t: new Date(at).toLocaleString(lang().locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) })
+    : asState.msg ? t('ghFail', { e: asState.msg }) : (at ? t('ghOk', { t: new Date(at).toLocaleString(lang().locale, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) }) : t('asChecking'));
+  return '<input class="input f" id="ghtok" data-key="ghtok" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' +
+    esc(tok ? t('ghTokSet', { s: tok.slice(-4) }) : 'ghp_…') + '" value="">' +
+    '<button type="button" class="btn f" data-key="ghsave" data-act="' + A(async () => {
+      const v = $('#ghtok').value.trim();
+      if (v) store.set('ghToken', v);
+      store.del('ghGistId');
+      toast(t('ghSaving'), 3000);
+      const st = await asSync();
+      toast(st && st.cloud ? t('ghSaved') : t('ghFail', { e: (st && st.msg) || '?' }), 8000);
+      rerun();
+    }) + '">' + esc(t('ghSaveNow')) + '</button>' +
+    '<span class="sval">' + esc(status) + '</span>';
 }
 
 /* once a session, a little after start: sync; once a week, check that everything can still be found */
