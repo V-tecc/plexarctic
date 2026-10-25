@@ -26,10 +26,18 @@ async function osFetch(path, opts, base) {
 async function osLogin(force) {
   if (!force && osSession && Date.now() - osSession.at < 20 * 3600000) return osSession;
   /* the account name, or the e-mail address as a second try (OpenSubtitles takes either depending on the account) */
-  const names = [osUser(), (window.PRESET && window.PRESET.osUserAlt) || ''].filter((x, i, l) => x && l.indexOf(x) === i);
+  /* OpenSubtitles allows one login per second, so tries are spaced out (and a "too many" is waited out once);
+     the name that worked is remembered */
+  const worked = store.get('osUserOk', '');
+  const names = [worked, osUser(), (window.PRESET && window.PRESET.osUserAlt) || ''].filter((x, i, l) => x && l.indexOf(x) === i);
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   let j = null, err = null;
-  for (const u of names) {
-    try { j = await osFetch('/login', { method: 'POST', body: { username: u, password: osPass() } }); break; } catch (e) { err = e; }
+  for (let i = 0; i < names.length && !j; i++) {
+    if (i) await wait(1600);
+    for (let tryN = 0; tryN < 2 && !j; tryN++) {
+      try { j = await osFetch('/login', { method: 'POST', body: { username: names[i], password: osPass() } }); store.set('osUserOk', names[i]); }
+      catch (e) { err = e; if (e.status === 429 || /rate limit/i.test(e.message || '')) await wait(2000); else break; }
+    }
   }
   if (!j) throw err || new Error('login failed');
   osSession = { token: j.token, base: j.base_url ? 'https://' + String(j.base_url).replace(/^https?:\/\//, '') + '/api/v1' : OS_API, at: Date.now(),
