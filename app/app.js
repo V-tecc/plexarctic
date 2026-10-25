@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.58.3';
+const VERSION = '0.59.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -706,7 +706,15 @@ function effectiveTheme() {
 }
 setInterval(() => { if (S.theme === 'auto' && stage.dataset.theme !== effectiveTheme()) applyTheme(); }, 60000);
 /* colour themes on the same base: black & white, Arctic (teal & purple), Ember, Aurora, Cinema, Sakura */
-const ACCENTS = [['mono', 'accentMono'], ['color', 'accentColor'], ['ember', 'palEmber'], ['aurora', 'palAurora'], ['gold', 'palGold'], ['sakura', 'palSakura']];
+const ACCENTS = [['mono', 'accentMono'], ['color', 'accentColor'], ['ember', 'palEmber'], ['aurora', 'palAurora'], ['gold', 'palGold'], ['sakura', 'palSakura'], ['cobalt', 'palCobalt']];
+/* the colour squares shown next to each theme: background, surface, selection, highlight (dark theme) */
+const ACCENT_SW = {
+  mono: ['#111113', '#1C1C1F', '#F1F1EC', '#8A8A90'], color: ['#111113', '#1C1C1F', '#29F5DC', '#C084FC'],
+  ember: ['#14110F', '#211C18', '#FFB547', '#FF7A45'], aurora: ['#0E1311', '#17201B', '#6BF2A0', '#E879F9'],
+  gold: ['#0A0A0A', '#161514', '#E8C468', '#D9CBA6'], sakura: ['#121014', '#1E1A21', '#FF7EB6', '#A78BFA'],
+  cobalt: ['#0E1218', '#18202B', '#4DA3FF', '#FF9F43']
+};
+function accentSwatch(id) { return '<span class="acsw" aria-hidden="true">' + (ACCENT_SW[id] || []).map((c) => '<i style="background: ' + c + '"></i>').join('') + '</span>'; }
 function setAccent(x) { S.accent = x; store.set('accent', x); try { store.set(userKey('accent'), x); } catch (e) { /* no profile yet */ } applyTheme(); }
 function autoNote() { const st = sunTimes(new Date()); return t('themeAutoNote', { a: hhmm(st.set), b: hhmm(st.rise) }); }
 function applyTheme() {
@@ -718,7 +726,7 @@ function pickTheme() {
   const draw = (prefer) => openModal(sheetHeader(t('theme')) +
     '<div class="optlist">' + THEMES.map((x) => optionRow('th-' + x[0], t(x[1]), [], S.theme === x[0], A(() => { S.theme = x[0]; store.set('theme', x[0]); applyTheme(); draw('th-' + x[0]); }), x[0] === 'auto' ? autoNote() : '')).join('') + '</div>' +
     '<span class="label">' + esc(t('accent')) + '</span><div class="optlist">' +
-    ACCENTS.map((x) => optionRow('ac-' + x[0], t(x[1]), [], S.accent === x[0], A(() => { setAccent(x[0]); draw('ac-' + x[0]); }), x[0] === 'mono' ? '' : t(x[0] === 'color' ? 'accentColorNote' : x[1] + 'Note'))).join('') + '</div>', prefer);
+    ACCENTS.map((x) => optionRow('ac-' + x[0], t(x[1]), [], S.accent === x[0], A(() => { setAccent(x[0]); draw('ac-' + x[0]); }), x[0] === 'mono' ? '' : t(x[0] === 'color' ? 'accentColorNote' : x[1] + 'Note')).replace('<span class="tags">', '<span class="tags">' + accentSwatch(x[0]))).join('') + '</div>', prefer);
   draw('th-' + S.theme);
 }
 
@@ -889,7 +897,8 @@ function viewSettings() {
     row(t('titleStyle'), '<div class="seg">' + [['logo', t('titleLogo')], ['text', t('titleText')]].map((x) => '<button type="button" class="f' + (S.titleStyle === x[0] ? ' on' : '') + '" data-key="ts-' + x[0] + '" data-act="' + A(() => { S.titleStyle = x[0]; store.set('titleStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('seasonStyle'), '<div class="seg">' + [['numbers', t('ssNumbers')], ['picker', t('ssPicker')], ['posters', t('ssPosters')]].map((x) => '<button type="button" class="f' + (S.seasonStyle === x[0] ? ' on' : '') + '" data-key="ss-' + x[0] + '" data-act="' + A(() => { S.seasonStyle = x[0]; store.set('seasonStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { S.theme = x[0]; store.set('theme', x[0]); applyTheme(); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' +
-      '<div class="seg">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
+      '<div class="seg wrap">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + accentSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
+    row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set('saverMin', n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') +
     row(t('defQuality'), '<button type="button" class="btn f" data-key="q" data-act="' + A(() => pickQuality(S.quality, (id) => { S.quality = id; store.set('quality', id); closeModal(true); rerun(); })) + '">' + ICON.quality + esc(qLabel(S.quality)) + '</button>' +
       '<button type="button" class="chip f' + (S.forceDirect ? ' on' : '') + '" data-key="fd" data-act="' + A(() => { S.forceDirect = !S.forceDirect; store.set('forceDirect', S.forceDirect); rerun(); }) + '">' + (S.forceDirect ? ICON.check : '') + esc(t('forceDirect')) + '</button>') +
     row(t('tmdbKey'), '<input class="input f" id="tmdb" data-key="tmdb" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.tmdb) + '">' +
@@ -2933,10 +2942,10 @@ function ratingsHTML(m) {
   return out.map((p) => '<div class="r"><span>' + esc(p[0]) + '</span><b>' + esc(p[1]) + '</b></div>').join('');
 }
 /* Full-screen cast and crew page, opened on top of the current screen. */
-function castSheet(roles, title, ctx) {
+function castSheet(roles, title, ctx, beforeGo) {
   openModal('<div class="fullhead"><div class="htitle"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(() => closeModal()) + '">' + ICON.back + esc(title) + '</button><h1>' + esc(t('allCast')) + '</h1></div>' + clockHTML() + '</div>' +
     '<div class="castgrid">' + roles.map((p, i) =>
-      '<div class="face f" data-key="cp-' + i + '" data-act="' + A(() => { closeModal(true); go(viewPerson, [p.tag, p.thumb, Object.assign({}, ctx || {}, { kind: p.k }), title]); }) + '">' +
+      '<div class="face f" data-key="cp-' + i + '" data-act="' + A(() => { closeModal(true); if (beforeGo) beforeGo(i); go(viewPerson, [p.tag, p.thumb, Object.assign({}, ctx || {}, { kind: p.k }), title]); }) + '">' +
       (p.thumb ? '<img class="img" loading="lazy" src="' + esc(imgURL(p.thumb, 400, 400)) + '" alt="">' : '<div class="img"></div>') +
       '<b>' + esc(p.tag) + '</b><span>' + esc(p.role || p.kind || '') + '</span></div>').join('') + '</div>', null, true);
   tickClock();
@@ -3686,14 +3695,21 @@ async function viewPlayer(ratingKey, opts) {
     '<div class="icol"><span class="label">' + esc(t('about')) + '</span><p id="about">' + esc(m.summary || '') + '</p>' +
     '<button type="button" class="pbtn small f" id="more" data-key="more" data-nav-r="pf-0,allcast" data-act="' + A(toggleMore) + '">' + esc(t('showMore')) + ICON.next + '</button></div>' +
     '<div class="icol"><span class="label">' + esc(t('cast')) + '</span><div class="pcast" data-nav-d="allcast" data-nav-l="more">' +
-    cast.map((p, i) => '<div class="face f" data-key="pf-' + i + '" data-act="' + A(() => { vid.pause(); current.args = [m.ratingKey, { at: position() }]; go(viewPerson, [p.tag, p.thumb, personCtx(m), title]); }) + '">' + (p.thumb ? '<img class="img" src="' + esc(imgURL(p.thumb, 240, 240)) + '" alt="">' : '<div class="img"></div>') + '<b>' + esc(p.tag) + '</b></div>').join('') +
-    '</div><button type="button" class="pbtn small f" data-key="allcast" data-act="' + A(() => { vid.pause(); castSheet(crewOf(m), title, personCtx(m)); }) + '">' + esc(t('allCast')) + ICON.next + '</button></div>' +
+    cast.map((p, i) => '<div class="face f" data-key="pf-' + i + '" data-act="' + A(() => { vid.pause(); current.args = [m.ratingKey, backHere('pf-' + i)]; go(viewPerson, [p.tag, p.thumb, personCtx(m), title]); }) + '">' + (p.thumb ? '<img class="img" src="' + esc(imgURL(p.thumb, 240, 240)) + '" alt="">' : '<div class="img"></div>') + '<b>' + esc(p.tag) + '</b>' + (p.role ? '<span class="prole">' + esc(p.role) + '</span>' : '') + '</div>').join('') +
+    '</div><button type="button" class="pbtn small f" data-key="allcast" data-act="' + A(() => { vid.pause(); openCast(); }) + '">' + esc(t('allCast')) + ICON.next + '</button></div>' +
     '<div class="icol"><span class="label">' + esc(t('playback')) + '</span><div class="kv" id="kv"></div><div class="tags">' + tagsHTML(mediaTags(m)) + '</div></div>' +
     '</div></section></div></div>');
   const pl = $('#pl'), vid = $('#vid');
   if (typeof playerClearart === 'function') playerClearart(m);
   if (typeof songJump !== 'undefined') songJump = { key: String(m.ratingKey), go: (at) => { if (!document.contains(vid)) return false; try { vid.currentTime = at; vid.play(); } catch (e) { /* ignore */ } return true; } };
   const position = () => (st.hold != null ? st.hold : (vid.currentTime || 0));
+  /* going to an actor from here: Back returns to this spot, paused, with the info (or the cast page) open again */
+  const backHere = (focusKey, castKey) => ({ at: position(), paused: true, info: true, focusKey: focusKey, castKey: castKey || null });
+  const openCast = (focusKey) => {
+    castSheet(crewOf(m), title, personCtx(m), (i) => { current.args = [m.ratingKey, backHere('allcast', 'cp-' + i)]; });
+    if (focusKey) { const el = $('.modal [data-key="' + focusKey + '"]', viewEl); if (el) setFocus(el, true); }
+  };
+  let resumePaused = !!opts.paused;
 
   function audioName(a) { return a ? (a.language || a.displayTitle || '?') + (a.channels ? ' ' + (a.channels >= 8 ? '7.1' : a.channels >= 6 ? '5.1' : a.channels === 2 ? '2.0' : '') : '') : ''; }
   function subName() { const s = subs.find((x) => x.id === st.subId); return s ? subLangName(s) : t('off'); }
@@ -3773,7 +3789,11 @@ async function viewPlayer(ratingKey, opts) {
   }
   /* Streams always start at 0 and the player seeks inside them, so the timeline is the file's own time. */
   /* in a Watch Together room the room decides when to play, so the player doesn't start by itself */
-  function autoPlay() { if (typeof wtControls === 'function' && wtControls(m.ratingKey)) return; vid.play().catch(() => {}); }
+  function autoPlay() {
+    if (resumePaused) { resumePaused = false; updateUI(); return; } /* back from an actor's page: stay paused */
+    if (typeof wtControls === 'function' && wtControls(m.ratingKey)) return;
+    vid.play().catch(() => {});
+  }
   function start(at) {
     st.hold = at;
     updateUI();
@@ -4169,7 +4189,11 @@ async function viewPlayer(ratingKey, opts) {
     if (st.sub2Id) loadSub2();
   }
   applyTrack();
-  initFocus('pp');
+  if (opts.info) {
+    setInfo(true);
+    initFocus(opts.focusKey || 'more');
+    if (opts.castKey) openCast(opts.castKey);
+  } else initFocus('pp');
   wake();
 }
 

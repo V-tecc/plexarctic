@@ -1600,3 +1600,31 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 #stage[data-palette="aurora"] { --grad: linear-gradient(90deg, #0CA678 0%, #3FD68A 100%); }
 #stage[data-palette="gold"]   { --grad: linear-gradient(90deg, #9C7A1E 0%, #C9A645 100%); }
 #stage[data-palette="sakura"] { --grad: linear-gradient(90deg, #8B5CF6 0%, #EC4899 100%); }
+
+/* player: the character under each actor */
+.player .pcast .face .prole { display: block; margin-top: 2px; font-size: 15px; line-height: 1.25; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 130px; }
+/* player panel: very slightly see-through, so the film shows faintly behind the controls */
+.player .panel { background: rgba(18,18,20,0.82); }
+
+/* ---------- screen saver ---------- */
+.saver { position: absolute; inset: 0; z-index: 9000; background: #000; opacity: 0; pointer-events: none; transition: opacity 900ms ease; overflow: hidden; }
+.saver.on { opacity: 1; pointer-events: auto; }
+.saver .svimg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transform: scale(1.0); transition: opacity 2200ms ease; }
+.saver .svimg.show { opacity: 1; animation: svdrift 16s linear forwards; }
+@keyframes svdrift { from { transform: scale(1.02); } to { transform: scale(1.12); } }
+.saver .svshade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.78) 0%, rgba(0,0,0,0) 48%), linear-gradient(90deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,0) 45%); }
+.saver .svinfo { position: absolute; left: 120px; bottom: 110px; color: #F1F1EC; text-shadow: 0 2px 14px rgba(0,0,0,.7); transition: left 2s ease, bottom 2s ease; }
+.saver .svclock { font-size: 120px; font-weight: var(--w300); line-height: 1; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.saver .svdate { font-size: 26px; color: #D8D8DA; margin-top: 6px; text-transform: capitalize; }
+.saver .svtitle { margin-top: 34px; font-size: 44px; font-weight: var(--w700); }
+.saver .svsub { margin-top: 6px; font-size: 24px; color: #C9C9CC; }
+/* Cobalt: blue with orange */
+#stage[data-palette="cobalt"] { --focus: #1D6FD8; --ring: #1D6FD8; --on-focus: #FFFFFF; --primary: #D9480F; --hl: #D9480F; --on-hl: #FFFFFF; --hl-text: #C2410C; --ac1: #1D6FD8; --ac1-rgb: 29,111,216; --ac2: #D9480F;
+  --grad: linear-gradient(90deg, #1D6FD8 0%, #4DA3FF 100%); }
+#stage[data-theme="dark"][data-palette="cobalt"] { --bg: #0E1218; --surface: #18202B; --img: #202A37; --chip: #1C2430; --line: #28323F; --line3: #1C2430; --bg-rgb: 14,18,24; --surface-rgb: 24,32,43; --panel-rgb: 18,24,32;
+  --focus: #4DA3FF; --ring: #4DA3FF; --on-focus: #04172E; --primary: #FF9F43; --hl: #FF9F43; --on-hl: #2A1300; --hl-text: #FFB870; --ac1: #4DA3FF; --ac1-rgb: 77,163,255; --ac2: #FFB870; }
+/* the colour squares next to each theme */
+.acsw { display: inline-flex; gap: 4px; margin-right: 10px; vertical-align: middle; }
+.acsw i { width: 16px; height: 16px; box-shadow: 0 0 0 1px rgba(128,128,128,.45); }
+.subrow .tags .acsw { margin: 0; }
+.subrow .tags .acsw i { width: 26px; height: 26px; }
