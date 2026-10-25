@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.63.1';
+const VERSION = '0.63.2';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -38,6 +38,8 @@ const S = {
   auddKey: store.get('auddKey', '') || ((window.PRESET && window.PRESET.audd) || ''),
   font: store.get('font', 'Questrial'),
   forceDirect: store.get('forceDirect', false),
+  audioMode: store.get('audioMode', 'surround'),   /* 'surround' (the TV decodes Dolby) or 'stereo' (Plex mixes down) */
+  audioBoost: store.get('audioBoost', 100),         /* Plex's volume boost when converting: 100 none, 200, 300 */
   account: store.get('account', null),
   theme: store.get('theme', 'dark'),
   accent: store.get('accent', 'color'),
@@ -743,6 +745,18 @@ const ACCENT_SW = {
 function accentSwatch(id) { return '<span class="acsw" aria-hidden="true">' + (ACCENT_SW[id] || []).map((c) => '<i style="background: ' + c + '"></i>').join('') + '</span>'; }
 /* light / dark / auto is each profile's own, like the accent */
 function setTheme(x) { S.theme = x; store.set('theme', x); try { store.set(userKey('theme'), x); } catch (e) { /* no profile yet */ } applyTheme(); }
+/* When the server converts a film, Plex mixes 5.1/7.1 down to stereo, and dialogue ends up quiet.
+   If this TV can decode Dolby (AC3 / E-AC3) itself, ask Plex to send that instead, like direct play does. */
+function surroundExtra(vid) {
+  if ((S.audioMode || 'surround') !== 'surround') return null;
+  const can = (c) => { try { return !!((window.MediaSource && MediaSource.isTypeSupported('audio/mp4; codecs="' + c + '"')) || (vid && vid.canPlayType('audio/mp4; codecs="' + c + '"'))); } catch (e) { return false; } };
+  const codecs = [];
+  if (can('ec-3')) codecs.push('eac3');
+  if (can('ac-3')) codecs.push('ac3');
+  if (!codecs.length) return null;
+  return ['add-transcode-target-audio-codec(type=videoProfile&context=streaming&protocol=hls&audioCodec=' + codecs.join(',') + ')']
+    .concat(codecs.map((c) => 'add-limitation(scope=videoAudioCodec&scopeName=' + c + '&type=upperBound&name=audio.channels&value=8)')).join('+');
+}
 function setAccent(x) { S.accent = x; store.set('accent', x); try { store.set(userKey('accent'), x); } catch (e) { /* no profile yet */ } applyTheme(); }
 function autoNote() { const st = sunTimes(new Date()); return t('themeAutoNote', { a: hhmm(st.set), b: hhmm(st.rise) }); }
 function applyTheme() {
@@ -931,6 +945,9 @@ function viewSettings() {
     row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set('saverMin', n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') +
     row(t('defQuality'), '<button type="button" class="btn f" data-key="q" data-act="' + A(() => pickQuality(S.quality, (id) => { S.quality = id; store.set('quality', id); closeModal(true); rerun(); })) + '">' + ICON.quality + esc(qLabel(S.quality)) + '</button>' +
       '<button type="button" class="chip f' + (S.forceDirect ? ' on' : '') + '" data-key="fd" data-act="' + A(() => { S.forceDirect = !S.forceDirect; store.set('forceDirect', S.forceDirect); rerun(); }) + '">' + (S.forceDirect ? ICON.check : '') + esc(t('forceDirect')) + '</button>') +
+    row(t('audioConv'), '<div class="seg">' + [['surround', t('audSurround')], ['stereo', t('audStereo')]].map((x) => '<button type="button" class="f' + (S.audioMode === x[0] ? ' on' : '') + '" data-key="am-' + x[0] + '" data-act="' + A(() => { S.audioMode = x[0]; store.set('audioMode', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
+      '<div class="seg">' + [[100, t('boostOff')], [200, t('boostMore')], [300, t('boostMax')]].map((x) => '<button type="button" class="f' + (S.audioBoost === x[0] ? ' on' : '') + '" data-key="ab-' + x[0] + '" data-act="' + A(() => { S.audioBoost = x[0]; store.set('audioBoost', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
+      '<span class="sval">' + esc(t('audioConvNote')) + '</span>') +
     row(t('tmdbKey'), '<input class="input f" id="tmdb" data-key="tmdb" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.tmdb) + '">' +
       '<button type="button" class="btn f" data-key="tmdbsave" data-act="' + A(() => { S.tmdb = $('#tmdb').value.trim(); store.set('tmdb', S.tmdb); trendingCache = null; toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
     row(t('fanartKeyLabel'), '<input class="input f" id="fanartkey" data-key="fanartkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.fanartKey) + '">' +
@@ -3744,7 +3761,7 @@ async function viewPlayer(ratingKey, opts) {
   const canDirect = () => (S.forceDirect && st.quality === 'orig') || st.quality === 'orig' && media.container === 'mp4' && media.videoCodec === 'h264' && ['aac', 'mp3'].includes(media.audioCodec) && !burnNeeded() && st.audioId === audioDefault;
   /* Text subtitles that Plex can hand over as a file (downloaded or sidecar .srt) are shown by the player itself,
      so switching is instant and never restarts the stream. Everything else is burned in by the server. */
-  const textSub = (id) => { const ex = subs.find((x) => x.id === id && x.ext); if (ex) return ex; if (!S.subDraw) return null; const s = subs.find((x) => x.id === id); return s && s.key && !st.noText.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null; };
+  const textSub = (id) => { const ex = subs.find((x) => x.id === id && x.ext); if (ex) return ex; if (!S.subDraw && !(S.forceDirect && st.quality === 'orig')) return null; const s = subs.find((x) => x.id === id); return s && s.key && !st.noText.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null; };
   const burnNeeded = () => !!st.subId && !textSub(st.subId) && !st.burnFailed;
 
   const title = m.type === 'episode' ? m.grandparentTitle : m.title;
@@ -3877,7 +3894,8 @@ async function viewPlayer(ratingKey, opts) {
       maxVideoBitrate: q.br || (S.server.relay ? 2000 : 200000),
       videoResolution: q.res || '3840x2160',
       subtitleSize: 100,
-      audioBoost: 100,
+      audioBoost: S.audioBoost || 100,
+      'X-Plex-Client-Profile-Extra': surroundExtra(vid),
       location: S.server.local ? 'lan' : 'wan',
       subtitles: burnNeeded() ? 'burn' : 'none',
       subtitleStreamID: burnNeeded() ? st.subId : null,
@@ -3904,6 +3922,7 @@ async function viewPlayer(ratingKey, opts) {
     $('#spin').hidden = false;
     const wasDirect = st.direct;
     st.direct = canDirect();
+    if (st.direct && st.subId && !textSub(st.subId) && !st.warnedPicSub) { st.warnedPicSub = true; setTimeout(() => toast(t('picSubDirect'), 9000), 1500); }
     if (!wasDirect) stopTranscode();
     refreshStatic();
     if (st.direct) {
