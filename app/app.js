@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.61.1';
+const VERSION = '0.62.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -887,6 +887,7 @@ function viewSettings() {
     '<div class="scroll hide-scroll"><div class="settings">' +
     row(t('language'), segLang(S.lang, (c) => { S.lang = c; store.set(userKey('lang'), c); if (!S.user) store.set('lang', c); applyLangChange(); rerun(); }, false)) +
     row(t('subLang'), segLang(S.subLang, (c) => { S.subLang = c; store.set(userKey('subLang'), c); if (!S.user) store.set('subLang', c); rerun(); }, true)) +
+    (typeof osSettingsHTML === 'function' ? row(t('osTitle'), osSettingsHTML()) : '') +
     row(t('font'), '<div class="seg wrap">' + FONTS.map((f) => '<button type="button" class="f' + (S.font === f ? ' on' : '') + '" data-key="font-' + esc(f) + '" data-act="' + A(async () => {
       const prev = S.font;
       S.font = f;
@@ -3020,7 +3021,7 @@ function openSubPicker(o) {
     /* Subtitle files the app draws itself are not selected on the server, so the server's stream stays
        untouched; others (shown by the server) are selected there as usual. */
     const chosen = o.subs.find((x) => x.id === id);
-    const ownDraw = S.subDraw && chosen && chosen.key && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(chosen.codec || '');
+    const ownDraw = (chosen && chosen.ext) || (S.subDraw && chosen && chosen.key && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(chosen.codec || ''));
     try { await fetch(pmsURL('/library/parts/' + o.part.id, { subtitleStreamID: ownDraw ? 0 : id, allParts: 1 }), { method: 'PUT' }); } catch (e) { /* ignore */ }
     o.subs.forEach((s) => { s.selected = s.id === id; });
     closeModal(true);
@@ -3058,7 +3059,10 @@ function openSubPicker(o) {
     openModal(sheetHeader(t('searchOnline'), L.name) + '<div class="empty">' + esc(t('searching')) + '</div>' + (guided ? backBtn : ''), guided ? 'dl' : null);
     let res;
     try { res = (await api('/library/metadata/' + o.ratingKey + '/subtitles', { language: code, hearingImpaired: 0, forced: 0 })).Stream || []; } catch (e) { res = null; }
-    if (res === null) { openModal(sheetHeader(t('searchOnline'), L.name) + '<p class="sheettext">' + esc(t('onlineFailed')) + '</p>' + backBtn, backKey); return; }
+    if (res === null) {
+      if (typeof osReady === 'function' && osReady()) return osDirect(code, null, backBtn, backKey);
+      openModal(sheetHeader(t('searchOnline'), L.name) + '<p class="sheettext">' + esc(t('onlineFailed')) + '</p>' + backBtn, backKey); return;
+    }
     if (!res.length) {
       openModal(sheetHeader(t('searchOnline'), L.name) + '<p class="sheettext"><b>' + esc(t('noSubsLang', { l: L.name })) + '</b></p>' +
         (code !== 'en' ? '<button type="button" class="btn primary f" data-key="tryen" data-act="' + A(() => searchOnline('en')) + '">' + esc(t('searchEnglish')) + '</button>' : '') + backBtn, code !== 'en' ? 'tryen' : backKey);
@@ -3073,11 +3077,13 @@ function openSubPicker(o) {
       if (r.hearingImpaired) tags.push('HI/CC');
       sourceTags(rel).forEach((x) => tags.push(x));
       if (/2160p|4k/i.test(rel)) tags.push('4K'); else if (/1080p/i.test(rel)) tags.push('1080P'); else if (/720p/i.test(rel)) tags.push('720P');
-      return '<div class="subrow f" data-key="or-' + i + '" data-act="' + A(() => download(r)) + '"><span class="chk"></span><span class="lang">' + esc(rel) +
+      return '<div class="subrow f" data-key="or-' + i + '" data-act="' + A(() => download(r, code, backBtn, backKey)) + '"><span class="chk"></span><span class="lang">' + esc(rel) +
         (r.providerTitle ? '<small>' + esc(r.providerTitle) + '</small>' : '') + '</span><span class="tags">' + tagsHTML(tags, [t('matchesFile')]) + '</span></div>';
-    }).join('') + '</div>' + backBtn, 'or-0');
+    }).join('') + '</div>' +
+      (typeof osReady === 'function' && osReady() ? '<div class="optlist"><div class="subrow dlrow-sub f" data-key="osdirect" data-act="' + A(() => osDirect(code, null, backBtn, backKey)) + '"><span class="chk">' + ICON.download + '</span><span class="lang">' + esc(t('osDirect')) + '<small>' + esc(t('osDirectSub')) + '</small></span></div></div>' : '') +
+      backBtn, 'or-0');
   }
-  async function download(r) {
+  async function download(r, code, backBtn, backKey) {
     const before = new Set(o.subs.map((s) => s.id));
     toast(t('downloading'), 3000);
     try {
@@ -3096,9 +3102,45 @@ function openSubPicker(o) {
       }
       if (added && o.second) { closeModal(true); o.onSecond(added); return; }
       if (added) return choose(added.id, true);
+      /* Plex couldn't get it (its OpenSubtitles connection is down or used up): ask OpenSubtitles directly */
+      if (typeof osReady === 'function' && osReady() && code) return osDirect(code, r, backBtn, backKey);
       toast(t('downloadSlow'), 6000);
       closeModal();
-    } catch (e) { toast(t('onlineFailed'), 6000); }
+    } catch (e) {
+      if (typeof osReady === 'function' && osReady() && code) return osDirect(code, r, backBtn, backKey);
+      toast(t('onlineFailed'), 6000);
+    }
+  }
+  /* Straight from OpenSubtitles with your own account. With a release picked in Plex's list, the same
+     release is taken right away if OpenSubtitles has it; otherwise its own list is shown, best first. */
+  async function osDirect(code, wanted, backBtn, backKey) {
+    const L = LANGS.find((l) => l.code === code);
+    openModal(sheetHeader(t('osDirect'), L.name) + '<div class="empty">' + esc(t('osTrying')) + '</div>', null);
+    let hits;
+    try { hits = await osSearch(o.ratingKey, code); } catch (e) {
+      openModal(sheetHeader(t('osDirect'), L.name) + '<p class="sheettext">' + esc(t('osFail', { e: e.message || e })) + '</p>' + (backBtn || ''), backKey); return;
+    }
+    if (!hits.length) { openModal(sheetHeader(t('osDirect'), L.name) + '<p class="sheettext"><b>' + esc(t('noSubsLang', { l: L.name })) + '</b></p>' + (backBtn || ''), backKey); return; }
+    const norm = (x) => String(x || '').toLowerCase().replace(/\.[a-z0-9]{2,4}$/, '').replace(/[^a-z0-9]+/g, '');
+    const same = wanted && hits.find((h) => norm(h.release) === norm(wanted.title || wanted.displayTitle));
+    const take = async (h) => {
+      toast(t('downloading'), 3000);
+      try {
+        const res = await osDownload(o.ratingKey, h);
+        o.subs.push(res.stream);
+        if (res.remaining != null) toast(t('osGot', { n: res.remaining }), 5000);
+        choose(res.stream.id, false);
+      } catch (e) { toast(t('osFail', { e: e.message || e }), 9000); }
+    };
+    if (same) return take(same);
+    openModal(sheetHeader(t('osDirect'), L.name) + '<span class="label">' + esc(wanted ? t('osPlexFailed') : t('bestFirst')) + '</span><div class="optlist">' + hits.slice(0, 25).map((h, i) => {
+      const tags = [];
+      if (h.hi) tags.push('HI/CC');
+      if (h.machine) tags.push('AI');
+      sourceTags(h.release).forEach((x) => tags.push(x));
+      return '<div class="subrow f" data-key="os-' + i + '" data-act="' + A(() => take(h)) + '"><span class="chk"></span><span class="lang">' + esc(h.release || L.name) +
+        '<small>OpenSubtitles · ' + esc(t('osDownloads', { n: h.downloads })) + '</small></span><span class="tags">' + tagsHTML(tags) + '</span></div>';
+    }).join('') + '</div>' + (backBtn || ''), 'os-0');
   }
 }
 
@@ -3613,6 +3655,8 @@ async function viewPlayer(ratingKey, opts) {
   if (!part) throw new Error(t('noFile'));
   const streams = part.Stream || [];
   const subs = streams.filter((s) => s.streamType === 3);
+  /* subtitles fetched straight from OpenSubtitles earlier, kept on this TV */
+  if (typeof osSavedFor === 'function') { try { (await osSavedFor(m.ratingKey)).forEach((x) => subs.push(x)); } catch (e) { /* none */ } }
   const audios = streams.filter((s) => s.streamType === 2);
   const durMs = m.duration || media.duration || 0;
   const creditsMarkers = (m.Marker || []).filter((x) => x.type === 'credits');
@@ -3652,7 +3696,7 @@ async function viewPlayer(ratingKey, opts) {
   const canDirect = () => (S.forceDirect && st.quality === 'orig') || st.quality === 'orig' && media.container === 'mp4' && media.videoCodec === 'h264' && ['aac', 'mp3'].includes(media.audioCodec) && !burnNeeded() && st.audioId === audioDefault;
   /* Text subtitles that Plex can hand over as a file (downloaded or sidecar .srt) are shown by the player itself,
      so switching is instant and never restarts the stream. Everything else is burned in by the server. */
-  const textSub = (id) => { if (!S.subDraw) return null; const s = subs.find((x) => x.id === id); return s && s.key && !st.noText.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null; };
+  const textSub = (id) => { const ex = subs.find((x) => x.id === id && x.ext); if (ex) return ex; if (!S.subDraw) return null; const s = subs.find((x) => x.id === id); return s && s.key && !st.noText.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null; };
   const burnNeeded = () => !!st.subId && !textSub(st.subId) && !st.burnFailed;
 
   const title = m.type === 'episode' ? m.grandparentTitle : m.title;
@@ -3991,7 +4035,7 @@ async function viewPlayer(ratingKey, opts) {
     const s = textSub(id);
     if (!s) return;
     try {
-      const txt = await fetchText(pmsURL(s.key), { timeout: 20000, accept: '*/*' });
+      const txt = s.extText || await fetchText(pmsURL(s.key), { timeout: 20000, accept: '*/*' });
       if (id !== st.subId || seq !== viewSeq) return;
       st.cues = parseVTT(toVTT(txt));
       if (!st.cues.length) throw new Error('empty');
@@ -4020,6 +4064,7 @@ async function viewPlayer(ratingKey, opts) {
       if (!stale()) { st.cues2 = cues; drawCue(); }
       return true;
     };
+    if (s2.extText) { use(s2.extText); return; }
     if (sub2Cache.has(cacheKey)) { st.cues2 = sub2Cache.get(cacheKey); drawCue(); return; }
     const saved = sub2Store(cacheKey);
     if (saved && use(saved)) return;
