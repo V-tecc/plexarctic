@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.64.0';
+const VERSION = '0.65.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -47,7 +47,8 @@ const S = {
   calView: store.get('calView', 'week'),
   titleStyle: store.get('titleStyle', 'logo'),
   seasonStyle: store.get('seasonStyle', 'picker'),
-  trailerSrc: store.get('trailerSrc', 'youtube'),   /* 'logo' (title logos where there is one) or 'text' */
+  trailerSrc: store.get('trailerSrc', 'youtube'),
+  ytWhere: store.get('ytWhere', 'app'),   /* 'app' (inside PLEX:arctic) or 'yt' (the YouTube app, with your own account) */   /* 'logo' (title logos where there is one) or 'text' */
   calMode: store.get('calMode', 'tv'),          /* 'tv' (your shows) or 'movies' (cinema releases) */
   calHidden: store.get('calHidden', []),        /* shows left out of the calendar */
   calExtra: store.get('calExtra', []),          /* shows added by hand: { id (TVmaze), name, image, year } */
@@ -490,39 +491,55 @@ function visible(el) {
   const r = el.getBoundingClientRect();
   return r.width > 0 && r.height > 0 && el.style.visibility !== 'hidden';
 }
+function movePick(dir, a, list) {
+  const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+  let best = null, bestScore = Infinity;
+  list.forEach((el) => {
+    if (el === focused) return;
+    const b = el.getBoundingClientRect();
+    const bx = b.left + b.width / 2, by = b.top + b.height / 2;
+    const dx = bx - ax, dy = by - ay;
+    let primary, secondary;
+    /* sideways distance counts from the nearest edges, so wide rows and narrow buttons above/below them line up */
+    const gapX = Math.max(0, b.left - a.right, a.left - b.right);
+    const gapY = Math.max(0, b.top - a.bottom, a.top - b.bottom);
+    /* sideways moves only reach things that overlap horizontally if they're on the same line */
+    if ((dir === 'r' || dir === 'l') && gapY > 0 && (dir === 'r' ? b.left < a.right - 2 : b.right > a.left + 2)) return;
+    /* and up/down never goes to something beside it on the same line (e.g. a cast photo whose name runs to two lines) */
+    if ((dir === 'd' || dir === 'u') && gapX > 0 && (dir === 'd' ? b.top < a.bottom - 2 : b.bottom > a.top + 2)) return;
+    if (dir === 'r') { if (b.left < a.right - 2 && dx < 8) return; primary = Math.max(1, b.left - a.right + a.width / 2); secondary = gapY + Math.abs(dy) * 0.15; }
+    if (dir === 'l') { if (b.right > a.left + 2 && dx > -8) return; primary = Math.max(1, a.left - b.right + a.width / 2); secondary = gapY + Math.abs(dy) * 0.15; }
+    if (dir === 'd') { if (b.top < a.bottom - 2 && dy < 8) return; primary = Math.max(1, b.top - a.bottom + a.height / 2); secondary = gapX + Math.abs(dx) * 0.15; }
+    if (dir === 'u') { if (b.bottom > a.top + 2 && dy > -8) return; primary = Math.max(1, a.top - b.bottom + a.height / 2); secondary = gapX + Math.abs(dx) * 0.15; }
+    if (primary <= 0) return;
+    /* left/right strongly prefer something on the same line over something diagonally below/above */
+    const score = primary + secondary * 2.2 + ((dir === 'l' || dir === 'r') && gapY > 0 ? 600 : 0);
+    if (score < bestScore) { bestScore = score; best = el; }
+  });
+  return best;
+}
 function move(dir) {
   const scope = $('.modal', viewEl) || viewEl;
+  /* looking at every button and title on the page is slow on an older TV, so first only the group the selection
+     is in (the keyboard, a grid of titles, a list); the whole page only when leaving it */
+  const ok = focused && document.contains(focused) && scope.contains(focused) && visible(focused);
+  const grp = ok ? focused.closest('.kgrid, .grid10, .grid3, .llist, .dllist, .optlist, .ssug') : null;
+  let a = ok ? focused.getBoundingClientRect() : null;
+  if (grp) {
+    const hit = movePick(dir, a, $$('.f', grp).filter(visible));
+    if (hit) { setFocus(hit); return true; }
+    /* at the end of the titles built so far: build more and try again */
+    const sc0 = grp.closest('.scroll') || grp;
+    if ((dir === 'd' || dir === 'r') && sc0._more && sc0._more()) {
+      const hit2 = movePick(dir, a, $$('.f', grp).filter(visible));
+      if (hit2) { setFocus(hit2); return true; }
+    }
+  }
   const els = $$('.f', scope).filter(visible);
   if (!els.length) return false;
   if (!focused || !els.includes(focused)) { setFocus(els[0]); return true; }
-  const a = focused.getBoundingClientRect();
-  const ax = a.left + a.width / 2, ay = a.top + a.height / 2;
-  const pick = (list) => {
-    let best = null, bestScore = Infinity;
-    list.forEach((el) => {
-      if (el === focused) return;
-      const b = el.getBoundingClientRect();
-      const bx = b.left + b.width / 2, by = b.top + b.height / 2;
-      const dx = bx - ax, dy = by - ay;
-      let primary, secondary;
-      /* sideways distance counts from the nearest edges, so wide rows and narrow buttons above/below them line up */
-      const gapX = Math.max(0, b.left - a.right, a.left - b.right);
-      const gapY = Math.max(0, b.top - a.bottom, a.top - b.bottom);
-      /* sideways moves only reach things that overlap horizontally if they're on the same line */
-      if ((dir === 'r' || dir === 'l') && gapY > 0 && (dir === 'r' ? b.left < a.right - 2 : b.right > a.left + 2)) return;
-      /* and up/down never goes to something beside it on the same line (e.g. a cast photo whose name runs to two lines) */
-      if ((dir === 'd' || dir === 'u') && gapX > 0 && (dir === 'd' ? b.top < a.bottom - 2 : b.bottom > a.top + 2)) return;
-      if (dir === 'r') { if (b.left < a.right - 2 && dx < 8) return; primary = Math.max(1, b.left - a.right + a.width / 2); secondary = gapY + Math.abs(dy) * 0.15; }
-      if (dir === 'l') { if (b.right > a.left + 2 && dx > -8) return; primary = Math.max(1, a.left - b.right + a.width / 2); secondary = gapY + Math.abs(dy) * 0.15; }
-      if (dir === 'd') { if (b.top < a.bottom - 2 && dy < 8) return; primary = Math.max(1, b.top - a.bottom + a.height / 2); secondary = gapX + Math.abs(dx) * 0.15; }
-      if (dir === 'u') { if (b.bottom > a.top + 2 && dy > -8) return; primary = Math.max(1, a.top - b.bottom + a.height / 2); secondary = gapX + Math.abs(dx) * 0.15; }
-      if (primary <= 0) return;
-      /* left/right strongly prefer something on the same line over something diagonally below/above */
-      const score = primary + secondary * 2.2 + ((dir === 'l' || dir === 'r') && gapY > 0 ? 600 : 0);
-      if (score < bestScore) { bestScore = score; best = el; }
-    });
-    return best;
-  };
+  a = a || focused.getBoundingClientRect();
+  const pick = (list) => movePick(dir, a, list);
   /* A block can say where leaving it in a direction should go (data-nav-l / -r / -u / -d = a list of
      data-keys): moves inside the block work as usual, and only leaving it uses the given target. */
   const box = focused.closest('[data-nav-' + dir + ']');
@@ -960,6 +977,7 @@ function viewSettings() {
     row(t('wlSetting'), '<div class="seg">' + [[true, t('wlShow')], [false, t('wlHide')]].map((x) => '<button type="button" class="f' + ((store.get(userKey('wlHome'), true) !== false) === x[0] ? ' on' : '') + '" data-key="wlh-' + x[0] + '" data-act="' + A(() => { store.set(userKey('wlHome'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('tasteSettings'), '<button type="button" class="btn f" data-key="tastereset" data-act="' + A(() => { tasteReset(); rerun(); }) + '">' + esc(t('tasteResetBtn', { n: tasteCount() })) + '</button>', t('tasteSettingsNote')) +
     row(t('trailerSrc'), '<div class="seg">' + [['youtube', t('trailerYt')], ['plex', t('trailerPlex')]].map((x) => '<button type="button" class="f' + (S.trailerSrc === x[0] ? ' on' : '') + '" data-key="tr-' + x[0] + '" data-act="' + A(() => { S.trailerSrc = x[0]; store.set('trailerSrc', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('ytWhere'), '<div class="seg">' + [['app', t('ytWhereApp')], ['yt', t('ytWhereYt')]].map((x) => '<button type="button" class="f' + (S.ytWhere === x[0] ? ' on' : '') + '" data-key="ytw-' + x[0] + '" data-act="' + A(() => { S.ytWhere = x[0]; store.set('ytWhere', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div><span class="sval">' + esc(t('ytWhereNote')) + '</span>') +
     row(t('ytPage'), '<input class="input f" id="ytpage" data-key="ytpage" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="https://…github.io/…/yt.html" value="' + esc(S.ytPage) + '">' +
       '<button type="button" class="btn f" data-key="ytsave" data-act="' + A(() => { S.ytPage = $('#ytpage').value.trim(); store.set('ytPage', S.ytPage); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
     row(t('wt'), '<button type="button" class="btn f" data-key="wtjoin" data-act="' + A(() => wtPanel()) + '">' + ICON.people + esc(t('wtJoinCode')) + '</button>') +
@@ -1067,7 +1085,7 @@ async function tmdbTrailer(isShow, tmdbId, title) {
     const pick = (l) => l.find((x) => x.type === 'Trailer' && x.official) || l.find((x) => x.type === 'Trailer');
     const v = (cc !== 'en' && pick(mine)) || pick(vids.filter((x) => x.iso_639_1 !== cc)) || pick(vids) || vids[0];
     if (!v) { toast(t('noTrailer'), 5000); return; }
-    if (window.IS_TV && S.ytPage) { trailerInApp(v.key, title); return; }
+    if (window.IS_TV && S.ytPage && S.ytWhere !== 'yt') { trailerInApp(v.key, title); return; }
     if (window.IS_TV) { openYouTube(v.key); return; }
     openModal('<iframe class="yt" referrerpolicy="strict-origin-when-cross-origin" src="https://www.youtube.com/embed/' + encodeURIComponent(v.key) + '?autoplay=1&rel=0&modestbranding=1" title="' + esc(t('trailer')) + '" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>' +
       '<button type="button" class="btn f ytclose" data-default data-act="' + A(() => closeModal()) + '">' + ICON.back + esc(t('back')) + '</button>', null, true);
@@ -1079,7 +1097,7 @@ function trailerInApp(id, title) {
   const cc = prefLangOrder()[0];
   const src = S.ytPage + (S.ytPage.includes('?') ? '&' : '?') + 'v=' + encodeURIComponent(id) + '&cc=' + encodeURIComponent(cc) + '&hl=' + encodeURIComponent(S.lang) + '&_v=' + encodeURIComponent(VERSION);
   const el = openModal('<iframe class="yt ytpage" tabindex="-1" src="' + esc(src) + '" title="' + esc(t('trailer')) + '" allow="autoplay; encrypted-media; fullscreen"></iframe>' +
-    '<div class="ytbar"><span class="yttitle">' + esc(title || '') + '</span><span class="ytpos" id="ytpos"></span><span class="ythint">' + esc(t('ytHint')) + '</span></div>', 'ytback', true);
+    '<div class="ytbar"><span class="yttitle">' + esc(title || '') + '</span><span class="ytpos" id="ytpos"></span><span class="ythint">' + esc(t('ytHint')) + ' · ' + esc(t('ytHintYt')) + '</span></div>', 'ytback', true);
   el.classList.add('trailerpage');
   const frame = $('iframe', el);
   const cmd = (c) => { try { frame.contentWindow.postMessage(c, '*'); } catch (e) { /* ignore */ } };
@@ -1106,6 +1124,8 @@ function trailerInApp(id, title) {
     if (e.key === 'Enter' || e.key === ' ') { cmd({ cmd: 'toggle' }); return true; }
     if (e.key === 'ArrowLeft') { cmd({ cmd: 'seek', by: -10 }); return true; }
     if (e.key === 'ArrowRight') { cmd({ cmd: 'seek', by: 10 }); return true; }
+    /* an advert you can't skip here: Down hands the trailer to the YouTube app (your account, no ads with Premium) */
+    if (e.key === 'ArrowDown') { closeModal(); openYouTube(id); return true; }
     return false;
   };
   el._onclose = () => { clearTimeout(hideT); window.removeEventListener('message', onMsg); keyHandler = prevKeys; };
@@ -1125,6 +1145,19 @@ async function openYouTube(id) {
       [new tizen.ApplicationControlData('PAYLOAD', [JSON.stringify({ values: 'v=' + id })])]);
     tizen.application.launchAppControl(ctl, YT, () => {}, plain);
   } catch (e) { plain(); }
+}
+/* "Trailer" from a menu: the same choice as on the details page (Plex's own trailer or the one from TMDB) */
+async function trailerFor(it) {
+  const key = it.type === 'season' ? (it.parentRatingKey || it.ratingKey) : it.ratingKey;
+  try {
+    const [mres, xres] = await Promise.all([api('/library/metadata/' + key, { includeGuids: 1 }), api('/library/metadata/' + key + '/extras').catch(() => ({}))]);
+    const m = (mres.Metadata || [])[0];
+    if (!m) { toast(t('noTrailer'), 5000); return; }
+    const local = (xres.Metadata || []).find((x) => x.subtype === 'trailer' || String(x.extraType) === '1') || null;
+    const tmdbId = tmdbIdOf(m) || 0;
+    if (local && !(S.trailerSrc === 'youtube' && S.tmdb && tmdbId)) return go(viewPlayer, [local.ratingKey, { fromStart: true }]);
+    return tmdbTrailer(m.type === 'show', tmdbId, m.title);
+  } catch (e) { toast(t('noTrailer'), 5000); }
 }
 /* Options for a movie or episode, opened by holding OK on it. */
 async function itemMenuByKey(key) {
@@ -1148,6 +1181,7 @@ function showMenu(it) {
   }), 'S1 E1'));
   rows.push(optionRow('cx-wt', t('wt'), [], false, A(() => { closeModal(true); wtStart(it); }), t('wtMenuNote')));
   rows.push(optionRow('cx-open', t('ctxShow'), [], false, A(() => { closeModal(true); go(viewDetails, [showKey]); })));
+  rows.push(optionRow('cx-trailer', t('trailer'), [], false, A(() => { closeModal(true); trailerFor({ type: 'show', ratingKey: showKey }); })));
   if (typeof wlRow === 'function' && it.type === 'show' && wlRow(it)) rows.push(wlRow(it));
   if (typeof tasteRows === 'function' && it.type === 'show') tasteRows(it).forEach((r) => rows.push(r));
   if (typeof artAllowedNow === 'function' && artAllowedNow()) rows.push(optionRow('cx-art', t('artChange'), [], false, A(() => { closeModal(true); artEditor({ ratingKey: showKey }); }), t('artMenuNote')));
@@ -1172,6 +1206,7 @@ function itemMenu(it) {
   rows.push(optionRow('cx-start', it.viewOffset ? t('fromStart') : t('play'), [], false, A(() => { closeModal(true); go(viewPlayer, [it.ratingKey, { fromStart: true }]); })));
   rows.push(optionRow('cx-wt', t('wt'), [], false, A(() => { closeModal(true); wtStart(it); }), t('wtMenuNote')));
   rows.push(optionRow('cx-open', ep ? t('ctxEpisode') : t('ctxDetails'), [], false, A(() => { closeModal(true); go(viewDetails, [it.ratingKey]); })));
+  if (!ep) rows.push(optionRow('cx-trailer', t('trailer'), [], false, A(() => { closeModal(true); trailerFor(it); })));
   if (typeof wlRow === 'function' && wlRow(it)) rows.push(wlRow(it));
   if (typeof tasteRows === 'function') tasteRows(it).forEach((r) => rows.push(r));
   if (ep && it.grandparentRatingKey) rows.push(optionRow('cx-show', t('ctxShow'), [], false, A(() => { closeModal(true); go(viewDetails, [it.grandparentRatingKey]); }), it.grandparentTitle));
@@ -1270,6 +1305,8 @@ function lineHTML(it, key, action, opts) {
 
 /* ---------- library index (used to mark trending titles you own) ---------- */
 let libIndex = null;
+/* each library's titles, kept a little while so going back and forth doesn't read them all again */
+const libCache = new Map();
 async function loadLibIndex(sections) {
   if (libIndex) return libIndex;
   const idx = new Map();
@@ -2631,7 +2668,10 @@ function filterItems(items, fl, q) {
   return items.filter((it) => {
     if (fl.watch !== 'all' && watchState(it) !== fl.watch) return false;
     if (fl.res !== 'any' && resOf(it) !== fl.res) return false;
-    if (fl.genre && !(it.Genre || []).some((g) => g.tag === fl.genre)) return false;
+    if (fl.genres && fl.genres.length) {
+      const tags = (it.Genre || []).map((g) => g.tag);
+      if (fl.gAny ? !fl.genres.some((g) => tags.includes(g)) : !fl.genres.every((g) => tags.includes(g))) return false;
+    }
     if (qq && !fold(it.title).includes(qq) && !fold(it.originalTitle).includes(qq)) return false;
     return true;
   });
@@ -2645,28 +2685,66 @@ async function viewLibrary(sec, coll, opts) {
   const title = coll ? coll.title : sec.title;
   const crumb = coll ? sec.title : t('home');
   const isShow = sec.type === 'show';
-  render('<div class="screen"><div class="top"><div class="htitle"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(crumb) + '</button><h1>' + esc(title) + '</h1></div>' + clockHTML() + '</div><div class="empty">' + esc(t('loading')) + '</div></div>');
-  const res = coll
+  /* coming back (from a film, a trailer…): the same filters, search and titles as when you left */
+  const me = current;
+  const kept = me && me.lib;
+  const cacheKey = (coll ? 'c' + coll.ratingKey : sec.key) + '|' + (S.user ? S.user.id : 'owner');
+  const fetchAll = async () => ((coll
     ? await api('/library/collections/' + coll.ratingKey + '/children', { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 10000 })
-    : await api('/library/sections/' + sec.key + '/all', { sort: 'addedAt:desc', 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 10000 });
-  if (seq !== viewSeq) return;
-  const items = res.Metadata || [];
+    : await api('/library/sections/' + sec.key + '/all', { sort: 'addedAt:desc', 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 10000 })).Metadata || []);
+  /* the list was read a moment ago (here, or by Home): show that at once and check for changes behind it */
+  let cached = libCache.get(cacheKey);
+  if (!cached && !coll && sec.type === 'movie' && spot.movies && spot.movies.key === sec.key + '|' + (S.user ? S.user.id : 'owner') && Date.now() - spot.at < 30 * 60000) cached = { items: spot.movies.items, at: spot.at };
+  let items;
+  if (cached && Date.now() - cached.at < 30 * 60000) items = cached.items.slice();
+  else {
+    render('<div class="screen"><div class="top"><div class="htitle"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(crumb) + '</button><h1>' + esc(title) + '</h1></div>' + clockHTML() + '</div><div class="empty">' + esc(t('loading')) + '</div></div>');
+    items = await fetchAll();
+    if (seq !== viewSeq) return;
+    libCache.set(cacheKey, { items: items.slice(), at: Date.now() });
+    cached = null;
+  }
   /* shared universes (the Arrowverse) appear as a series of their own */
   if (isShow && !coll && typeof woLibraryItems === 'function') woLibraryItems(sec, items).forEach((x) => items.push(x));
   const sortKey = 'sort3.' + (coll ? 'c' + coll.ratingKey : sec.key);
   const st = {
     sort: store.get(sortKey, coll ? { id: 'released', dir: 'asc' } : { id: 'added', dir: 'desc' }),
-    fl: { watch: 'all', res: 'any', genre: '' },
+    fl: kept ? kept.fl : { watch: 'all', res: 'any', genres: [], gAny: false },
     /* each library (Movies, TV Shows…) remembers its own view */
     view: store.get('libView.' + sec.key, S.libView),
-    q: '',
-    searching: !!opts.search
+    q: kept ? kept.q : '',
+    searching: kept ? kept.searching : !!opts.search
   };
-  const genres = (() => {
+  if (me) me.lib = st;
+  let genres = [];
+  const countGenres = () => (() => {
     const counts = new Map();
     items.forEach((it) => (it.Genre || []).forEach((g) => counts.set(g.tag, (counts.get(g.tag) || 0) + 1)));
     return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]).map((x) => x[0]);
   })();
+  genres = countGenres();
+  /* words in the titles, for the suggestions above the keyboard */
+  let words = null;
+  const wordList = () => {
+    if (words) return words;
+    const c = new Map();
+    items.forEach((it) => fold(it.title).split(/[^\p{L}\p{N}']+/u).forEach((w) => { if (w.length >= 2) c.set(w, (c.get(w) || 0) + 1); }));
+    words = Array.from(c.entries()).sort((a, b) => b[1] - a[1]);
+    return words;
+  };
+  /* shown from what was read before: ask the server again and redraw only if something changed */
+  if (cached || kept) setTimeout(async () => {
+    try {
+      const fresh = await fetchAll();
+      libCache.set(cacheKey, { items: fresh.slice(), at: Date.now() });
+      const sig = (l) => l.map((i) => i.ratingKey + ':' + (i.viewCount || 0) + ':' + (i.viewOffset || 0) + ':' + (i.updatedAt || 0)).join(',');
+      if (seq !== viewSeq || sig(fresh) === sig(items.filter((x) => !x.virtual))) return;
+      const virt = items.filter((x) => x.virtual);
+      items.length = 0; fresh.forEach((x) => items.push(x)); virt.forEach((x) => items.push(x));
+      genres = countGenres(); words = null;
+      if (!modalOpen()) drawBody(focused && focused.dataset.key);
+    } catch (e) { /* keep what's shown */ }
+  }, 1500);
   const sortLabel = () => {
     const s = SORTS.find((x) => x.id === st.sort.id) || SORTS[0];
     return t(s.label) + (st.sort.dir === 'desc' ? ' ↓' : ' ↑');
@@ -2675,7 +2753,7 @@ async function viewLibrary(sec, coll, opts) {
     const out = [];
     if (st.fl.watch !== 'all') out.push(['watch', t((WATCH_OPTS.find((w) => w[0] === st.fl.watch) || [])[1])]);
     if (st.fl.res !== 'any') out.push(['res', (RES_OPTS.find((r) => r[0] === st.fl.res) || [])[1]]);
-    if (st.fl.genre) out.push(['genre', st.fl.genre]);
+    (st.fl.genres || []).forEach((g) => out.push(['genre:' + g, g]));
     return out;
   };
   const list = () => filterItems(sortItems(items, st.sort), st.fl, st.q);
@@ -2740,7 +2818,7 @@ async function viewLibrary(sec, coll, opts) {
       '</div>' + clockHTML(false, 'margin-left: 24px') + '</div>' +
       '<div class="subbar">' +
       (st.searching ? searchPanelHTML() : '') +
-      activeFilters().map((f) => '<button type="button" class="chip f" data-key="chip-' + f[0] + '" data-act="' + A(() => { if (f[0] === 'watch') st.fl.watch = 'all'; if (f[0] === 'res') st.fl.res = 'any'; if (f[0] === 'genre') st.fl.genre = ''; drawAll('filter'); }) + '">' + esc(f[1]) + ICON.x + '</button>').join('') +
+      activeFilters().map((f) => '<button type="button" class="chip f" data-key="chip-' + esc(f[0]) + '" data-act="' + A(() => { if (f[0] === 'watch') st.fl.watch = 'all'; if (f[0] === 'res') st.fl.res = 'any'; if (f[0].indexOf('genre:') === 0) st.fl.genres = st.fl.genres.filter((g) => 'genre:' + g !== f[0]); drawAll('filter'); }) + '">' + esc(f[1]) + ICON.x + '</button>').join('') +
       '</div>' +
       '<div class="libbody" id="lib"></div></div>');
     function pickView() {
@@ -2763,7 +2841,7 @@ async function viewLibrary(sec, coll, opts) {
       q.addEventListener('input', () => {
         const jump = q.value.length - lastLen;
         lastLen = q.value.length;
-        st.q = q.value; const sh = $('#qshow'); if (sh) sh.textContent = q.value; drawBody();
+        st.q = q.value; const sh = $('#qshow'); if (sh) sh.textContent = q.value; sugRefresh(); drawBody();
         /* typing happens on the app's own keyboard, so anything arriving here is voice: close the TV's
            keyboard (and its listening) as soon as the words stop coming */
         clearTimeout(doneT);
@@ -2777,42 +2855,68 @@ async function viewLibrary(sec, coll, opts) {
     }
     drawBody(focusKey);
   }
+  /* Only the first screens of titles are built; more are added as you scroll down (a big library would
+     otherwise take seconds on an older TV, and every move of the remote would have to look at all of them). */
+  const CHUNK = { box: 60, boxl: 42, fanart: 24, list: 40, detailed: 40 };
   function drawBody(focusKey) {
     const v = st.view;
     const l = list();
     $('#libcount').textContent = (l.length === items.length ? '' : t('showingOf', { n: l.length, m: items.length }) + ' · ') + (isShow ? t('nShows', { n: items.length }) : t('nMovies', { n: items.length }));
     const lib = $('#lib');
+    st.more = null; st.upTo = null;
     if (!l.length) { lib.innerHTML = '<div class="empty">' + esc(items.length ? t('noMatches') : t('emptyLib')) + '</div>'; finishFocus(focusKey); return; }
     const key = (it) => 'i-' + it.ratingKey;
+    let one, wrap, inner;
     if (v === 'list') {
       /* List: one big line per title; the selected one opens up with its poster and summary underneath. */
-      lib.innerHTML = '<div class="scroll hide-scroll"><div class="llist">' + l.map((it) => '<div class="lrow f" data-key="' + key(it) + '" data-act="' + A(() => open(it)) + '" data-ctx="' + A(() => itemMenu(it)) + '" data-onfocus="' + A((el) => listOpen(el, it)) + '">' +
+      one = (it) => '<div class="lrow f" data-key="' + key(it) + '" data-act="' + A(() => open(it)) + '" data-ctx="' + A(() => itemMenu(it)) + '" data-onfocus="' + A((el) => listOpen(el, it)) + '">' +
         '<div class="lmain"><span class="tt">' + esc(it.title) + '</span><span class="ly">' + esc(it.year || '') + '</span>' +
         '<span class="lg">' + esc((it.Genre && it.Genre[0] && it.Genre[0].tag) || '') + '</span>' +
         '<span class="ld">' + esc(isShow ? seasonsText(it.childCount) : durText(it.duration)) + '</span>' +
         '<span class="rt">' + ((it.audienceRating || it.rating) ? ICON.star + esc(Number(it.audienceRating || it.rating).toFixed(1)) : '') + '</span>' +
-        '<span class="tags">' + tagsHTML(mediaTags(it).slice(0, 3)) + '</span></div><div class="lx"></div></div>').join('') + '</div></div>';
+        '<span class="tags">' + tagsHTML(mediaTags(it).slice(0, 3)) + '</span></div><div class="lx"></div></div>';
+      wrap = (h) => '<div class="scroll hide-scroll"><div class="llist">' + h + '</div></div>'; inner = '.llist';
     } else if (v === 'detailed') {
-      lib.innerHTML = '<div class="dl"><div class="dllist scroll hide-scroll">' + l.map((it) => {
-        return '<div class="dlrow big f" data-key="' + key(it) + '" data-act="' + A(() => open(it)) + '" data-ctx="' + A(() => itemMenu(it)) + '" data-onfocus="' + A(() => detailPanel(it)) + '">' +
+      one = (it) => '<div class="dlrow big f" data-key="' + key(it) + '" data-act="' + A(() => open(it)) + '" data-ctx="' + A(() => itemMenu(it)) + '" data-onfocus="' + A(() => detailPanel(it)) + '">' +
           '<span class="dtx"><span class="dt">' + esc(it.title) + '</span><span class="dsub">' + esc([it.year, isShow ? seasonsText(it.childCount) : durText(it.duration)].filter(Boolean).join(' · ')) + '</span></span>' +
           '<span class="tags">' + tagsHTML(mediaTags(it).slice(0, 2)) + '</span></div>';
-      }).join('') + '</div><article class="dp" id="dp"></article></div>';
-      /* Show the first title in the panel straight away so the view never opens empty. */
-      detailPanel(l[0]);
-      azRail(l);
-      if (!focusKey && (!focused || !document.contains(focused))) { const first = $('.dlrow', lib); if (first) { setFocus(first, true); return; } }
+      wrap = (h) => '<div class="dl"><div class="dllist scroll hide-scroll">' + h + '</div><article class="dp" id="dp"></article></div>'; inner = '.dllist';
     } else if (v === 'fanart') {
-      lib.innerHTML = '<div class="scroll hide-scroll"><div class="grid3">' + l.map((it) => {
+      one = (it) => {
         const art = imgURL(it.art || it.thumb, 720, 405);
         return '<div class="card wide f" data-key="' + key(it) + '" data-act="' + A(() => open(it)) + '" data-ctx="' + A(() => itemMenu(it)) + '">' +
           '<div class="fimg">' + (art ? '<img class="img" loading="lazy" src="' + esc(art) + '" alt="">' : '<div class="img"></div>') +
           (!it.virtual && (it.type === 'movie' || it.type === 'show') ? '<div class="flogo" data-logo-lazy="' + esc(it.ratingKey) + '"></div>' : '') + '</div>' +
           '<div class="wrow"><span class="t">' + esc(it.title) + '</span><span class="tags">' + tagsHTML(mediaTags(it).slice(0, 2)) + '</span></div>' +
           '<div class="s">' + esc(itemSub(it)) + '</div></div>';
-      }).join('') + '</div></div>';
+      };
+      wrap = (h) => '<div class="scroll hide-scroll"><div class="grid3">' + h + '</div></div>'; inner = '.grid3';
     } else {
-      lib.innerHTML = '<div class="scroll hide-scroll"><div class="grid10' + (v === 'boxl' ? ' large' : '') + '">' + l.map((it) => cardHTML(it, key(it), A(() => open(it)), { tags: mediaTags(it).slice(0, 2), sub: it.type === 'collection' ? (it.childCount || '') + '' : null })).join('') + '</div></div>';
+      one = (it) => cardHTML(it, key(it), A(() => open(it)), { tags: mediaTags(it).slice(0, 2), sub: it.type === 'collection' ? (it.childCount || '') + '' : null });
+      wrap = (h) => '<div class="scroll hide-scroll"><div class="grid10' + (v === 'boxl' ? ' large' : '') + '">' + h + '</div></div>'; inner = '.grid10';
+    }
+    const chunk = CHUNK[v] || 60;
+    let shown = Math.min(l.length, chunk);
+    /* coming back to a title further down: build down to it */
+    const fk = focusKey || (current && current.focusKey);
+    if (fk && /^i-/.test(fk)) { const i = l.findIndex((x) => key(x) === fk); if (i >= shown) shown = Math.min(l.length, i + 1 + chunk); }
+    lib.innerHTML = wrap(l.slice(0, shown).map(one).join(''));
+    const box = $(inner, lib), sc = $('.scroll', lib) || box;
+    st.more = (n) => {
+      if (shown >= l.length || !document.contains(box)) return false;
+      const add = l.slice(shown, shown + (n || chunk));
+      shown += add.length;
+      box.insertAdjacentHTML('beforeend', add.map(one).join(''));
+      return true;
+    };
+    st.upTo = (idx) => { if (idx >= shown) st.more(idx - shown + 1 + chunk); };
+    sc._more = () => st.more(chunk);
+    sc.addEventListener('scroll', () => { if (sc.scrollTop + sc.clientHeight > sc.scrollHeight - 1800) st.more(chunk); }, { passive: true });
+    if (v === 'detailed') {
+      /* Show the first title in the panel straight away so the view never opens empty. */
+      detailPanel(l[0]);
+      azRail(l);
+      if (!focusKey && (!focused || !document.contains(focused))) { const first = $('.dlrow', lib); if (first) { setFocus(first, true); return; } }
     }
     azRail(l);
     finishFocus(focusKey);
@@ -2828,6 +2932,7 @@ async function viewLibrary(sec, coll, opts) {
       const want = order.indexOf(letter);
       it = (st.sort.dir === 'desc' ? l.slice().reverse() : l).find((x) => order.indexOf(azLetter(x)) >= want) || l[l.length - 1];
     }
+    if (it && st.upTo) st.upTo(l.indexOf(it));
     return it ? $('[data-key="i-' + it.ratingKey + '"]', viewEl) : null;
   }
   /* the A–Z wheel: one control; Up/Down turn it (it wraps around Z → # → A), the letter in the middle is the chosen one */
@@ -2929,14 +3034,34 @@ async function viewLibrary(sec, coll, opts) {
     const key = (k, label, cls, fn) => '<button type="button" class="kkey f' + (cls ? ' ' + cls : '') + '" data-key="k-' + k + '" data-act="' + A(fn) + '">' + label + '</button>';
     return '<div class="spanel"><div class="sline"><span class="sicon">' + ICON.search + '</span><span id="qshow" class="' + (st.q ? '' : 'ph') + '">' + esc(st.q || t('searchIn', { s: title })) + '</span>' +
       '<input class="input" id="q" type="text" spellcheck="false" autocomplete="off" value="' + esc(st.q) + '" hidden></div>' +
+      '<div class="ssug" id="ssug">' + sugHTML() + '</div>' +
       '<div class="kgrid">' + keys.map((k) => key(k, k.toUpperCase(), '', () => typeQ(st.q + k))).join('') +
       key('space', esc(t('kSpace')), 'wide', () => typeQ(st.q + ' ')) +
       key('del', '⌫', 'wide', () => typeQ(st.q.slice(0, -1))) +
       key('clear', esc(t('kClear')), 'wide', () => typeQ('')) +
       key('mic', ICON.mic + '<span>' + esc(t('voiceSearch')) + '</span>', 'wide mic', voiceOrType) + '</div></div>';
   }
+  /* words from the titles that start with what's typed so far ("mov" → movie, move…); OK puts the word in */
+  function sugHTML() {
+    const m = /(\S+)$/.exec(st.q || '');
+    if (!m) return '';
+    const p = fold(m[1]);
+    const hits = wordList().filter((w) => w[0].length > p.length && w[0].indexOf(p) === 0).slice(0, 8);
+    return hits.map((w, i) => '<button type="button" class="chip sugchip f" data-key="sg-' + i + '" data-act="' + A(() => {
+      typeQ(st.q.slice(0, st.q.length - m[1].length) + w[0] + ' ');
+      const first = $('#lib .f'); setFocus(first || $('[data-key="k-a"]', viewEl), true);
+    }) + '"><span><b>' + esc(w[0].charAt(0).toUpperCase() + w[0].slice(1, p.length)) + '</b>' + esc(w[0].slice(p.length)) + '</span></button>').join('');
+  }
+  function sugRefresh() {
+    const sg = $('#ssug');
+    if (!sg) return;
+    const had = focused && sg.contains(focused);
+    sg.innerHTML = sugHTML();
+    if (had) setFocus($('.f', sg) || $('[data-key="k-a"]', viewEl), true);
+  }
   function typeQ(v) {
     st.q = v;
+    sugRefresh();
     const sh = $('#qshow');
     if (sh) { sh.textContent = v || t('searchIn', { s: title }); sh.className = v ? '' : 'ph'; }
     const q = $('#q');
@@ -2960,8 +3085,10 @@ async function viewLibrary(sec, coll, opts) {
     const draw = (prefer) => openModal(sheetHeader(t('filter'), title) +
       '<span class="label">' + esc(t('fShow')) + '</span><div class="chips">' + WATCH_OPTS.map((w) => chipHTML('fw-' + w[0], t(w[1]), st.fl.watch === w[0], () => { st.fl.watch = w[0]; draw('fw-' + w[0]); })).join('') + '</div>' +
       '<span class="label">' + esc(t('quality')) + '</span><div class="chips">' + RES_OPTS.map((r) => chipHTML('fr-' + r[0], r[0] === 'any' ? t(r[1]) : r[1], st.fl.res === r[0], () => { st.fl.res = r[0]; draw('fr-' + r[0]); })).join('') + '</div>' +
-      (genres.length ? '<span class="label">' + esc(t('genre')) + '</span><div class="chips">' + chipHTML('fg-', t('fAny'), !st.fl.genre, () => { st.fl.genre = ''; draw('fg-'); }) +
-        genres.map((g, i) => chipHTML('fg-' + i, g, st.fl.genre === g, () => { st.fl.genre = g; draw('fg-' + i); })).join('') + '</div>' : '') +
+      (genres.length ? '<span class="label">' + esc(t('genre')) + (st.fl.genres.length ? ' · ' + esc(t('fGenresN', { n: st.fl.genres.length })) : '') + '</span><div class="chips">' + chipHTML('fg-', t('fAny'), !st.fl.genres.length, () => { st.fl.genres = []; draw('fg-'); }) +
+        genres.map((g, i) => chipHTML('fg-' + i, g, st.fl.genres.includes(g), () => { st.fl.genres = st.fl.genres.includes(g) ? st.fl.genres.filter((x) => x !== g) : st.fl.genres.concat([g]); draw('fg-' + i); })).join('') + '</div>' +
+        /* two or more genres: films that have all of them, or any one */
+        (st.fl.genres.length > 1 ? '<div class="chips">' + chipHTML('fga-all', t('fGenresAll'), !st.fl.gAny, () => { st.fl.gAny = false; draw('fga-all'); }) + chipHTML('fga-any', t('fGenresAny'), !!st.fl.gAny, () => { st.fl.gAny = true; draw('fga-any'); }) + '</div>' : '') : '') +
       '<button type="button" class="btn primary f" data-key="fdone" data-act="' + A(() => { closeModal(true); drawAll('filter'); }) + '">' + esc(t('showResults', { n: list().length })) + '</button>', prefer);
     draw('fw-' + st.fl.watch);
   }

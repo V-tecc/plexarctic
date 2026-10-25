@@ -1658,3 +1658,10 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .bgblk.focus::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 5px var(--focus); }
 .bgblk.focus img { opacity: 1; }
 .bgfoot { flex-wrap: wrap; }
+
+/* search: word suggestions between the search line and the keyboard */
+.ssug { display: flex; gap: 10px; height: 52px; align-items: center; overflow: hidden; flex-wrap: nowrap; }
+.ssug .sugchip { flex: none; font-size: 22px; font-weight: var(--w500); text-transform: none; }
+.ssug .sugchip b { font-weight: var(--w800); color: var(--ac1, #2DD4BF); }
+#stage:not([data-theme="dark"]) .ssug .sugchip b { color: #6A1BCB; }
+.ssug .sugchip.focus b { color: inherit; }
