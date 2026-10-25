@@ -25,7 +25,13 @@ async function osFetch(path, opts, base) {
 }
 async function osLogin(force) {
   if (!force && osSession && Date.now() - osSession.at < 20 * 3600000) return osSession;
-  const j = await osFetch('/login', { method: 'POST', body: { username: osUser(), password: osPass() } });
+  /* the account name, or the e-mail address as a second try (OpenSubtitles takes either depending on the account) */
+  const names = [osUser(), (window.PRESET && window.PRESET.osUserAlt) || ''].filter((x, i, l) => x && l.indexOf(x) === i);
+  let j = null, err = null;
+  for (const u of names) {
+    try { j = await osFetch('/login', { method: 'POST', body: { username: u, password: osPass() } }); break; } catch (e) { err = e; }
+  }
+  if (!j) throw err || new Error('login failed');
   osSession = { token: j.token, base: j.base_url ? 'https://' + String(j.base_url).replace(/^https?:\/\//, '') + '/api/v1' : OS_API, at: Date.now(),
     remaining: j.user && j.user.allowed_downloads };
   return osSession;
