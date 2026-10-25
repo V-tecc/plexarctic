@@ -1631,3 +1631,30 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* A–Z rail always on top of the posters, and its dot larger with a dark edge so it shows over artwork */
 .azrail { z-index: 8; }
 .azrail .az.focus::before { width: 9px; height: 9px; margin: 0 7px 0 -14px; box-shadow: 0 0 0 3px rgba(0,0,0,.75); }
+
+/* Feel like binging? — a collection back to back, from now */
+.binge { position: relative; padding-top: 6px; }
+.binge { overflow: hidden; }
+.binge .bgartw { position: absolute; right: 0; top: 0; width: 70%; height: 100%; pointer-events: none; -webkit-mask-image: linear-gradient(0deg, transparent 0%, #000 45%); mask-image: linear-gradient(0deg, transparent 0%, #000 45%); }
+.binge .bgart { width: 100%; height: 100%; object-fit: cover; opacity: .28; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 45%); mask-image: linear-gradient(90deg, transparent 0%, #000 45%); }
+#stage:not([data-theme="dark"]) .binge .bghead strong { color: #6A1BCB; }
+.binge > *:not(.bgartw) { position: relative; }
+.binge .bghead { display: flex; align-items: baseline; gap: 22px; margin: 4px 0 18px; }
+.binge .bghead b { font-size: 40px; font-weight: var(--w700); }
+.binge .bghead span { font-size: 22px; color: var(--muted); }
+.binge .bghead strong { color: var(--ac1, #2DD4BF); font-weight: var(--w700); }
+.tlaxis.bgaxis { position: relative; height: 40px; border-bottom: 1px solid var(--line); margin-right: 64px; }
+.tlaxis.bgaxis span { font-size: 22px; }
+.bgrow { position: relative; display: flex; height: 230px; margin: 14px 64px 18px 0; border-left: 4px solid var(--ac1, #2DD4BF); }
+.bgrow .tlgrid { position: absolute; top: -14px; height: 14px; width: 1px; background: var(--line); opacity: .7; z-index: 2; pointer-events: none; }
+.bgblk { position: relative; flex-basis: 0; min-width: 0; overflow: hidden; cursor: pointer; background: var(--surface); color: #F1F1EC; border-right: 3px solid var(--bg); }
+.bgblk img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .8; }
+.bgblk.seen img { opacity: .4; filter: grayscale(.5); }
+.bgblk .bgshade { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(0,0,0,.88) 0%, rgba(0,0,0,.35) 55%, rgba(0,0,0,.15) 100%); }
+.bgblk .bgtx { position: absolute; left: 18px; right: 14px; bottom: 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bgblk .bgtx small { font-size: 22px; font-weight: var(--w700); color: var(--ac1, #2DD4BF); }
+.bgblk .bgtx b { font-size: 26px; font-weight: var(--w700); line-height: 1.15; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-shadow: 0 2px 8px rgba(0,0,0,.6); }
+.bgblk .bgtx em { font-style: normal; font-size: 18px; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bgblk.focus::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 5px var(--focus); }
+.bgblk.focus img { opacity: 1; }
+.bgfoot { flex-wrap: wrap; }

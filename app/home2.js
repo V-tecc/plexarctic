@@ -416,3 +416,92 @@ async function abActorFilms(sec, f, moviesAll) {
   (moviesAll || []).forEach((m) => { if (!m.viewCount && !seen.has(String(m.ratingKey)) && (m.Role || []).some((r) => String(r.tag).toLowerCase() === nm)) { list.push(m); seen.add(String(m.ratingKey)); } });
   return list;
 }
+
+/* ---------- "Feel like binging?": a random collection back to back, as a timeline from now ---------- */
+async function bingeLoad(sec, x, avoid) {
+  if (!x.bingeColls) {
+    const r = await api('/library/sections/' + sec.key + '/collections', { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 2000 });
+    x.bingeColls = (r.Metadata || []).filter((c) => (c.childCount || 0) >= 2 && (c.childCount || 0) <= 12 && (!c.subtype || c.subtype === 'movie'));
+    x.bingeShown = [];
+  }
+  let pool = x.bingeColls.filter((c) => !x.bingeShown.includes(c.ratingKey) && c.ratingKey !== avoid);
+  if (!pool.length) { x.bingeShown = []; pool = x.bingeColls.filter((c) => c.ratingKey !== avoid); }
+  let best = null;
+  /* a few tries for one with something you haven't seen; otherwise take what came up */
+  for (let i = 0; i < 5 && pool.length; i++) {
+    const c = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    let items = [];
+    try { items = ((await api('/library/collections/' + c.ratingKey + '/children', { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 50 })).Metadata || []).filter((m) => m.type === 'movie' && m.duration); } catch (e) { items = []; }
+    if (items.length < 2) continue;
+    const dt = (m) => m.originallyAvailableAt || String(m.year || 9999);
+    items.sort((a, b) => (dt(a) < dt(b) ? -1 : dt(a) > dt(b) ? 1 : 0));
+    const cand = { c: c, items: items, skipSeen: false };
+    if (!best) best = cand;
+    if (items.some((m) => !m.viewCount)) { best = cand; break; }
+  }
+  if (best) { x.bingeShown.push(best.c.ratingKey); x.binge = best; }
+  return x.binge || null;
+}
+
+function bingeList(b) {
+  const un = b.items.filter((m) => !m.viewCount);
+  return b.skipSeen && un.length ? un : b.items;
+}
+
+function bingeHTML(x) {
+  const b = x.binge;
+  if (!b || !b.items.length) return '';
+  const list = bingeList(b);
+  const left = (m) => Math.max(60000, (m.duration || 0) - (m.viewCount ? 0 : (m.viewOffset || 0)));
+  const now = Date.now();
+  const total = list.reduce((s, m) => s + left(m), 0);
+  const end = new Date(now + total);
+  const pct = (ms) => Math.max(0, Math.min(100, ms / total * 100));
+  /* a tick on the full hour, every one, two or three hours depending on how long it runs */
+  const step = (total <= 6 * 3600000 ? 1 : total <= 12 * 3600000 ? 2 : 3) * 3600000;
+  const ticks = [];
+  const tk = new Date(now); tk.setMinutes(0, 0, 0); tk.setHours(tk.getHours() + 1);
+  while (step > 3600000 && tk.getHours() % (step / 3600000)) tk.setHours(tk.getHours() + 1);
+  for (let ts = tk.getTime(); ts < end.getTime(); ts += step) if ((ts - now) / total > 0.05 && (end - ts) / total > 0.05) ticks.push(ts);
+  const nextDay = end.toDateString() !== new Date(now).toDateString();
+  const unseen = b.items.filter((m) => !m.viewCount).length;
+  let at = now;
+  const blocks = list.map((m, i) => {
+    const start = at; at += left(m);
+    return '<div class="bgblk f' + (m.viewCount ? ' seen' : '') + '" data-key="bg-' + i + '" style="flex-grow: ' + Math.round(left(m) / 60000) + '"' +
+      ' data-act="' + A(() => openItem(m)) + '" data-ctx="' + A(() => itemMenu(m)) + '">' +
+      ((m.art || m.thumb) ? '<img loading="lazy" src="' + esc(imgURL(m.art || m.thumb, 640, 360)) + '" alt="">' : '') + '<i class="bgshade"></i>' +
+      '<span class="bgtx"><small>' + esc(hhmm(new Date(start))) + '</small><b>' + esc(m.title) + '</b>' +
+      '<em>' + esc([m.year, durText(left(m)), m.viewCount ? t('bingeSeen') : ''].filter(Boolean).join(' · ')) + '</em></span></div>';
+  }).join('');
+  const go1 = () => go(viewPlayer, [list[0].ratingKey, { queue: list.slice(1).map((m) => m.ratingKey) }]);
+  return '<section class="hub binge" id="binge">' + (b.c.art ? '<div class="bgartw"><img class="bgart" src="' + esc(imgURL(b.c.art, 1280, 720)) + '" alt=""></div>' : '') +
+    '<div class="hubhead"><h2>' + esc(t('bingeTitle')) + '</h2><span>' + esc(t('bingeSub')) + '</span></div>' +
+    '<div class="bghead"><b>' + esc(b.c.title) + '</b><span>' + esc(t('bingeMeta', { n: list.length, d: durText(total) })) + ' · <strong>' +
+      esc(t(nextDay ? 'bingeEndsTom' : 'bingeEnds', { t: hhmm(end) })) + '</strong></span></div>' +
+    '<div class="tlaxis bgaxis"><span class="tlnow">' + esc(t('tlNow', { t: hhmm(new Date(now)) })) + '</span>' +
+      ticks.map((ts) => '<span class="tltick" style="left: ' + pct(ts - now).toFixed(2) + '%">' + esc(hhmm(new Date(ts))) + '</span>').join('') +
+      '<span class="tlend">' + esc(hhmm(end)) + '</span></div>' +
+    '<div class="bgrow">' + ticks.map((ts) => '<i class="tlgrid" style="left: ' + pct(ts - now).toFixed(2) + '%"></i>').join('') + blocks + '</div>' +
+    '<div class="tlfoot bgfoot"><button type="button" class="btn primary f" data-key="bg-play" data-act="' + A(go1) + '">' + ICON.play + esc(t('bingeStart')) + '</button>' +
+      '<button type="button" class="btn f" data-key="bg-other" data-act="' + A(() => bingeOther(x)) + '">' + ICON.next + esc(t('bingeOther')) + '</button>' +
+      (unseen && unseen < b.items.length ? '<button type="button" class="chip f' + (b.skipSeen ? ' on' : '') + '" data-key="bg-skip" data-act="' + A(() => { b.skipSeen = !b.skipSeen; bingeRedraw(x, 'bg-skip'); }) + '">' + (b.skipSeen ? ICON.check : '') + esc(t('bingeSkipSeen')) + '</button>' : '') +
+      '<button type="button" class="btn ghostbtn f" data-key="bg-open" data-act="' + A(() => go(viewLibrary, [x.bingeSec, b.c])) + '">' + ICON.stack + esc(t('bingeOpen')) + '</button></div>' +
+    '</section>';
+}
+function bingeRedraw(x, key) {
+  const el = $('#binge', viewEl);
+  if (!el) return;
+  el.outerHTML = bingeHTML(x);
+  const f = $('[data-key="' + key + '"]', viewEl);
+  if (f) setFocus(f, true);
+}
+let bingeBusy = false;
+async function bingeOther(x) {
+  if (bingeBusy || !x.bingeSec) return;
+  bingeBusy = true;
+  const btn = $('[data-key="bg-other"]', viewEl); if (btn) btn.classList.add('busy');
+  try { await bingeLoad(x.bingeSec, x, x.binge && x.binge.c.ratingKey); bingeRedraw(x, 'bg-other'); }
+  catch (e) { toast(e.message || String(e)); }
+  finally { bingeBusy = false; const b2 = $('[data-key="bg-other"]', viewEl); if (b2) b2.classList.remove('busy'); }
+}
