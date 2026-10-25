@@ -9,7 +9,12 @@ const OS_API = 'https://api.opensubtitles.com/api/v1';
 let osSession = null;   /* { token, base, at, remaining } */
 
 function osKey() { return store.get('osKey', '') || (window.PRESET && window.PRESET.osKey) || ''; }
-function osUser() { return store.get('osUser', '') || (window.PRESET && window.PRESET.osUser) || ''; }
+/* a name typed in Settings wins only once it has actually worked; until then the built-in one is used */
+function osUser() {
+  const typed = store.get('osUser', ''), pre = (window.PRESET && window.PRESET.osUser) || '';
+  if (pre && typed && typed !== store.get('osUserOk', '')) return pre;
+  return typed || pre;
+}
 function osPass() { return store.get('osPass', '') || (window.PRESET && window.PRESET.osPass) || ''; }
 function osReady() { return !!(osKey() && osUser() && osPass()); }
 
@@ -123,7 +128,7 @@ function osSettingsHTML() {
     '<button type="button" class="btn f" data-key="ossave" data-act="' + A(async () => {
       const k = $('#oskey').value.trim(), u = $('#osuser').value.trim(), p = $('#ospass').value;
       if (k) store.set('osKey', k);
-      if (u) store.set('osUser', u);
+      if (u) { store.set('osUser', u); store.set('osUserOk', u); }
       if (p) store.set('osPass', p);
       osSession = null;
       try { const s = await osLogin(true); toast(t('osOk', { n: s.remaining != null ? s.remaining : '?' }), 6000); } catch (e) { toast(t('osFail', { e: e.message || e }), 9000); }
