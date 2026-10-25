@@ -1628,3 +1628,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .acsw i { width: 16px; height: 16px; box-shadow: 0 0 0 1px rgba(128,128,128,.45); }
 .subrow .tags .acsw { margin: 0; }
 .subrow .tags .acsw i { width: 26px; height: 26px; }
+/* A–Z rail always on top of the posters, and its dot larger with a dark edge so it shows over artwork */
+.azrail { z-index: 8; }
+.azrail .az.focus::before { width: 9px; height: 9px; margin: 0 7px 0 -14px; box-shadow: 0 0 0 3px rgba(0,0,0,.75); }
