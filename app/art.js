@@ -178,6 +178,7 @@ async function artSelect(m, kind, o, before) {
     const picks = store.get('clearartPick', {}) || {};
     picks[S.server.id + ':' + m.ratingKey] = o.full;
     store.set('clearartPick', picks);
+    if (typeof artRecord === 'function') artRecord(m, kind, o);
     return;
   }
   const base = '/library/metadata/' + m.ratingKey;
@@ -195,6 +196,7 @@ async function artSelect(m, kind, o, before) {
   }
   await artLock(m, kind);
   if (kind === 'logo') logoForget(m.ratingKey);
+  if (typeof artRecord === 'function') artRecord(m, kind, o);
 }
 async function artEditor(item, kindIn) {
   if (!(await isAdmin())) { toast(t('adminOnly'), 4000); return; }
