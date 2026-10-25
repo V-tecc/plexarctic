@@ -1049,7 +1049,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .skipbtn { position: absolute; right: 96px; bottom: 120px; z-index: 6; height: 72px; padding: 0 30px; border: 0; border-radius: 0; background: var(--grad); color: #FFFFFF; font: inherit; font-size: 26px; font-weight: var(--w700); display: inline-flex; align-items: center; gap: 12px; box-shadow: 0 14px 30px rgba(0,0,0,0.45); transition: bottom 220ms ease; }
 .skipbtn svg { width: 24px; height: 24px; }
 .skipbtn small { margin-left: 6px; padding: 2px 8px; border: 1.5px solid rgba(255,255,255,0.7); font-size: 15px; font-weight: var(--w700); }
-.player:not(.idle) .skipbtn { bottom: 420px; }
+.skipbtn { transition: bottom 220ms ease; }
 #stage[data-theme="dark"] .homescroll > div > section.hub { box-sizing: border-box; padding: 26px 32px 32px; background: #17181B; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 /* shows with unwatched episodes: how many are left, in the poster corner */
 .watched.leftn { width: auto; min-width: 26px; padding: 0 7px; box-sizing: border-box; color: var(--fg); font-size: 15px; font-weight: var(--w700); }

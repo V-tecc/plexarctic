@@ -367,6 +367,7 @@ function playerClearart(m) {
         img.style.right = Math.max(96, bottom.clientWidth - ends.offsetLeft + 28) + 'px';
         if (ptl) ptl.style.maxWidth = Math.max(560, img.offsetLeft - ptl.offsetLeft - 40) + 'px';
       };
+      img._place = place; /* the player calls it again when the info panel opens or closes */
       place();
       setTimeout(place, 600);
     };
