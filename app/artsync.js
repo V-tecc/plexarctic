@@ -6,19 +6,58 @@
    Built so it keeps working even if Plex changes things:
    - a title is noted by several ids at once: Plex's own, TMDB, IMDb, TVDB, and as a last resort its name + year
      (a season by its show + number), so finding it again doesn't hang on any one of them;
-   - the list lives on every TV, in your plex.tv account when Plex allows it, and (in the browser version)
-     in a backup file you keep yourself, in plain readable JSON;
+   - the list lives on every TV that has made or scanned choices, and (in the browser version) in a backup
+     file you keep yourself, in plain readable JSON (Plex has no place in the account for it);
    - once a week the app checks quietly that every saved choice can still be found, and says so if not.
    "Restore my artwork" in Settings puts everything back. Clearart, which Plex can't store, comes back by itself. */
 'use strict';
 
-const AS_ID = 'plexarctic-art';
-const AS_HOSTS = ['https://clients.plex.tv', 'https://plex.tv'];
-let asState = { cloud: null, at: 0, msg: '' };   /* cloud: true (saved in the account) / false (only on this TV) */
+let asState = { cloud: false, at: 0, msg: '' };
 
+/* The list can hold thousands of choices, more than the TV's small settings storage takes, so it is kept in
+   the browser database (IndexedDB) and read into memory at start. Older versions kept it in settings storage:
+   it is moved over once, which also frees that space. */
 function asKey() { return userKey('artChoices'); }
-function asLocal() { const d = store.get(asKey(), null) || {}; return { v: 2, items: d.items || {} }; }
-function asSaveLocal(d) { store.set(asKey(), { v: 2, app: 'PLEX:arctic', items: d.items }); }
+let asMem = null, asMemKey = null;
+const asDB = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((ok, no) => {
+    try {
+      const r = indexedDB.open('plexarctic', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('kv'); };
+      r.onsuccess = () => ok(r.result);
+      r.onerror = () => no(r.error);
+    } catch (e) { no(e); }
+  }));
+  const tx = async (mode, fn) => { const db = await open(); return new Promise((ok, no) => { const t1 = db.transaction('kv', mode); const st = t1.objectStore('kv'); const req = fn(st); t1.oncomplete = () => ok(req && req.result); t1.onerror = () => no(t1.error); }); };
+  return { get: (k) => tx('readonly', (st) => st.get(k)), set: (k, v) => tx('readwrite', (st) => st.put(v, k)) };
+})();
+async function asLoad() {
+  const k = asKey();
+  if (asMem && asMemKey === k) return asMem;
+  let d = null;
+  try { d = await asDB.get(k); } catch (e) { d = null; }
+  const old = store.get(k, null);
+  if (old && old.items) {
+    d = asMerge(d || { items: {} }, old);
+    try { await asDB.set(k, { v: 2, app: 'PLEX:arctic', items: d.items }); store.del(k); } catch (e) { /* keep the old copy then */ }
+  }
+  asMem = { v: 2, items: (d && d.items) || {} }; asMemKey = k;
+  return asMem;
+}
+function asLocal() {
+  if (asMem && asMemKey === asKey()) return asMem;
+  const old = store.get(asKey(), null);
+  return { v: 2, items: (old && old.items) || {} };
+}
+let asSaveTimer = null;
+function asSaveLocal(d) {
+  asMem = { v: 2, items: d.items }; asMemKey = asKey();
+  clearTimeout(asSaveTimer);
+  asSaveTimer = setTimeout(() => {
+    asDB.set(asMemKey, { v: 2, app: 'PLEX:arctic', items: asMem.items }).catch(() => { store.set(asMemKey, { v: 2, items: asMem.items }); });
+  }, 400);
+}
 function asCount() { return Object.keys(asLocal().items).length; }
 
 /* every id Plex knows for a title: tmdb, imdb, tvdb */
@@ -53,35 +92,6 @@ async function artRecord(m, kind, o) {
   } catch (e) { /* never in the way of the choice itself */ }
 }
 
-/* ---- the copy in your plex.tv account ---- */
-async function asCloudGet() {
-  let last = null;
-  for (const h of AS_HOSTS) {
-    try {
-      const r = await fetch(h + '/api/v2/user/settings?' + plexParams({ 'X-Plex-Token': S.token }), { headers: { Accept: 'application/json' } });
-      if (!r.ok) { last = new Error('HTTP ' + r.status); continue; }
-      const list = await r.json();
-      const hit = (Array.isArray(list) ? list : []).find((x) => x.id === AS_ID);
-      return hit && hit.value ? JSON.parse(hit.value) : { v: 2, items: {} };
-    } catch (e) { last = e; }
-  }
-  throw last || new Error('no answer');
-}
-async function asCloudPut(d) {
-  const value = JSON.stringify({ v: 2, app: 'PLEX:arctic', items: d.items });
-  let last = null;
-  for (const h of AS_HOSTS) {
-    try {
-      const body = new URLSearchParams({ id: AS_ID, type: 'json', value: value, hidden: '1' });
-      const r = await fetch(h + '/api/v2/user/settings?' + plexParams({ 'X-Plex-Token': S.token }), {
-        method: 'PUT', headers: { Accept: 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString()
-      });
-      if (r.ok) return true;
-      last = new Error('HTTP ' + r.status);
-    } catch (e) { last = e; }
-  }
-  throw last || new Error('no answer');
-}
 function asMerge(a, b) {
   const out = { v: 2, items: Object.assign({}, a.items || {}) };
   Object.entries((b && b.items) || {}).forEach(([k, r]) => {
@@ -91,21 +101,15 @@ function asMerge(a, b) {
   return out;
 }
 let asPushTimer = null;
-function asPushSoon() { clearTimeout(asPushTimer); asPushTimer = setTimeout(() => asSync().catch(() => {}), 3000); }
+function asPushSoon() { /* nothing to send: the list is saved on this TV as it changes */ }
 
 /* both ways: what the account has and what this TV has, newest choice wins */
 async function asSync() {
   if (!S.token) return;
-  const local = asLocal();
-  try {
-    const cloud = await asCloudGet();
-    const merged = asMerge(local, cloud);
-    asSaveLocal(merged);
-    if (JSON.stringify(merged.items) !== JSON.stringify((cloud && cloud.items) || {})) await asCloudPut(merged);
-    asState = { cloud: true, at: Date.now(), msg: '' };
-  } catch (e) {
-    asState = { cloud: false, at: Date.now(), msg: (e && e.message) || String(e) };
-  }
+  await asLoad();
+  /* Plex has no place in the account for a list like this (plex.tv answers 404), so it stays on each TV
+     and in the backup file; covers, backgrounds and logos themselves are on the server for every TV anyway */
+  asState = { cloud: false, at: Date.now(), msg: '' };
   asApplyClearart(asLocal()).catch(() => {});
   return asState;
 }
@@ -183,8 +187,9 @@ async function asApplyClearart(d) {
 
 /* fill in the extra ids for records saved before they were kept (while Plex's own id still works) */
 async function asEnrich() {
+  await asLoad();
   const d = asLocal();
-  const thin = Object.entries(d.items).filter(([, r]) => !r.ids || (r.y === 'season' && !r.sh));
+  const thin = Object.entries(d.items).filter(([, r]) => !r.enr && (!r.ids || !Object.keys(r.ids).length || r.yr == null || (r.y === 'season' && !r.sh)));
   if (!thin.length) return 0;
   const idx = await asIndex();
   let n = 0;
@@ -192,14 +197,15 @@ async function asEnrich() {
     const m = await asFind(r, idx);
     if (!m) continue;
     try {
-      const full = ((await api('/library/metadata/' + m.ratingKey, { includeGuids: 1 })).Metadata || [])[0] || m;
+      /* films and shows: the server's list already has their ids; seasons are asked for */
+      const full = m.Guid || m.type !== 'season' ? m : (((await api('/library/metadata/' + m.ratingKey, { includeGuids: 1 })).Metadata || [])[0] || m);
       r.ids = asIdsOf(full); r.yr = full.year || r.yr || null; r.y = full.type || r.y;
       if (full.type === 'season') {
         r.sx = full.index;
         const sh = ((await api('/library/metadata/' + full.parentRatingKey, { includeGuids: 1 })).Metadata || [])[0];
         if (sh) r.sh = { g: sh.guid, ids: asIdsOf(sh), t: sh.title, yr: sh.year || null };
       }
-      d.items[k] = r; n++;
+      r.enr = 1; d.items[k] = r; n++;
     } catch (e) { /* next */ }
   }
   if (n) { asSaveLocal(d); asPushSoon(); }
@@ -208,6 +214,7 @@ async function asEnrich() {
 
 /* can every saved choice still be found? (nothing is changed) */
 async function asCheck() {
+  await asLoad();
   const recs = Object.values(asLocal().items);
   const idx = await asIndex(true);
   let ok = 0;
@@ -220,6 +227,7 @@ async function asCheck() {
 
 /* "Restore my artwork": put every saved choice back on the server (cover, season cover, background, logo) */
 async function asRestore(onStep) {
+  await asLoad();
   const recs = Object.values(asLocal().items);
   const idx = await asIndex(true);
   let done = 0, same = 0, missing = 0, failed = 0;
@@ -246,6 +254,7 @@ async function asRestore(onStep) {
 /* Note the choices already made on the server (locked covers, backgrounds and logos), so earlier work is
    saved too. Plex marks a picked picture as locked; only those are noted. */
 async function asBackupExisting(onStep) {
+  await asLoad();
   let secs = [];
   try { secs = ((await api('/library/sections')).Directory || []).filter((x) => x.type === 'movie' || x.type === 'show'); } catch (e) { secs = []; }
   const lockOf = { thumb: 'poster', art: 'art', clearLogo: 'logo' };
@@ -319,10 +328,10 @@ function asUpload() {
 /* the Settings row */
 function asSettingsHTML() {
   const n = asCount();
-  const where = asState.cloud === true ? t('asCloud') : asState.cloud === false ? t('asLocalOnly', { e: asState.msg }) : t('asChecking');
+
   const chk = store.get(userKey('artCheck'), null);
   const prog = (i, all, title) => { const el = $('#asprog'); if (el) el.textContent = i + ' / ' + all + ' · ' + title; };
-  return '<span class="sval">' + esc(t('asCount', { n: n }) + ' · ' + where) + (chk && chk.total ? ' · ' + esc(t('asCheckLine', { a: chk.ok, b: chk.total })) : '') + '</span>' +
+  return '<span class="sval">' + esc(t('asCountTV', { n: n })) + (chk && chk.total ? ' · ' + esc(t('asCheckLine', { a: chk.ok, b: chk.total })) : '') + '</span>' +
     '<button type="button" class="btn f" data-key="asrestore" data-act="' + A(async () => {
       if (!(await isAdmin())) { toast(t('adminOnly'), 4000); return; }
       if (!asCount()) { toast(t('asNone'), 4000); return; }
@@ -346,7 +355,6 @@ function asSettingsHTML() {
       toast(r.ok === r.total ? t('asCheckAll', { n: r.total }) : t('asCheckSome', { a: r.ok, b: r.total, s: r.lost.slice(0, 3).join(', ') }), 9000);
       rerun();
     }) + '">' + esc(t('asCheck')) + '</button>' +
-    '<button type="button" class="btn ghostbtn f" data-key="assync" data-act="' + A(async () => { await asSync(); rerun(); }) + '">' + esc(t('asSyncNow')) + '</button>' +
     (window.IS_TV ? '' :
       '<button type="button" class="btn ghostbtn f" data-key="asdown" data-act="' + A(asDownload) + '">' + esc(t('asDownload')) + '</button>' +
       '<button type="button" class="btn ghostbtn f" data-key="asup" data-act="' + A(asUpload) + '">' + esc(t('asUpload')) + '</button>') +
