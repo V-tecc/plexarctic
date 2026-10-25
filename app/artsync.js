@@ -180,6 +180,7 @@ async function asIndex(force) {
     let items = [];
     try { items = (await api('/library/sections/' + sec.key + '/all', { type: sec.type === 'movie' ? 1 : 2, includeGuids: 1 })).Metadata || []; } catch (e) { items = []; }
     items.forEach((m) => {
+      m._sec = sec.key;
       const put = (k) => { if (k && !map.has(k)) map.set(k, m); };
       put('plex:' + m.guid);
       Object.entries(asIdsOf(m)).forEach(([k, v]) => put(k + ':' + v));
@@ -314,6 +315,7 @@ async function asBackupExisting(onStep) {
   try { secs = ((await api('/library/sections')).Directory || []).filter((x) => x.type === 'movie' || x.type === 'show'); } catch (e) { secs = []; }
   const lockOf = { thumb: 'poster', art: 'art', clearLogo: 'logo' };
   let found = 0;
+  const edits = [];
   for (const sec of secs) {
     let items = [];
     try { items = (await api('/library/sections/' + sec.key + '/all', { type: sec.type === 'movie' ? 1 : 2, includeGuids: 1 })).Metadata || []; } catch (e) { items = []; }
@@ -328,6 +330,9 @@ async function asBackupExisting(onStep) {
           try {
             const m = ((await api('/library/metadata/' + m0.ratingKey, { includeGuids: 1 })).Metadata || [])[0];
             if (m && (m.Field || []).some((f) => f.locked && lockOf[f.name])) locked.push(m);
+            /* hand-made edits (title, sort title, summary) for the library backup */
+            const ed = m ? (m.Field || []).filter((f) => f.locked && /^(title|titleSort|summary|originalTitle)$/.test(f.name)).map((f) => f.name) : [];
+            if (ed.length) edits.push({ g: m.guid, ids: asIdsOf(m), t: m.title, yr: m.year || null, y: m.type, f: ed.reduce((o, k) => { o[k] = m[k] || ''; return o; }, {}) });
           } catch (e) { /* next */ }
           seen++;
           if (onStep && seen % 10 === 0) onStep(seen, items.length, sec.title);
@@ -348,6 +353,7 @@ async function asBackupExisting(onStep) {
       }
     }
   }
+  if (edits.length) { try { await asDB.set(userKey('libEdits'), edits); } catch (e) { /* next time */ } }
   await asEnrich().catch(() => 0);
   return found;
 }
