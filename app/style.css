@@ -1732,3 +1732,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abseg { height: 62px; align-items: stretch; }
 .abanner .abseg button { font-size: 22px; padding: 0 26px; }
 .abanner .abnav [data-key="ab-set"] { width: 62px; height: 62px; }
+.abanner .abnav [data-key="ab-set"] { height: auto; align-self: stretch; width: 70px; }
