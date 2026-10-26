@@ -1762,3 +1762,8 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abnav .abseg { order: 2; height: 54px; }
 .abanner .abnav [data-key="ab-set"] { order: 3; height: 54px; }
 .abanner .abnav .abseg .f { flex: none; }
+/* screen saver: a fact about an actor in the film */
+.saver .svfact { margin-top: 22px; max-width: 960px; display: flex; flex-direction: column; gap: 6px; opacity: 0; transition: opacity 1200ms ease; }
+.saver .svfact.on { opacity: 1; }
+.saver .svfacth { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; color: var(--ac1, #2DD4BF); font-weight: var(--w600); }
+.saver .svfactt { font-size: 26px; line-height: 1.4; color: #E8E8EA; }
