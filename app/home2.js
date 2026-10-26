@@ -410,6 +410,19 @@ window.onDeepLink = () => { if (current && current.fn === viewHome) tvDeepLinkGo
 
 /* An actor's unwatched films here. Plex sometimes keeps the same person under several tags (one per metadata
    agent), so every tag id seen for that name is asked for, plus the films whose cast lists the name. */
+/* every actor in a library (name, id), read once a session */
+const abActors = {};
+async function abActorIndex(sec) {
+  const k = sec.key + '|' + (S.server ? S.server.id : '');
+  if (abActors[k] && Date.now() - abActors[k].at < 6 * 3600000) return abActors[k].list;
+  const r = await api('/library/sections/' + sec.key + '/actor');
+  const list = (r.Directory || []).map((x) => {
+    const id = /^\d+$/.test(String(x.key)) ? String(x.key) : ((/actor=(\d+)/.exec(x.fastKey || x.key || '') || [])[1] || '');
+    return [fold(x.title), id];
+  }).filter((x) => x[1]);
+  abActors[k] = { at: Date.now(), list: list };
+  return list;
+}
 async function abActorFilms(sec, f, moviesAll) {
   const ids = new Set(f.id ? [String(f.id)] : []);
   const nm = String(f.name || '').toLowerCase();
@@ -418,6 +431,9 @@ async function abActorFilms(sec, f, moviesAll) {
     Object.values(cs.c).forEach((cast) => (cast || []).forEach((r) => { if (r[1] && String(r[0]).toLowerCase() === nm) ids.add(String(r[1])); }));
   } catch (e) { /* no saved casts */ }
   (moviesAll || []).forEach((m) => (m.Role || []).forEach((r) => { if (r.id && String(r.tag).toLowerCase() === nm) ids.add(String(r.id)); }));
+  /* Plex can have the same person under several ids (one per metadata source); the library's own list of actors
+     has them all, so every one with this name is asked for */
+  try { (await abActorIndex(sec)).forEach((x) => { if (x[0] === fold(f.name)) ids.add(x[1]); }); } catch (e) { /* the ids found above */ }
   let list = [];
   if (ids.size) {
     try { list = (await api('/library/sections/' + sec.key + '/all', { type: 1, actor: Array.from(ids).join(','), unwatched: 1 })).Metadata || []; } catch (e) { list = []; }
