@@ -52,7 +52,7 @@ document.addEventListener('keydown', (e) => {
   if (k === 'ab-next' && e.key === 'ArrowDown') return jump('ab-big');
   if (k === 'ab-next' && e.key === 'ArrowUp') return jump('ab-face');
   if (k === 'ab-face' && e.key === 'ArrowRight') return jump('ab-m-' + abMode());
-  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-big');
+  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-m-' + abMode());
   if (k !== 'ab-big') return;
   const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
