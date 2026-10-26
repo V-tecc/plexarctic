@@ -1725,3 +1725,10 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abbig, .abanner .abbig.f.focus { width: 160px; height: 240px; }
 .abanner .abarrows { width: 160px; }
 .abanner .abrow { left: 248px; }
+/* the controls bottom right as one block: Next actor across the full width, the switch and the gear under it */
+.abanner .abnav { display: grid; grid-template-columns: auto auto; gap: 12px; align-items: stretch; }
+.abanner .abnav .abnext, .abanner .abnav .abnext.f.focus { position: static !important; grid-column: 1 / -1; width: auto; height: 62px; justify-content: center; font-size: 22px; padding: 0 20px; }
+.abanner .abnav .abnext .abcount { font-size: 18px; }
+.abanner .abseg { height: 62px; align-items: stretch; }
+.abanner .abseg button { font-size: 22px; padding: 0 26px; }
+.abanner .abnav [data-key="ab-set"] { width: 62px; height: 62px; }

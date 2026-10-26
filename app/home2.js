@@ -72,7 +72,7 @@ function actorBannerHTML(x, d) {
   const ini = a.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
   const cur = () => a.items[a.sel];
   const nextBtn = pool.length > 1 ? '<button type="button" class="btn ghostbtn f abnext" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ' <span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' + ICON.next + '</button>' : '';
-  return '<section class="abanner" id="abanner">' + nextBtn +
+  return '<section class="abanner" id="abanner">' +
     '<img class="abart" id="abart" src="' + esc(first && first.art ? imgURL(first.art, 1600, 900) : '') + '" alt="">' +
     '<div class="abshade"></div>' +
     /* the face is a button: all their films */
@@ -84,7 +84,7 @@ function actorBannerHTML(x, d) {
     (first ? '<div class="abbig f' + (first.viewCount ? ' seen' : '') + '" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
       '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""><span class="watched">' + ICON.check + '</span></div><span class="abarrows' + (a.sel <= 0 ? ' nol' : '') + (a.sel >= a.items.length - 1 ? ' nor' : '') + '" id="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
     '<div class="abrow"><div class="abrowc" id="abrowc">' + abRowHTML(a) + '</div>' +
-    '<div class="abnav"><div class="seg abseg">' + [['all', t('abAllF')], ['unseen', t('abUnseenF')], ['seen', t('abSeenF')]].map((o) => '<button type="button" class="f' + (abMode() === o[0] ? ' on' : '') + '" data-key="ab-m-' + o[0] + '" data-act="' + A(() => abSetMode(x, d, o[0])) + '">' + esc(o[1]) + '</button>').join('') + '</div>' +
+    '<div class="abnav">' + nextBtn + '<div class="seg abseg">' + [['all', t('abAllF')], ['unseen', t('abUnseenF')], ['seen', t('abSeenF')]].map((o) => '<button type="button" class="f' + (abMode() === o[0] ? ' on' : '') + '" data-key="ab-m-' + o[0] + '" data-act="' + A(() => abSetMode(x, d, o[0])) + '">' + esc(o[1]) + '</button>').join('') + '</div>' +
     '<button type="button" class="btn ghostbtn icon f" data-key="ab-set" aria-label="' + esc(t('pinTitle')) + '" data-act="' + A(() => abSettings(x, d)) + '">' + ICON.gear + '</button></div>' +
     '</div></section>';
 }
