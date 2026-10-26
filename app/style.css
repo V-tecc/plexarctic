@@ -1742,3 +1742,17 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abnav [data-key="ab-set"] { grid-column: 2; grid-row: 1; width: 62px; }
 .abanner .abnav .abseg { grid-column: 1 / -1; grid-row: 2; }
 .abanner .abnav .abseg .f { flex: 1; }
+/* actor tile: a little closer to the edges, smaller controls, the gear like the other buttons */
+.abanner .abtx { left: 40px; top: 30px; }
+.abanner .absel { left: 40px; top: 212px; }
+.abanner .abbig, .abanner .abbig.f.focus { left: 40px; bottom: 30px; }
+.abanner .abarrows { left: 36px; bottom: 26px; }
+.abanner .abrow { left: 232px; right: 40px; bottom: 30px; }
+.abanner .abfacebtn .abfacehint { right: 40px; top: 30px; }
+.abanner .abnav { gap: 10px; }
+.abanner .abnav .abnext, .abanner .abnav .abnext.f.focus { height: 54px; font-size: 20px; }
+.abanner .abnav .abnext .abcount { font-size: 17px; }
+.abanner .abseg { height: 60px; padding: 4px; }
+.abanner .abseg button { font-size: 20px; padding: 0 22px; }
+.abanner .abnav [data-key="ab-set"] { width: 54px; background: rgba(28,28,31,.75); color: #F1F1EC; }
+.abanner .abnav [data-key="ab-set"].focus { background: var(--focus); color: var(--on-focus); }
