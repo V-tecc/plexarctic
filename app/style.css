@@ -1676,3 +1676,16 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .diag div span { color: var(--muted); word-break: break-all; }
 .diag.small div { font-size: 18px; }
 .diag.small div b { width: 520px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* actor tile: bigger face, Next actor above the big poster, All / Unseen / Seen beside the gear */
+.abwho { left: 48px; top: 36px; }
+.abface { width: 216px; height: 216px; font-size: 60px; }
+.abanner .abnext { position: absolute; left: 56px; top: 270px; z-index: 6; height: 52px; padding: 0 18px; font-size: 19px; gap: 8px; color: #F1F1EC; background: rgba(28,28,31,.75); }
+.abanner .abnext .abcount { font-size: 16px; color: #C9C9CC; font-weight: var(--w500); }
+.abanner .abnext.f.focus { position: absolute !important; }
+.abseg { background: rgba(28,28,31,.75); }
+.abseg button { color: #F1F1EC; }
+.abbig .watched { display: none; }
+.abbig.seen .watched { display: flex; }
+.abcard { position: relative; }
+.abbig .watched, .abcard .watched { position: absolute; top: 8px; right: 8px; }
+.abanner .abnext { width: 192px; padding: 0 10px; justify-content: center; }

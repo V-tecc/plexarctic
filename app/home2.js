@@ -19,7 +19,7 @@ function abSelect(m) {
 let abCur = null;
 function abRowHTML(a) {
   const next = a.items.slice(a.sel + 1, a.sel + 7);
-  return next.map((m) => '<div class="abcard"><img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt=""></div>').join('') +
+  return next.map((m) => '<div class="abcard"><img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="">' + (m.viewCount ? '<span class="watched">' + ICON.check + '</span>' : '') + '</div>').join('') +
     '<span class="abpos">' + esc((a.sel + 1) + ' / ' + a.items.length) + '</span>';
 }
 /* ‹ only once you've moved on, › not on the last film */
@@ -35,7 +35,7 @@ function abShow(dir) {
   if (n === a.sel) return false;
   a.sel = n;
   const m = a.items[n];
-  const big = $('#abbig'); if (big) { const im = $('img', big); if (im) im.src = imgURL(m.thumb, 400, 600); }
+  const big = $('#abbig'); if (big) { const im = $('img', big); if (im) im.src = imgURL(m.thumb, 400, 600); big.classList.toggle('seen', !!m.viewCount); }
   const row = $('#abrowc'); if (row) row.innerHTML = abRowHTML(a);
   abArrows(a);
   abSelect(m);
@@ -46,10 +46,13 @@ document.addEventListener('keydown', (e) => {
   const k = focused.dataset.key;
   /* up from the big poster to the face, down from the face to the poster */
   const jump = (key) => { const el = $('[data-key="' + key + '"]', viewEl); if (el) { setFocus(el); e.preventDefault(); e.stopImmediatePropagation(); } };
-  if (k === 'ab-big' && e.key === 'ArrowUp') return jump('ab-face');
-  if (k === 'ab-face' && e.key === 'ArrowDown') return jump('ab-big');
-  if (k === 'ab-face' && e.key === 'ArrowRight') return jump($('[data-key="ab-next"]', viewEl) ? 'ab-next' : 'ab-set');
-  if (k === 'ab-next' && e.key === 'ArrowLeft') return jump('ab-big');
+  const hasNext = !!$('[data-key="ab-next"]', viewEl);
+  if (k === 'ab-big' && e.key === 'ArrowUp') return jump(hasNext ? 'ab-next' : 'ab-face');
+  if (k === 'ab-face' && e.key === 'ArrowDown') return jump(hasNext ? 'ab-next' : 'ab-big');
+  if (k === 'ab-next' && e.key === 'ArrowDown') return jump('ab-big');
+  if (k === 'ab-next' && e.key === 'ArrowUp') return jump('ab-face');
+  if (k === 'ab-face' && e.key === 'ArrowRight') return jump('ab-m-' + abMode());
+  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-big');
   if (k !== 'ab-big') return;
   const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
@@ -65,7 +68,8 @@ function actorBannerHTML(x, d) {
   const pool = x.actorPool || [];
   const ini = a.name.split(' ').map((w) => w[0]).join('').slice(0, 2);
   const cur = () => a.items[a.sel];
-  return '<section class="abanner" id="abanner">' +
+  const nextBtn = pool.length > 1 ? '<button type="button" class="btn ghostbtn f abnext" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ' <span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' + ICON.next + '</button>' : '';
+  return '<section class="abanner" id="abanner">' + nextBtn +
     '<img class="abart" id="abart" src="' + esc(first && first.art ? imgURL(first.art, 1600, 900) : '') + '" alt="">' +
     '<div class="abshade"></div>' +
     /* the face is a button: all their films */
@@ -74,13 +78,22 @@ function actorBannerHTML(x, d) {
     '<div class="abtx"><span class="eyebrow">' + esc(t('abEyebrow')) + '</span><h2><span class="abmw">' + esc(t('abMore')) + '</span>' + esc(a.name) + '</h2>' +
     '<span class="absub">' + esc(t('tasteActorSub2', { s: tasteTitlesText(a.who) })) + '</span></div></div>' +
     '<div class="absel" id="absel">' + abSelHTML(first) + '</div>' +
-    (first ? '<div class="abbig f" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
-      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""></div><span class="abarrows' + (a.sel <= 0 ? ' nol' : '') + (a.sel >= a.items.length - 1 ? ' nor' : '') + '" id="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
+    (first ? '<div class="abbig f' + (first.viewCount ? ' seen' : '') + '" id="abbig" data-key="ab-big" data-act="' + A(() => openItem(cur())) + '" data-ctx="' + A(() => itemMenu(cur())) + '" data-onfocus="' + A(() => { abSelect(cur()); const ban = $('#abanner'); if (ban) { ban.scrollTop = 0; setTimeout(() => { ban.scrollTop = 0; }, 50); } }) + '">' +
+      '<img src="' + esc(imgURL(first.thumb, 400, 600)) + '" alt=""><span class="watched">' + ICON.check + '</span></div><span class="abarrows' + (a.sel <= 0 ? ' nol' : '') + (a.sel >= a.items.length - 1 ? ' nor' : '') + '" id="abarrows" aria-hidden="true"><i>‹</i><i>›</i></span>' : '') +
     '<div class="abrow"><div class="abrowc" id="abrowc">' + abRowHTML(a) + '</div>' +
-    (pool.length > 1 ? '<div class="abnav"><span class="abcount">' + esc(((x.actorPos || 0) + 1) + ' / ' + pool.length) + '</span>' +
-      '<button type="button" class="btn ghostbtn f" data-key="ab-next" data-act="' + A(() => abNext(x, d)) + '">' + esc(t('abSwitch')) + ICON.next + '</button>' : '<div class="abnav">') +
+    '<div class="abnav"><div class="seg abseg">' + [['all', t('abAllF')], ['unseen', t('abUnseenF')], ['seen', t('abSeenF')]].map((o) => '<button type="button" class="f' + (abMode() === o[0] ? ' on' : '') + '" data-key="ab-m-' + o[0] + '" data-act="' + A(() => abSetMode(x, d, o[0])) + '">' + esc(o[1]) + '</button>').join('') + '</div>' +
     '<button type="button" class="btn ghostbtn icon f" data-key="ab-set" aria-label="' + esc(t('pinTitle')) + '" data-act="' + A(() => abSettings(x, d)) + '">' + ICON.gear + '</button></div>' +
     '</div></section>';
+}
+/* All / Unseen / Seen: the same actor again with the other choice */
+async function abSetMode(x, d, mode) {
+  store.set(userKey('abSeen'), mode);
+  const f = x.actor && x.actor.who;
+  if (!f || !d.movieSec) return;
+  const list = abOrder(await abActorFilms(d.movieSec, f, x.moviesAll), x.taste);
+  x.actor = { name: f.name, n: f.n, who: f, items: list.slice(0, 60), sel: 0 };
+  const el = $('#abanner', viewEl);
+  if (el) { el.outerHTML = actorBannerHTML(x, d); const b = $('[data-key="ab-m-' + mode + '"]', viewEl); if (b) setFocus(b, true); }
 }
 let abBusy = false;
 async function abNext(x, d) {
@@ -95,7 +108,7 @@ async function abNext(x, d) {
       const f = pool[pos];
       let list = [];
       list = await abActorFilms(d.movieSec, f, x.moviesAll);
-      list = tasteSort(list, x.taste);
+      list = abOrder(list, x.taste);
       if (list.length >= 2) {
         x.actor = { name: f.name, n: f.n, who: f, items: list.slice(0, 60) };
         x.actorPos = pos;
@@ -478,6 +491,11 @@ async function abActorIndex(sec) {
   abActors[k] = { at: Date.now(), list: list };
   return list;
 }
+/* which of the actor's films the tile shows: all of them, only unseen or only seen (per profile) */
+function abMode() { const v = store.get(userKey('abSeen'), 'all'); return v === 'unseen' || v === 'seen' ? v : 'all'; }
+function abKeep(m) { const mo = abMode(); return mo === 'all' || (mo === 'unseen' ? !m.viewCount : !!m.viewCount); }
+/* taste order, unseen ones first */
+function abOrder(list, h) { const l = tasteSort(list, h); return l.filter((m) => !m.viewCount).concat(l.filter((m) => m.viewCount)); }
 async function abActorFilms(sec, f, moviesAll) {
   const ids = new Set(f.id ? [String(f.id)] : []);
   const nm = String(f.name || '').toLowerCase();
@@ -491,10 +509,10 @@ async function abActorFilms(sec, f, moviesAll) {
   try { (await abActorIndex(sec)).forEach((x) => { if (x[0] === fold(f.name)) ids.add(x[1]); }); } catch (e) { /* the ids found above */ }
   let list = [];
   if (ids.size) {
-    try { list = (await api('/library/sections/' + sec.key + '/all', { type: 1, actor: Array.from(ids).join(','), unwatched: 1 })).Metadata || []; } catch (e) { list = []; }
+    try { list = ((await api('/library/sections/' + sec.key + '/all', Object.assign({ type: 1, actor: Array.from(ids).join(',') }, abMode() === 'unseen' ? { unwatched: 1 } : {}))).Metadata || []).filter(abKeep); } catch (e) { list = []; }
   }
   const seen = new Set(list.map((m) => String(m.ratingKey)));
-  const add = (m) => { if (m && !m.viewCount && !seen.has(String(m.ratingKey))) { list.push(m); seen.add(String(m.ratingKey)); } };
+  const add = (m) => { if (m && abKeep(m) && !seen.has(String(m.ratingKey))) { list.push(m); seen.add(String(m.ratingKey)); } };
   (moviesAll || []).forEach((m) => { if ((m.Role || []).some((r) => String(r.tag).toLowerCase() === nm)) add(m); });
   /* and their filmography from TMDB matched to your films by title and year: finds the ones Plex's cast lists
      don't connect to them (a different id, or a cast list that stops before them) */
