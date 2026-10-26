@@ -1733,3 +1733,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abseg button { font-size: 22px; padding: 0 26px; }
 .abanner .abnav [data-key="ab-set"] { width: 62px; height: 62px; }
 .abanner .abnav [data-key="ab-set"] { height: auto; align-self: stretch; width: 70px; }
+/* the switch's buttons fill it evenly (same gap above and below) */
+.abanner .abseg { height: 70px; box-sizing: border-box; padding: 5px; align-items: stretch; }
+.abanner .abseg .f { height: auto; }
