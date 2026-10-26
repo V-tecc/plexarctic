@@ -158,9 +158,9 @@ async function saverFact(p) {
   if (!tid) return null;
   const lang = tmdbLang();
   const [mv, cr] = await Promise.all([tmdbGet('/movie/' + tid, { language: lang }), tmdbGet('/movie/' + tid + '/credits', { language: lang })]);
-  const cast = (cr.cast || []).slice(0, 4).filter((c) => c.id);
-  if (!cast.length) return null;
-  const c = cast[Math.floor(Math.random() * cast.length)];
+  /* the top-billed actor (the one on the poster, not someone further down the list) */
+  const c = (cr.cast || []).filter((x) => x.id).sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+  if (!c) return null;
   const [pp, mc] = await Promise.all([tmdbGet('/person/' + c.id, { language: lang }), tmdbGet('/person/' + c.id + '/movie_credits', { language: lang }).catch(() => ({}))]);
   let bio = pp.biography || '';
   if (!bio && lang !== 'en-US') { try { bio = (await tmdbGet('/person/' + c.id, { language: 'en-US' })).biography || ''; } catch (e) { bio = ''; } }
@@ -169,7 +169,9 @@ async function saverFact(p) {
   /* a sentence from the biography (not the first, which is usually just where they were born) */
   const sents = bio.replace(/\s+/g, ' ').split(/(?<=[.!?])\s+(?=[A-ZÅÄÖÁČĎÉĚÍŇÓŘŠŤÚŮÝŽА-ЯΑ-Ω])/).slice(1)
     .filter((x) => x.length >= 60 && x.length <= 230 && !/\b(born|is an?|was an?)\b.{0,30}\b(actor|actress)\b/i.test(x.slice(0, 60)));
-  if (sents.length) { const x = sents[Math.floor(Math.random() * sents.length)]; facts.push(x, x); }
+  /* "He started his career…" → "Keanu Reeves started his career…", so it's clear who it's about */
+  const named = (x) => x.replace(/^(He|She|They|Han|Hon|De|On|Ona|Він|Вона|Αυτός|Αυτή)\s+/, name + ' ');
+  if (sents.length) { const x = named(sents[Math.floor(Math.random() * sents.length)]); facts.push(x, x); }
   const bd = pp.birthday && new Date(pp.birthday), rd = mv.release_date && new Date(mv.release_date);
   if (bd && rd && rd > bd) {
     let age = rd.getFullYear() - bd.getFullYear(); if (rd.getMonth() < bd.getMonth() || (rd.getMonth() === bd.getMonth() && rd.getDate() < bd.getDate())) age--;
@@ -180,7 +182,7 @@ async function saverFact(p) {
   if (nfilms >= 5) facts.push(t('factFilms', { n: name, c: nfilms }));
   if (c.character) facts.push(t('factPlays', { n: name, c: c.character, t: title }));
   if (!facts.length) return null;
-  const f = { head: t('factHead'), text: facts[Math.floor(Math.random() * facts.length)] };
+  const f = { head: t('factHead') + ' · ' + name, text: facts[Math.floor(Math.random() * facts.length)] };
   saverFacts.set(p.key, f);
   return f;
 }
