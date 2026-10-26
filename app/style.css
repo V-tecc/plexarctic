@@ -1689,3 +1689,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abcard { position: relative; }
 .abbig .watched, .abcard .watched { position: absolute; top: 8px; right: 8px; }
 .abanner .abnext { width: 192px; padding: 0 10px; justify-content: center; }
+/* Pick for me 👍 when marked More like this */
+.pick [data-key="pk-yes"].on { background: var(--focus); color: #04211d; }
