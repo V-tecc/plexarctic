@@ -273,8 +273,28 @@ function afterArt(m) {
     const keep = current.focusKey;
     setTimeout(() => { if (!modalOpen()) { current.focusKey = keep; rerun(); } }, 50);
   } else if (current && current.fn !== viewPlayer) {
-    setTimeout(() => { if (!modalOpen()) rerun(); }, 50);
+    /* anywhere else (Home, a library…): swap the pictures in place, so you stay where you were */
+    artSwapInPlace(m).catch(() => { setTimeout(() => { if (!modalOpen()) rerun(); }, 50); });
   }
+}
+async function artSwapInPlace(m) {
+  const fresh = ((await api('/library/metadata/' + m.ratingKey)).Metadata || [])[0];
+  if (!fresh) throw new Error('gone');
+  const enc = (p) => new URLSearchParams({ url: p }).toString().slice(4);
+  const pairs = ['thumb', 'art', 'grandparentThumb', 'grandparentArt', 'parentThumb'].map((f) => [m[f], fresh[f], f]).filter((x) => x[0] && x[1] && x[0] !== x[1]);
+  if (!pairs.length) return;
+  /* every picture on screen made from the old one */
+  $$('img', viewEl).forEach((img) => {
+    let src = img.getAttribute('src') || '';
+    pairs.forEach((x) => { src = src.split(enc(x[0])).join(enc(x[1])); });
+    if (src !== img.getAttribute('src')) img.src = src;
+  });
+  /* and the titles kept in memory, so pictures drawn later (the actor tile's posters) use the new one too */
+  const lists = [];
+  try { if (abCur && abCur.actor) lists.push(abCur.actor.items); } catch (e) { /* none */ }
+  try { if (spot.movies) lists.push(spot.movies.items); } catch (e) { /* none */ }
+  try { libCache.forEach((v) => lists.push(v.items)); } catch (e) { /* none */ }
+  lists.forEach((l) => (l || []).forEach((it) => { if (String(it.ratingKey) === String(m.ratingKey)) pairs.forEach((x) => { it[x[2]] = x[1]; }); }));
 }
 
 /* ---------- clearart (fanart.tv) ----------
