@@ -1756,3 +1756,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abseg button { font-size: 20px; padding: 0 22px; }
 .abanner .abnav [data-key="ab-set"] { width: 54px; background: rgba(28,28,31,.75); color: #F1F1EC; }
 .abanner .abnav [data-key="ab-set"].focus { background: var(--focus); color: var(--on-focus); }
+/* all the controls on one row, level with the bottom of the posters: Next actor, All / Unseen / Seen, the gear */
+.abanner .abnav { display: flex; gap: 10px; align-items: stretch; }
+.abanner .abnav .abnext, .abanner .abnav .abnext.f.focus { order: 1; height: 54px; }
+.abanner .abnav .abseg { order: 2; height: 54px; }
+.abanner .abnav [data-key="ab-set"] { order: 3; height: 54px; }
+.abanner .abnav .abseg .f { flex: none; }

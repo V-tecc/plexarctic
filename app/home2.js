@@ -18,7 +18,7 @@ function abSelect(m) {
    the small posters after it are the ones coming up. */
 let abCur = null;
 function abRowHTML(a) {
-  const next = a.items.slice(a.sel + 1, a.sel + 7);
+  const next = a.items.slice(a.sel + 1, a.sel + 6);
   return next.map((m) => '<div class="abcard"><img loading="lazy" src="' + esc(imgURL(m.thumb, 300, 450)) + '" alt="">' + (m.viewCount ? '<span class="watched">' + ICON.check + '</span>' : '') + '</div>').join('') +
     '<span class="abpos">' + esc((a.sel + 1) + ' / ' + a.items.length) + '</span>';
 }
@@ -52,13 +52,12 @@ document.addEventListener('keydown', (e) => {
   if (k === 'ab-big' && e.key === 'ArrowUp') return jump('ab-face');
   if (k === 'ab-face' && e.key === 'ArrowDown') return jump(hasNext ? 'ab-next' : modeKey);
   if (k === 'ab-face' && e.key === 'ArrowLeft') return jump('ab-big');
-  if (k === 'ab-next' && e.key === 'ArrowDown') return jump(modeKey);
   if (k === 'ab-next' && e.key === 'ArrowUp') return jump('ab-face');
   if (k === 'ab-next' && e.key === 'ArrowLeft') return jump('ab-big');
-  if (/^ab-m-/.test(k || '') && e.key === 'ArrowUp' && hasNext) return jump('ab-next');
-  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-set');
-  if (k === 'ab-set' && e.key === 'ArrowLeft' && hasNext) return jump('ab-next');
-  if (k === 'ab-set' && e.key === 'ArrowDown') return jump('ab-m-seen');
+  /* one row: Next actor, All / Unseen / Seen, the gear */
+  if (k === 'ab-next' && e.key === 'ArrowRight') return jump(modeKey);
+  if (/^ab-m-/.test(k || '') && e.key === 'ArrowUp') return jump('ab-face');
+  if (k === 'ab-set' && e.key === 'ArrowUp') return jump('ab-face');
   if (k !== 'ab-big') return;
   const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
