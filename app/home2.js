@@ -276,8 +276,18 @@ function wlInfo(w) {
   gradSheet(openModal(sheetHeader(w.title || '', [w.year, w.type === 'show' ? t('shows') : t('movies')].filter(Boolean).join(' · ')) +
     '<div class="tags"><span class="tag">' + esc(t('notInLibrary').toUpperCase()) + '</span></div>' +
     (w.summary ? '<p class="sheettext">' + esc(w.summary) + '</p>' : '') +
-    '<div class="optlist">' + optionRow('wl-rm', t('wlRemove'), [], false, A(() => { closeModal(true); wlToggle(w); })) + '</div>', 'wl-rm'));
+    '<div class="optlist">' + optionRow('wl-tr', t('trailer'), [], false, A(() => { closeModal(true); wlTrailer(w); })) + optionRow('wl-rm', t('wlRemove'), [], false, A(() => { closeModal(true); wlToggle(w); })) + '</div>', 'wl-tr'));
   modalArt = prevArt;
+}
+/* a Watchlist title you don't have: its trailer from TMDB (found by Plex's ids, or by name and year) */
+async function wlTrailer(w) {
+  const isShow = w.type === 'show';
+  let tid = tmdbIdOf(w);
+  if (!tid && wlId(w)) { try { tid = tmdbIdOf((((await wlCall('/library/metadata/' + wlId(w), { includeGuids: 1 })).MediaContainer || {}).Metadata || [])[0]); } catch (e) { tid = 0; } }
+  if (!tid && S.tmdb && w.title) {
+    try { const j = await tmdbGet('/search/' + (isShow ? 'tv' : 'movie'), { query: w.title, year: isShow ? undefined : w.year, first_air_date_year: isShow ? w.year : undefined }); tid = ((j.results || [])[0] || {}).id || 0; } catch (e) { tid = 0; }
+  }
+  return tmdbTrailer(isShow, tid, w.title);
 }
 function watchlistHTML(x) {
   const items = x.watchlist || [];

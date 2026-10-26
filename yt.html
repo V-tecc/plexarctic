@@ -19,6 +19,8 @@ var q = new URLSearchParams(location.search);
 var id = q.get('v') || '';
 var cc = q.get('cc') || '';   /* subtitle language wanted, e.g. sv */
 var hl = q.get('hl') || cc;
+/* probe=1: only find out how long the video is (the app uses it to come back after the YouTube app), silently */
+var probe = q.get('probe') === '1';
 var player = null;
 function send(msg) { try { parent.postMessage(msg, '*'); } catch (e) {} }
 var tag = document.createElement('script');
@@ -27,15 +29,27 @@ document.head.appendChild(tag);
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('p', {
     videoId: id,
-    playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin,
+    playerVars: { autoplay: probe ? 0 : 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, origin: location.origin,
       cc_load_policy: cc ? 1 : 0, cc_lang_pref: cc || undefined, hl: hl || undefined },
     events: {
-      onReady: function (e) { e.target.playVideo(); send({ yt: 'ready', v: 2 }); if (cc) send({ yt: 'cc', mode: 'looking' }); },
+      onReady: function (e) { if (probe) { startProbe(e.target); return; } e.target.playVideo(); send({ yt: 'ready', v: 2 }); if (cc) send({ yt: 'cc', mode: 'looking' }); },
       onApiChange: function () { pickCaptions(); },
       onStateChange: function (e) { send({ yt: 'state', s: e.data }); },
       onError: function (e) { send({ yt: 'error', code: e.data }); }
     }
   });
+}
+/* the length, without playing if YouTube already knows it; otherwise a moment of silent play */
+function startProbe(p) {
+  p.mute();
+  var n = 0, played = false;
+  var iv = setInterval(function () {
+    n++;
+    var d = 0; try { d = p.getDuration() || 0; } catch (err) {}
+    if (d > 0 && (!played || n > 4)) { clearInterval(iv); try { p.stopVideo(); } catch (err) {} send({ yt: 'dur', d: d }); return; }
+    if (n === 10 && !played) { played = true; p.playVideo(); }
+    if (n > 40) { clearInterval(iv); try { p.stopVideo(); } catch (err) {} send({ yt: 'dur', d: 0 }); }
+  }, 250);
 }
 /* subtitles: the wanted language if the video has it, otherwise YouTube's own translation of the English (or the
    first) track. The caption list can arrive late, so this is tried again for a while; the result is sent to the app. */
@@ -68,6 +82,7 @@ window.addEventListener('message', function (e) {
   if (d.cmd === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + d.by), true);
 });
 setInterval(function () {
+  if (probe) return;
   if (player && player.getCurrentTime) send({ yt: 'time', t: player.getCurrentTime(), d: player.getDuration() });
 }, 1000);
 </script>

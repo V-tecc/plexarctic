@@ -1665,3 +1665,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .ssug .sugchip b { font-weight: var(--w800); color: var(--ac1, #2DD4BF); }
 #stage:not([data-theme="dark"]) .ssug .sugchip b { color: #6A1BCB; }
 .ssug .sugchip.focus b { color: inherit; }
+/* quietly asks the trailer page how long a YouTube video is */
+.ytprobe { position: fixed; left: 0; top: 0; width: 320px; height: 180px; opacity: 0.01; pointer-events: none; border: 0; z-index: -1; }
