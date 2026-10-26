@@ -323,6 +323,7 @@ function abSettings(x, d) {
     const pins = pinActors();
     const top = (x.taste && x.taste.favs || []).slice(0, 20);
     const rows = [];
+    if (cur) rows.push(optionRow('as-why', t('abWhy', { s: cur.name }), [], false, A(() => { closeModal(true); abDiag(x, d, cur); }), t('abWhySub')));
     if (cur) rows.push(optionRow('as-cur', t(isPinned(cur.name) ? 'pinUnpinThis' : 'pinThis', { s: cur.name }), [], isPinned(cur.name), A(() => { pinToggle(cur); draw('as-cur'); })));
     const body = '<span class="label">' + esc(t('pinPinned')) + '</span>' +
       (pins.length ? '<div class="optlist">' + pins.map((p, i) => optionRow('as-p' + i, p.name, [], true, A(() => { pinToggle(p); draw('as-p' + Math.max(0, i - 1)); }), t('pinTapToRemove'))).join('') + '</div>' : '<p class="sheettext small">' + esc(t('pinNone')) + '</p>') +
@@ -332,6 +333,51 @@ function abSettings(x, d) {
     $('.modal', viewEl)._onclose = () => { x.actorPool = abPool(x.taste && x.taste.favs || []); };
   };
   draw();
+}
+/* "Why these films?": every step of finding an actor's films, with counts and titles, to see where some go missing */
+async function abDiag(x, d, f) {
+  const sec = d.movieSec;
+  const all = x.moviesAll || [];
+  const nm = String(f.name || '').toLowerCase();
+  const lines = [];
+  const L = (k, v) => lines.push([k, v]);
+  toast(t('loading'), 2000);
+  const ids = new Set(f.id ? [String(f.id)] : []);
+  let castIds = 0;
+  try { Object.values(castStore().c).forEach((cast) => (cast || []).forEach((r) => { if (r[1] && String(r[0]).toLowerCase() === nm) { ids.add(String(r[1])); castIds++; } })); } catch (e) { /* none */ }
+  all.forEach((m) => (m.Role || []).forEach((r) => { if (r.id && String(r.tag).toLowerCase() === nm) ids.add(String(r.id)); }));
+  let idxIds = [];
+  try { idxIds = (await abActorIndex(sec)).filter((y) => y[0] === fold(f.name)).map((y) => y[1]); idxIds.forEach((i) => ids.add(i)); L('Plex actor list', idxIds.length + ' id(s): ' + idxIds.join(', ')); } catch (e) { L('Plex actor list', 'failed: ' + (e.message || e)); }
+  L('All ids used', Array.from(ids).join(', ') || '—');
+  let plexAll = [];
+  try { if (ids.size) plexAll = (await api('/library/sections/' + sec.key + '/all', { type: 1, actor: Array.from(ids).join(',') })).Metadata || []; } catch (e) { L('Plex search', 'failed: ' + (e.message || e)); }
+  L('Plex: films with him', plexAll.length + ' (' + plexAll.filter((m) => !m.viewCount).length + ' unseen)');
+  /* one id at a time, in case the server only takes the first of several */
+  for (const i of Array.from(ids).slice(0, 6)) {
+    try { const r = (await api('/library/sections/' + sec.key + '/all', { type: 1, actor: i })).Metadata || []; L('  id ' + i, r.length + ' film(s)'); } catch (e) { L('  id ' + i, 'failed'); }
+  }
+  const roleHits = all.filter((m) => (m.Role || []).some((r) => String(r.tag).toLowerCase() === nm));
+  L('In the film list\'s short casts', roleHits.length + '');
+  let tm = [], pid = null;
+  if (S.tmdb) {
+    try { pid = await findPerson(f.name); tm = await abTmdbFilms(f.name); L('TMDB person', (pid || '—') + ' · ' + tm.length + ' films as actor'); } catch (e) { L('TMDB', 'failed: ' + (e.message || e)); }
+  } else L('TMDB', 'no key');
+  const byTitle = new Map();
+  all.forEach((m) => [m.title, m.originalTitle].forEach((y) => { if (y) { const k = fold(y); (byTitle.get(k) || byTitle.set(k, []).get(k)).push(m); } }));
+  const tmHits = [];
+  tm.forEach((c) => { const y = +(String(c.release_date || '').slice(0, 4)) || 0; const h = [].concat(byTitle.get(fold(c.title)) || [], byTitle.get(fold(c.original_title)) || []).find((m) => !y || !m.year || Math.abs(m.year - y) <= 1); if (h && !tmHits.includes(h)) tmHits.push(h); });
+  L('TMDB films you have', tmHits.length + ' (' + tmHits.filter((m) => !m.viewCount).length + ' unseen)');
+  const owned = []; [plexAll, roleHits, tmHits].forEach((l) => l.forEach((m) => { if (!owned.some((o) => String(o.ratingKey) === String(m.ratingKey))) owned.push(m); }));
+  const no = tasteGet().no;
+  const shown = (await abActorFilms(sec, f, all));
+  L('Shown in the tile', tasteSort(shown, x.taste).length + ' (hidden by "less like this": ' + shown.filter((m) => no[m.ratingKey]).length + ')');
+  L('Movies in the list', all.length + '');
+  const body = '<div class="diag">' + lines.map((l) => '<div><b>' + esc(l[0]) + '</b><span>' + esc(l[1]) + '</span></div>').join('') + '</div>' +
+    '<button type="button" class="btn f" data-key="diagok" data-act="' + A(() => closeModal()) + '">OK</button>' +
+    '<span class="label">' + esc(t('abWhyOwned', { n: owned.length })) + '</span><div class="optlist">' +
+    owned.map((m, i) => optionRow('dg-' + i, m.title + (m.year ? ' (' + m.year + ')' : ''), [], false, A(() => {}),
+      [m.viewCount ? '✓ ' + t('watched') : t('fUnwatched'), no[m.ratingKey] ? '👎' : '', plexAll.includes(m) ? 'Plex' : '', roleHits.includes(m) ? 'cast' : '', tmHits.includes(m) ? 'TMDB' : ''].filter(Boolean).join(' · '))).join('') + '</div>';
+  gradSheet(openModal(sheetHeader(t('abWhy', { s: f.name }), '') + body, 'diagok'));
 }
 /* pinned actors first (in random order), then your top ten */
 function abPool(favs) {

@@ -1669,3 +1669,10 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .ytprobe { position: fixed; left: 0; top: 0; width: 320px; height: 180px; opacity: 0.01; pointer-events: none; border: 0; z-index: -1; }
 .fbtns { display: flex; gap: 14px; flex-wrap: wrap; }
 .subbar .chipclear { border-style: dashed; }
+/* "Why these films?" */
+.diag { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+.diag div { display: flex; gap: 18px; font-size: 20px; }
+.diag div b { flex: none; width: 360px; font-weight: var(--w600); }
+.diag div span { color: var(--muted); word-break: break-all; }
+.diag.small div { font-size: 18px; }
+.diag.small div b { width: 520px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
