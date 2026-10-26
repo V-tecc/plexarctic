@@ -410,6 +410,15 @@ window.onDeepLink = () => { if (current && current.fn === viewHome) tvDeepLinkGo
 
 /* An actor's unwatched films here. Plex sometimes keeps the same person under several tags (one per metadata
    agent), so every tag id seen for that name is asked for, plus the films whose cast lists the name. */
+/* an actor's films on TMDB (as actor), kept for the session */
+const abTmdb = new Map();
+async function abTmdbFilms(name) {
+  if (abTmdb.has(name)) return abTmdb.get(name);
+  const pid = await findPerson(name);
+  const list = pid ? (((await tmdbGet('/person/' + pid + '/movie_credits', { language: 'en-US' })).cast) || []) : [];
+  abTmdb.set(name, list);
+  return list;
+}
 /* every actor in a library (name, id), read once a session */
 const abActors = {};
 async function abActorIndex(sec) {
@@ -439,7 +448,22 @@ async function abActorFilms(sec, f, moviesAll) {
     try { list = (await api('/library/sections/' + sec.key + '/all', { type: 1, actor: Array.from(ids).join(','), unwatched: 1 })).Metadata || []; } catch (e) { list = []; }
   }
   const seen = new Set(list.map((m) => String(m.ratingKey)));
-  (moviesAll || []).forEach((m) => { if (!m.viewCount && !seen.has(String(m.ratingKey)) && (m.Role || []).some((r) => String(r.tag).toLowerCase() === nm)) { list.push(m); seen.add(String(m.ratingKey)); } });
+  const add = (m) => { if (m && !m.viewCount && !seen.has(String(m.ratingKey))) { list.push(m); seen.add(String(m.ratingKey)); } };
+  (moviesAll || []).forEach((m) => { if ((m.Role || []).some((r) => String(r.tag).toLowerCase() === nm)) add(m); });
+  /* and their filmography from TMDB matched to your films by title and year: finds the ones Plex's cast lists
+     don't connect to them (a different id, or a cast list that stops before them) */
+  if (S.tmdb && typeof findPerson === 'function' && moviesAll && moviesAll.length) {
+    try {
+      const films = await abTmdbFilms(f.name);
+      const byTitle = new Map();
+      moviesAll.forEach((m) => [m.title, m.originalTitle].forEach((x) => { if (x) { const k = fold(x); (byTitle.get(k) || byTitle.set(k, []).get(k)).push(m); } }));
+      films.forEach((c) => {
+        const y = +(String(c.release_date || '').slice(0, 4)) || 0;
+        const hits = [].concat(byTitle.get(fold(c.title)) || [], byTitle.get(fold(c.original_title)) || []);
+        add(hits.find((m) => !y || !m.year || Math.abs(m.year - y) <= 1));
+      });
+    } catch (e) { /* Plex's own matches only */ }
+  }
   return list;
 }
 
