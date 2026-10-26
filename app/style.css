@@ -1705,3 +1705,17 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .abfacebtn.focus .abface { opacity: 1; }
 .abanner .abfacebtn .abfacehint { left: 104px; top: 206px; bottom: auto; transform: none; font-size: 18px; padding: 6px 14px; }
 .abanner .abfacebtn.focus .abfacehint { box-shadow: 0 0 0 3px var(--focus); }
+/* actor tile, final: the film's backdrop on the left, the actor on the right melting into it, text from the top left,
+   Next actor above the All / Unseen / Seen switch and the gear */
+.abanner .abart { left: 0; right: auto; width: 66%;
+  -webkit-mask-image: linear-gradient(270deg, transparent 0%, rgba(0,0,0,.55) 30%, #000 62%); mask-image: linear-gradient(270deg, transparent 0%, rgba(0,0,0,.55) 30%, #000 62%); }
+.abanner .abshade { background: linear-gradient(0deg, rgba(11,11,13,.92) 0%, rgba(11,11,13,0) 45%), linear-gradient(90deg, rgba(11,11,13,.82) 0%, rgba(11,11,13,.45) 40%, rgba(11,11,13,0) 65%); }
+.abanner .abwho { left: 0; right: 0; top: 0; height: 100%; max-width: none; display: block; }
+.abanner .abtx { position: absolute; left: 56px; top: 40px; margin-left: 0; z-index: 2; }
+.abanner .abfacebtn, .abanner .abfacebtn.f.focus { position: absolute !important; left: auto; right: 0; top: 0; z-index: 1; }
+.abanner .abface { width: 640px; height: 700px; opacity: .92;
+  -webkit-mask-image: linear-gradient(270deg, #000 40%, transparent 100%), linear-gradient(0deg, transparent 0%, #000 30%); mask-image: linear-gradient(270deg, #000 40%, transparent 100%); }
+.abanner .abfacebtn .abfacehint { left: auto; right: 56px; top: 40px; }
+.abanner .absel { top: 226px; }
+.abanner .abnav { position: relative; z-index: 3; }
+.abanner .abnext { left: auto; right: 56px; top: auto; bottom: 106px; width: auto; padding: 0 18px; }

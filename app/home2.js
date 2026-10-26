@@ -47,12 +47,15 @@ document.addEventListener('keydown', (e) => {
   /* up from the big poster to the face, down from the face to the poster */
   const jump = (key) => { const el = $('[data-key="' + key + '"]', viewEl); if (el) { setFocus(el); e.preventDefault(); e.stopImmediatePropagation(); } };
   const hasNext = !!$('[data-key="ab-next"]', viewEl);
-  if (k === 'ab-big' && e.key === 'ArrowUp') return jump(hasNext ? 'ab-next' : 'ab-face');
-  if (k === 'ab-face' && e.key === 'ArrowDown') return jump(hasNext ? 'ab-next' : 'ab-big');
-  if (k === 'ab-next' && e.key === 'ArrowDown') return jump('ab-big');
+  const modeKey = 'ab-m-' + abMode();
+  /* the poster bottom left, the actor on the right, Next actor above the All / Unseen / Seen switch */
+  if (k === 'ab-big' && e.key === 'ArrowUp') return jump('ab-face');
+  if (k === 'ab-face' && e.key === 'ArrowDown') return jump(hasNext ? 'ab-next' : modeKey);
+  if (k === 'ab-face' && e.key === 'ArrowLeft') return jump('ab-big');
+  if (k === 'ab-next' && e.key === 'ArrowDown') return jump(modeKey);
   if (k === 'ab-next' && e.key === 'ArrowUp') return jump('ab-face');
-  if (k === 'ab-face' && e.key === 'ArrowRight') return jump('ab-m-' + abMode());
-  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-m-' + abMode());
+  if (k === 'ab-next' && e.key === 'ArrowLeft') return jump('ab-big');
+  if (/^ab-m-/.test(k || '') && e.key === 'ArrowUp' && hasNext) return jump('ab-next');
   if (k !== 'ab-big') return;
   const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
