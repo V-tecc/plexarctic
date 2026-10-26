@@ -1723,7 +1723,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .absel { left: 56px; top: 222px; width: 900px; gap: 4px; }
 .abanner .absel p { -webkit-line-clamp: 2; max-width: 900px; }
 .abanner .abbig, .abanner .abbig.f.focus { width: 160px; height: 240px; }
-.abanner .abarrows { width: 160px; }
+.abanner .abarrows { width: 168px; height: 248px; }
 .abanner .abrow { left: 248px; }
 /* the controls bottom right as one block: Next actor across the full width, the switch and the gear under it */
 .abanner .abnav { display: grid; grid-template-columns: auto auto; gap: 12px; align-items: stretch; }
