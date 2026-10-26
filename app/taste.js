@@ -11,7 +11,7 @@ function tasteCount() { const x = tasteGet(); return Object.keys(x.no).length + 
 const clampT = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
 /* teach: dir +1 more like this, -1 less like this */
-async function tasteMark(it, dir) {
+async function tasteMark(it, dir, opt) {
   let m = it;
   try { m = ((await api('/library/metadata/' + it.ratingKey)).Metadata || [])[0] || it; } catch (e) { /* use what we have */ }
   const x = tasteGet();
@@ -27,7 +27,9 @@ async function tasteMark(it, dir) {
   if (dir > 0) x.yes[key] = Date.now(); else if (dir < 0) x.no[key] = Date.now();
   tasteSave(x);
   toast(undo ? t('tasteUndone', { s: m.title }) : t(dir > 0 ? 'tasteMoreDone' : 'tasteLessDone', { s: m.title }), 4000);
-  if (current && current.fn === viewHome) { spot.pick = null; rerun(); }
+  /* only a "less like this" changes what Home shows; a thumbs up just stays lit, the page isn't rebuilt */
+  if (current && current.fn === viewHome && !(opt && opt.quiet) && (dir < 0 || prev < 0)) { spot.pick = null; rerun(); }
+  return dir;
 }
 function tasteReset() { store.set(userKey('taste'), null); toast(t('tasteResetDone'), 3000); }
 
