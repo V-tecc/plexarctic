@@ -1719,3 +1719,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .abanner .absel { top: 226px; }
 .abanner .abnav { position: relative; z-index: 3; }
 .abanner .abnext { left: auto; right: 56px; top: auto; bottom: 106px; width: auto; padding: 0 18px; }
+/* all the text on the left, one column: actor, then the selected film; the big poster a little smaller below it */
+.abanner .absel { left: 56px; top: 222px; width: 900px; gap: 4px; }
+.abanner .absel p { -webkit-line-clamp: 2; max-width: 900px; }
+.abanner .abbig, .abanner .abbig.f.focus { width: 160px; height: 240px; }
+.abanner .abarrows { width: 160px; }
+.abanner .abrow { left: 248px; }
