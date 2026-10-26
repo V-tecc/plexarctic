@@ -1736,3 +1736,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* the switch's buttons fill it evenly (same gap above and below) */
 .abanner .abseg { height: 70px; box-sizing: border-box; padding: 5px; align-items: stretch; }
 .abanner .abseg .f { height: auto; }
+/* top row: Next actor + gear; bottom row: the switch across the full width */
+.abanner .abnav { grid-template-columns: 1fr auto; }
+.abanner .abnav .abnext, .abanner .abnav .abnext.f.focus { grid-column: 1; grid-row: 1; }
+.abanner .abnav [data-key="ab-set"] { grid-column: 2; grid-row: 1; width: 62px; }
+.abanner .abnav .abseg { grid-column: 1 / -1; grid-row: 2; }
+.abanner .abnav .abseg .f { flex: 1; }

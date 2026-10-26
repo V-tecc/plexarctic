@@ -56,6 +56,9 @@ document.addEventListener('keydown', (e) => {
   if (k === 'ab-next' && e.key === 'ArrowUp') return jump('ab-face');
   if (k === 'ab-next' && e.key === 'ArrowLeft') return jump('ab-big');
   if (/^ab-m-/.test(k || '') && e.key === 'ArrowUp' && hasNext) return jump('ab-next');
+  if (k === 'ab-next' && e.key === 'ArrowRight') return jump('ab-set');
+  if (k === 'ab-set' && e.key === 'ArrowLeft' && hasNext) return jump('ab-next');
+  if (k === 'ab-set' && e.key === 'ArrowDown') return jump('ab-m-seen');
   if (k !== 'ab-big') return;
   const ban = $('#abanner'); if (ban && ban.scrollTop) ban.scrollTop = 0;
   if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
