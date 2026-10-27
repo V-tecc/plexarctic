@@ -202,7 +202,7 @@ function seasonCobweb(c) {
   /* the same colour as the logo (white on dark, black on light), whatever theme or colours are picked */
   let col = '#FFFFFF';
   try { const lg = document.querySelector('#view .hlogo svg.logo') || document.querySelector('#view .logo'); if (lg) col = getComputedStyle(lg).color || col; } catch (e) { /* white */ }
-  c.save(); c.globalAlpha = 0.3; c.strokeStyle = col; c.lineWidth = 0.6;
+  c.save(); c.globalAlpha = 0.42; c.strokeStyle = col; c.lineWidth = 1.1;   /* thick enough to survive a smaller TV scaling the picture down */
   const ang = (k) => (k / (spokes - 1)) * (Math.PI / 2);
   c.beginPath();
   for (let k = 0; k < spokes; k++) { c.moveTo(0, 0); c.lineTo(Math.cos(ang(k)) * R, Math.sin(ang(k)) * R); }
