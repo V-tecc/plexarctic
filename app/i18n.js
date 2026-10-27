@@ -316,3 +316,9 @@ const TEXT = {
     kSpace: "Κενό", kClear: "Καθαρισμός", starring: "Πρωταγωνιστούν", castCrew: "Ηθοποιοί & συντελεστές"
   }
 };
+/* the player's control layout */
+Object.assign(TEXT.en, { playerStyle: 'Player controls', psGrid: 'Grid', psFrame: 'Frame' });
+Object.assign(TEXT.sv, { playerStyle: 'Spelarkontroller', psGrid: 'Rutnät', psFrame: 'Ram' });
+Object.assign(TEXT.cs, { playerStyle: 'Ovládání přehrávače', psGrid: 'Mřížka', psFrame: 'Rámeček' });
+Object.assign(TEXT.uk, { playerStyle: 'Керування плеєром', psGrid: 'Сітка', psFrame: 'Рамка' });
+Object.assign(TEXT.el, { playerStyle: 'Χειριστήρια', psGrid: 'Πλέγμα', psFrame: 'Πλαίσιο' });
