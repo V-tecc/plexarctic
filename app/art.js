@@ -187,7 +187,9 @@ async function artSelect(m, kind, o, before) {
     if (!r.ok) throw new Error('PUT ' + r.status);
   } else {
     /* add it to the server from the link, then make sure it's the chosen one */
-    const r = await fetch(artURL(base + '/' + k.list, { url: o.full }), { method: 'POST' });
+    /* ThePosterDB needs the signed-in session, so the app downloads the picture and uploads it to Plex itself */
+    const r = o.src === 'tpdb' ? await fetch(artURL(base + '/' + k.list), { method: 'POST', body: await tpdbAsset(o.id) })
+      : await fetch(artURL(base + '/' + k.list, { url: o.full }), { method: 'POST' });
     if (!r.ok) throw new Error('POST ' + r.status);
     const after = await artList(m.ratingKey, kind).catch(() => []);
     const was = new Set((before || []).map((x) => x.id));
@@ -261,8 +263,42 @@ async function artEditor(item, kindIn) {
     if (note) note.outerHTML = body ? '<p class="sheettext small">' + esc(k.local ? t('artClearNote') : t('artNote')) + '</p>' + body : '<p class="sheettext">' + esc(kind === 'logo' && !S.tmdb ? t('artNoLogos') : t('artNone')) + '</p>';
     /* start at the top: the first picture (not the current one further down) */
     const firstKey = plex.length ? 'ao-' + plex[0].src + '0' : tm.length ? 'ao-tmdb0' : fa.length ? 'ao-fanart0' : 'at-' + kind;
+    const wantTp = kind === 'poster' && typeof tpdbReady === 'function' && tpdbReady() && ['movie', 'show', 'season', 'collection'].includes(m.type);
+    if (wantTp) (($('.mbody', el) || el)).insertAdjacentHTML('beforeend', '<div id="tpdbzone"><span class="label">' + esc(t('tpdbFromTpdb')) + '</span><p class="sheettext small">' + esc(t('tpdbLoading')) + '</p></div>');
     initFocus(focusKey || firstKey, el);
     if (!focusKey) { const sc = $('.mbody', el) || el; sc.scrollTop = 0; el.scrollTop = 0; }
+    if (wantTp) fillTpdb(el, k, focusKey);
+  };
+  /* ThePosterDB posters load after the rest, so the picker opens at once */
+  const fillTpdb = async (el, k, focusKey) => {
+    let list = [], err = '';
+    try { list = await tpdbFor(m); } catch (e) { err = e.message || String(e); }
+    const zone = $('#tpdbzone', el);
+    if (!zone || !document.contains(el) || kind !== 'poster') return;
+    const tcell = (o, i) => '<button type="button" class="artopt ' + k.ratio + ' f" data-key="ao-tpdb' + i + '" data-act="' + A(() => tpdbChoice(o, i)) + '"><img loading="lazy" src="' + esc(o.thumb) + '" alt="">' +
+      (o.setSize > 1 ? '<span class="artlang">SET ' + o.setSize + '</span>' : '') + '</button>';
+    zone.innerHTML = '<span class="label">' + esc(t('tpdbFromTpdb')) + '</span>' +
+      (err ? '<p class="sheettext small">' + esc(t('tpdbFail', { e: err })) + '</p>' : list.length ? '<div class="artgrid ' + k.ratio + '">' + list.map(tcell).join('') + '</div>' : '<p class="sheettext small">' + esc(t('tpdbNone')) + '</p>') +
+      '<div class="optlist"><div class="subrow dlrow-sub f" data-key="tp-import" data-act="' + A(() => tpdbAskSet(m, () => { changed = true; draw(); })) + '"><span class="chk">' + ICON.download + '</span><span class="lang">' + esc(t('tpdbMore')) + '</span></div></div>';
+    if (focusKey && /^ao-tpdb|^tp-/.test(focusKey)) initFocus(focusKey, el);
+  };
+  /* one ThePosterDB poster: just this one, or its whole set */
+  const tpdbChoice = (o, i) => {
+    if (busy) return;
+    const back = () => draw('ao-tpdb' + i);
+    const el2 = openModal(sheetHeader(t('artChange'), o.title || m.title) +
+      '<div class="tpdbpick"><img src="' + esc(o.thumb) + '" alt=""></div><div class="optlist">' +
+      optionRow('tpc-one', t('tpdbUseThis'), [], false, A(async () => {
+        busy = true;
+        toast(t('artSaving'), 2500);
+        try { await artSelect(m, 'poster', o, await artList(m.ratingKey, 'poster').catch(() => [])); toast(t('artSaved'), 3000); changed = true; } catch (e) { toast(t('artFailed') + ' (' + (e.message || e) + ')', 6000); }
+        busy = false;
+        draw();
+      })) +
+      (o.setId ? optionRow('tpc-set', t('tpdbUseSet', { n: o.setSize || '?' }), [], false, A(() => tpdbApplySet(o.setId, m, () => { changed = true; draw(); })), t('tpdbUseSetNote')) : '') +
+      '</div>', 'tpc-one', true);
+    el2._backTop = () => { back(); return true; };
+    el2._onclose = () => { if (changed) afterArt(m); };
   };
   draw();
 }

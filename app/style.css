@@ -1771,3 +1771,8 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 #stage > canvas.season { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 0; }
 #stage > #view { z-index: 1; }
 #stage > canvas.season-spider { position: absolute; width: 48px; height: 132px; pointer-events: none; z-index: 2; }
+
+/* ThePosterDB: one poster chosen, and the list of a set's matches */
+.tpdbpick { display: flex; justify-content: center; margin: 8px 0 18px; }
+.tpdbpick img { width: 240px; height: 360px; object-fit: cover; border-radius: 10px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35); }
+.tpdblist { margin: 6px 0 14px; padding-left: 26px; font-size: 22px; line-height: 1.5; opacity: 0.85; }
