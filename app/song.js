@@ -113,17 +113,18 @@ function songArt(res) {
 
 /* remember what was found (newest first), with where you heard it */
 function songRemember(res, m, at) {
-  const list = store.get('songHistory', []) || [];
+  const list = songList();
   list.unshift({ title: res.title, artist: res.artist, album: res.album || '', art: songArt(res), link: res.song_link || '',
     from: m.type === 'episode' ? (m.grandparentTitle + ' · ' + epCode(m)) : m.title, key: m.ratingKey, at: Math.floor(at), when: Date.now() });
-  store.set('songHistory', list.slice(0, 60));
+  songSave(list);
+  clearTimeout(songPushT); songPushT = setTimeout(() => songSync().catch(() => {}), 4000);
 }
 
 /* the button in the player: listen, then show a card at the bottom left */
 let songBusy = false, songLast = null;
 /* set by the player: jump inside the title that's playing instead of reopening it */
 let songJump = null;
-function songsFor(key) { return (store.get('songHistory', []) || []).filter((x) => String(x.key) === String(key)); }
+function songsFor(key) { return songList().filter((x) => String(x.key) === String(key)); }
 async function songFind(pl, m, at, audioStreamID) {
   if (!songKey()) { toast(t('songNeedsKey'), 6000); return; }
   /* never spend two lookups on the same moment: a second press while listening does nothing, and asking again
@@ -179,11 +180,58 @@ async function songFindNow(pl, m, at, audioStreamID) {
 
 /* every song you've looked up, newest first (Settings → Songs you looked up) */
 function songHistorySheet(onlyKey, title) {
-  const all = store.get('songHistory', []) || [];
+  const all = songList();
   const list = onlyKey ? all.filter((x) => String(x.key) === String(onlyKey)) : all;
   const rows = list.map((s, i) => '<div class="songrow f" data-key="sh-' + i + '" data-act="' + A(() => { closeModal(true); if (!(songJump && songJump.key === String(s.key) && songJump.go(s.at))) go(viewPlayer, [s.key, { at: s.at }]); }) + '">' +
     (s.art ? '<img src="' + esc(s.art) + '" alt="">' : '<div class="songph">' + ICON.music + '</div>') +
     '<div class="songtx"><b>' + esc(s.title) + '</b><span>' + esc(s.artist) + '</span><small>' + esc(s.from + ' · ' + tc(s.at)) + '</small></div></div>').join('');
   gradSheet(openModal(sheetHeader(title ? t('songsIn', { s: title }) : t('songHistory'), list.length ? (list.length === 1 ? t('songCount1') : t('songCount', { n: list.length })) : '') +
     (rows ? '<p class="sheettext small">' + esc(t('songHistoryNote')) + '</p><div class="songlist">' + rows + '</div>' : '<p class="sheettext">' + esc(t('songHistoryEmpty')) + '</p>'), 'sh-0'));
+}
+
+/* ---------- the songs you looked up belong to your profile and follow you to every TV ----------
+   Kept per profile on this TV, and in the same private GitHub gist as the artwork backup
+   (plexarctic-songs-<profile>.json), merged both ways, so a song found on one TV shows on the other. */
+let songPushT = null, songSyncAt = 0;
+function songList() {
+  let l = store.get(userKey('songs'), null);
+  if (!l) {
+    /* the old list was per TV: it goes to the first profile that opens it here */
+    l = store.get('songHistory', []) || [];
+    if (l.length) store.del('songHistory');
+    store.set(userKey('songs'), l);
+  }
+  return l;
+}
+function songSave(l) { store.set(userKey('songs'), (l || []).slice(0, 100)); }
+function songId(x) { return [x.title, x.artist, x.key, x.at].join('|'); }
+function songFile() { return 'plexarctic-songs-' + String(S.user ? S.user.id : 'owner').replace(/[^a-z0-9_-]/gi, '') + '.json'; }
+async function songSync(force) {
+  if (typeof ghToken !== 'function' || !ghToken() || !S.token) return false;
+  if (!force && Date.now() - songSyncAt < 60000) return false;
+  songSyncAt = Date.now();
+  const local = songList();
+  const g = await ghGist();
+  let remote = [];
+  const f = g && g.files && g.files[songFile()];
+  if (f) { let txt = f.content; if (f.truncated || !txt) txt = await (await fetch(f.raw_url)).text(); try { remote = (JSON.parse(txt).songs) || []; } catch (e) { remote = []; } }
+  const seen = new Set(), merged = [];
+  local.concat(remote).forEach((x) => { const id = songId(x); if (!seen.has(id)) { seen.add(id); merged.push(x); } });
+  merged.sort((a, b) => (b.when || 0) - (a.when || 0));
+  const out = merged.slice(0, 100);
+  const gotNew = out.length !== local.length || out.some((x, i) => songId(x) !== songId(local[i] || {}));
+  const remoteMissing = out.some((x) => !remote.some((y) => songId(y) === songId(x)));
+  if (gotNew) songSave(out);
+  if (remoteMissing) {
+    const files = {}; files[songFile()] = { content: JSON.stringify({ v: 1, app: 'PLEX:arctic', what: 'songs looked up', saved: new Date().toISOString(), songs: out }, null, 1) };
+    let id = store.get('ghGistId', '') || (g && g.id);
+    if (id) await gh('/gists/' + id, 'PATCH', { files: files });
+    else { const ng = await gh('/gists', 'POST', { description: GH_DESC, public: false, files: files }); store.set('ghGistId', ng.id); }
+  }
+  /* songs from the other TV: show them on Home straight away */
+  if (gotNew && typeof current !== 'undefined' && current && current.fn === viewHome && typeof songsHomeHTML === 'function') {
+    const sec = document.getElementById('songhome');
+    if (sec) sec.outerHTML = songsHomeHTML();
+  }
+  return gotNew;
 }

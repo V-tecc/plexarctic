@@ -166,9 +166,11 @@ function fitsOthers(x) {
 
 /* ---------- songs you've found with "What's this song?" ---------- */
 function songsHomeHTML() {
-  const list = (store.get('songHistory', []) || []).slice(0, 8);
+  const list = songList().slice(0, 8);
+  /* pick up songs found on your other TV */
+  if (typeof songSync === 'function') setTimeout(() => songSync().catch(() => {}), 2500);
   if (!list.length) return '';
-  return '<section class="hub"><div class="hubhead"><h2>' + esc(t('songHistory')) + '</h2><span>' + esc(t('songHomeSub')) + '</span></div><div class="songhome">' +
+  return '<section class="hub" id="songhome"><div class="hubhead"><h2>' + esc(t('songHistory')) + '</h2><span>' + esc(t('songHomeSub')) + '</span></div><div class="songhome">' +
     list.map((s, i) => '<div class="songcardh f" data-key="sgh-' + i + '" data-act="' + A(() => go(viewPlayer, [s.key, { at: s.at }])) + '" data-ctx="' + A(() => songHistorySheet()) + '">' +
       (s.art ? '<img src="' + esc(s.art) + '" alt="">' : '<span class="songph">' + ICON.music + '</span>') +
       '<span class="sgtx"><b>' + esc(s.title) + '</b><span>' + esc(s.artist) + '</span><small>' + esc(s.from + ' · ' + tc(s.at)) + '</small></span></div>').join('') +
