@@ -10,6 +10,8 @@ function seasonFor(d) {
   const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
   const md = m * 100 + day;
   if (md >= 1024 && md <= 1101) return 'halloween';
+  /* the other seasons are on hold until their logos are designed */
+  if (!SEASON_MORE) return null;
   if (md >= 1201 && md <= 1230) return 'christmas';
   if (md === 1231 || md <= 102) return 'newyear';
   if (md >= 213 && md <= 215) return 'valentine';
@@ -24,6 +26,7 @@ function seasonFor(d) {
   if (m === 6 && day >= 19 && day <= 27) { const fri = [19, 20, 21, 22, 23, 24, 25].find((x) => new Date(y, 5, x).getDay() === 5); if (day >= fri && day <= fri + 2) return 'midsummer'; }
   return null;
 }
+const SEASON_MORE = false;   /* Christmas, New Year, Valentine's, Easter, Midsummer: switched off for now */
 let seasonPreview = null;   /* a season picked in Settings to try out, until the app restarts */
 function seasonNow() {
   if (seasonPreview) return seasonPreview;
@@ -133,40 +136,64 @@ function seasonHeart(c, x, y, s) {
 /* Halloween: bats now and then across the top, a ghost or two drifting by, a cobweb in the corner behind the logo,
    and a spider letting itself down on its thread onto the X of PLEX */
 function seasonHalloween(c, t) {
+  /* the cobweb behind the logo with its spider on the X, and now and then a bat across the top */
   seasonCobweb(c);
   if (!SEASON.bats.length && Math.random() < 0.004) SEASON.bats.push({ x: -20, y: seaRnd(30, 140), v: seaRnd(1.4, 2.2), ph: seaRnd(0, 6) });
   SEASON.bats = SEASON.bats.filter((b) => b.x < SEA_W + 30);
   SEASON.bats.forEach((b) => {
     b.x += b.v; const yy = b.y + Math.sin(t * 3 + b.ph) * 8; const w = Math.sin(t * 18) * 5;
-    c.globalAlpha = 0.85; c.fillStyle = '#0B0B0D';
+    /* the page is behind-the-tiles dark: a lighter grey shows there; on the light theme a dark one */
+    c.globalAlpha = 0.9; c.fillStyle = document.getElementById('stage').getAttribute('data-theme') === 'dark' ? '#5C5C68' : '#2A2A30';
     c.beginPath(); c.moveTo(b.x, yy);
     c.quadraticCurveTo(b.x - 6, yy - 4 - w, b.x - 13, yy - 1 + w * 0.3); c.quadraticCurveTo(b.x - 7, yy + 1, b.x, yy + 3);
     c.quadraticCurveTo(b.x + 7, yy + 1, b.x + 13, yy - 1 + w * 0.3); c.quadraticCurveTo(b.x + 6, yy - 4 - w, b.x, yy);
     c.fill();
   });
-  /* ghosts: one at a time, now and then, from either side */
-  SEASON.ghosts = SEASON.ghosts || [];
-  if (SEASON.ghosts.length < 1 && Math.random() < 0.003) {
-    const left = Math.random() < 0.5;
-    SEASON.ghosts.push({ x: left ? -30 : SEA_W + 30, v: (left ? 1 : -1) * seaRnd(1.0, 1.6), y: seaRnd(30, 140), s: seaRnd(10, 14), ph: seaRnd(0, 6) });   /* across the screen like the bats */
-  }
-  SEASON.ghosts = SEASON.ghosts.filter((g) => g.x > -40 && g.x < SEA_W + 40);
-  SEASON.ghosts.forEach((g) => { g.x += g.v; seasonGhost(c, g.x, g.y + Math.sin(t * 1.6 + g.ph) * 6, g.s, g.v < 0, t + g.ph); });
   seasonSpider(t);
 }
 function seasonGhost(c, x, y, s, flip, t) {
-  c.save(); c.translate(x, y); if (flip) c.scale(-1, 1);
-  c.globalAlpha = 0.55;
-  c.fillStyle = '#F4F4F6';
+  /* drawn facing left (the hem trails to the right); turned round when flying to the right */
+  c.save(); c.translate(x, y); if (!flip) c.scale(-1, 1);
+  /* leaning into the flight, rocking a little, and a soft squash-and-stretch as it "swims" */
+  c.rotate(-0.3 + Math.sin(t * 1.8) * 0.08);
+  const sq = Math.sin(t * 3.2) * 0.05; c.scale(1 + sq, 1 - sq);
+  const r = s, w = (k) => Math.sin(t * 4 + k) * r * 0.1;
+  const g = c.createLinearGradient(0, -r * 1.1, 0, r * 1.5);
+  g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.6, '#F1F2FA'); g.addColorStop(1, '#C9CDEB');
+  c.fillStyle = g; c.strokeStyle = '#23264A'; c.lineWidth = Math.max(1, r * 0.08); c.lineJoin = 'round'; c.lineCap = 'round';
   c.beginPath();
-  c.moveTo(-s, 0); c.arc(0, 0, s, Math.PI, 0);
-  c.lineTo(s, s * 1.3);
-  /* a wavy hem that moves */
-  for (let i = 0; i <= 4; i++) { const xx = s - i * (s / 2); c.lineTo(xx, s * 1.3 + (i % 2 ? -s * 0.22 : s * 0.12) + Math.sin(t * 4 + i) * s * 0.06); }
-  c.lineTo(-s, s * 1.3); c.closePath(); c.fill();
-  c.globalAlpha = 0.8; c.fillStyle = '#16161A';
-  c.beginPath(); c.ellipse(-s * 0.35, -s * 0.1, s * 0.16, s * 0.24, 0, 0, 6.283); c.ellipse(s * 0.3, -s * 0.1, s * 0.16, s * 0.24, 0, 0, 6.283); c.fill();
-  c.beginPath(); c.ellipse(0, s * 0.42, s * 0.14, s * 0.2, 0, 0, 6.283); c.fill();
+  c.moveTo(-r * 0.86, 0);
+  c.bezierCurveTo(-r * 0.9, -r * 0.75, -r * 0.45, -r * 1.12, 0, -r * 1.12);          /* head, left half */
+  c.bezierCurveTo(r * 0.5, -r * 1.12, r * 0.9, -r * 0.75, r * 0.88, -r * 0.05);        /* head, right half */
+  /* right arm, part of the sheet */
+  c.bezierCurveTo(r * 0.92, r * 0.12, r * 1.18, r * 0.25, r * 1.22 + w(1), r * 0.48);
+  c.bezierCurveTo(r * 1.1, r * 0.55, r * 0.98, r * 0.5, r * 0.92, r * 0.48);
+  /* right side down to the trailing hem */
+  c.bezierCurveTo(r * 0.98, r * 0.95, r * 1.25, r * 1.3, r * 1.42 + w(2), r * 1.52);
+  /* the hem: scallops from right to left */
+  const pts = [[1.05, 1.4], [0.72, 1.6], [0.38, 1.42], [0.05, 1.58], [-0.3, 1.38], [-0.62, 1.5], [-0.88, 1.28]];
+  pts.forEach((p2, k) => { const px = p2[0] * r + w(k + 3), py = p2[1] * r + w(k + 7); c.quadraticCurveTo(px + r * 0.12, py + (k % 2 ? -r * 0.18 : r * 0.12), px, py); });
+  /* left side up, with the left arm */
+  c.bezierCurveTo(-r * 0.95, r * 1.05, -r * 0.92, r * 0.7, -r * 0.92, r * 0.52);
+  const flap = Math.sin(t * 5) * r * 0.14;
+  c.bezierCurveTo(-r * 1.05, r * 0.5, -r * 1.3, r * 0.4 + flap, -r * 1.42, r * 0.18 + flap);
+  c.bezierCurveTo(-r * 1.25, r * 0.08 + flap * 0.5, -r * 0.95, r * 0.1, -r * 0.86, 0);
+  c.closePath(); c.fill(); c.stroke();
+  /* a couple of soft folds in the sheet */
+  c.strokeStyle = 'rgba(120,128,190,.45)'; c.lineWidth = Math.max(0.6, r * 0.05);
+  c.beginPath(); c.moveTo(r * 0.15, r * 0.75); c.quadraticCurveTo(r * 0.3, r * 1.1, r * 0.38, r * 1.38);
+  c.moveTo(-r * 0.4, r * 0.85); c.quadraticCurveTo(-r * 0.35, r * 1.1, -r * 0.3, r * 1.32); c.stroke();
+  /* eyes, with a shine */
+  c.fillStyle = '#1E2142';
+  c.beginPath(); c.ellipse(-r * 0.58, -r * 0.35, r * 0.13, r * 0.2, 0, 0, 6.283); c.ellipse(-r * 0.05, -r * 0.38, r * 0.11, r * 0.18, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#FFFFFF';
+  c.beginPath(); c.arc(-r * 0.62, -r * 0.43, r * 0.05, 0, 6.283); c.arc(-r * 0.09, -r * 0.45, r * 0.045, 0, 6.283); c.fill();
+  /* "boo!": a round open mouth */
+  const o = 1 + Math.sin(t * 2.4) * 0.12;
+  c.fillStyle = '#1E2142';
+  c.beginPath(); c.ellipse(-r * 0.36, r * 0.02, r * 0.14 * o, r * 0.19 * o, 0, 0, 6.283); c.fill();
+  c.fillStyle = '#6D4B7E';
+  c.beginPath(); c.ellipse(-r * 0.36, r * 0.1, r * 0.075 * o, r * 0.065 * o, 0, 0, 6.283); c.fill();
   c.restore();
 }
 /* the web, in the top left corner behind the logo */
@@ -200,7 +227,7 @@ function seasonSpider(t) {
   if (!sp.at || t - sp.at > 2) {
     sp.at = t;
     const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
-    const xX = (r.left - st.left) * k + r.width * k * 0.655, yX = (r.top - st.top) * k + r.height * k * 0.94;
+    const xX = (r.left - st.left) * k + r.width * k * 0.683, yX = (r.top - st.top) * k + r.height * k * 0.94;
     sp.cv.style.left = Math.round(xX - 20) + 'px'; sp.cv.style.top = Math.round(yX) + 'px';
   }
   sp.cv.style.display = '';
@@ -236,7 +263,7 @@ setInterval(seasonStart, 3600000);
 function seasonSettingsHTML() {
   const cur = seasonSetting();
   const seg = '<div class="seg">' + [['auto', t('seasonAuto')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (cur === x[0] && !seasonPreview ? ' on' : '') + '" data-key="sea-' + x[0] + '" data-act="' + A(() => { store.set('season', x[0]); seasonPreview = null; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
-  const tries = ['halloween', 'christmas', 'newyear', 'valentine', 'easter', 'midsummer'].map((k) => '<button type="button" class="chip f' + (seasonPreview === k ? ' on' : '') + '" data-key="sea-p-' + k + '" data-act="' + A(() => { seasonPreview = seasonPreview === k ? null : k; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(t('season_' + k)) + '</button>').join('');
+  const tries = (SEASON_MORE ? ['halloween', 'christmas', 'newyear', 'valentine', 'easter', 'midsummer'] : ['halloween']).map((k) => '<button type="button" class="chip f' + (seasonPreview === k ? ' on' : '') + '" data-key="sea-p-' + k + '" data-act="' + A(() => { seasonPreview = seasonPreview === k ? null : k; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(t('season_' + k)) + '</button>').join('');
   const now = seasonFor(new Date());
   return seg + '<div class="chips">' + tries + '</div><span class="sval">' + esc(now ? t('seasonNow', { s: t('season_' + now) }) : t('seasonNone')) + '</span>';
 }
