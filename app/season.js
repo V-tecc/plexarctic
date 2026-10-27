@@ -53,6 +53,8 @@ function seasonStart() {
 function seasonStop() {
   cancelAnimationFrame(SEASON.raf);
   if (SEASON.cv) SEASON.cv.remove();
+  if (SEASON.spider) { SEASON.spider.cv.remove(); SEASON.spider = null; }
+  SEASON.ghosts = [];
   SEASON.cv = null; SEASON.ctx = null; SEASON.kind = null; SEASON.parts = [];
 }
 
@@ -90,6 +92,7 @@ function seasonFrame(now) {
   const c = SEASON.ctx; if (!c) return;
   const paused = seasonPaused();
   SEASON.cv.style.visibility = paused ? 'hidden' : '';
+  if (SEASON.spider) SEASON.spider.cv.style.visibility = paused ? 'hidden' : '';
   if (paused) return;
   c.clearRect(0, 0, SEA_W, SEA_H);
   const t = (now - SEASON.t0) / 1000;
@@ -127,11 +130,10 @@ function seasonHeart(c, x, y, s) {
   c.fill();
 }
 
-/* two jack-o'-lanterns in the bottom corners with flickering eyes, and now and then a bat crossing the top */
+/* Halloween: bats now and then across the top, a ghost or two drifting by, a cobweb in the corner behind the logo,
+   and a spider letting itself down on its thread onto the X of PLEX */
 function seasonHalloween(c, t) {
-  const flick = 0.75 + 0.25 * Math.sin(t * 9) * Math.sin(t * 5.3 + 1);
-  seasonPumpkin(c, 34, SEA_H - 22, 22, flick);
-  seasonPumpkin(c, SEA_W - 34, SEA_H - 20, 18, 0.8 + 0.2 * Math.sin(t * 7.1 + 2));
+  seasonCobweb(c);
   if (!SEASON.bats.length && Math.random() < 0.004) SEASON.bats.push({ x: -20, y: seaRnd(30, 140), v: seaRnd(1.4, 2.2), ph: seaRnd(0, 6) });
   SEASON.bats = SEASON.bats.filter((b) => b.x < SEA_W + 30);
   SEASON.bats.forEach((b) => {
@@ -142,25 +144,90 @@ function seasonHalloween(c, t) {
     c.quadraticCurveTo(b.x + 7, yy + 1, b.x + 13, yy - 1 + w * 0.3); c.quadraticCurveTo(b.x + 6, yy - 4 - w, b.x, yy);
     c.fill();
   });
+  /* ghosts: one at a time, now and then, from either side */
+  SEASON.ghosts = SEASON.ghosts || [];
+  if (SEASON.ghosts.length < 2 && Math.random() < 0.0025) {
+    const left = Math.random() < 0.5;
+    SEASON.ghosts.push({ x: left ? -30 : SEA_W + 30, v: (left ? 1 : -1) * seaRnd(0.35, 0.7), y: seaRnd(22, 48), s: seaRnd(10, 14), ph: seaRnd(0, 6) });   /* along the top, where the page shows the background */
+  }
+  SEASON.ghosts = SEASON.ghosts.filter((g) => g.x > -40 && g.x < SEA_W + 40);
+  SEASON.ghosts.forEach((g) => { g.x += g.v; seasonGhost(c, g.x, g.y + Math.sin(t * 1.6 + g.ph) * 6, g.s, g.v < 0, t + g.ph); });
+  seasonSpider(t);
 }
-function seasonPumpkin(c, x, y, r, glow) {
-  c.globalAlpha = 0.95;
-  /* body */
-  const g = c.createRadialGradient(x - r * 0.3, y - r * 0.3, r * 0.2, x, y, r * 1.1);
-  g.addColorStop(0, '#FFA640'); g.addColorStop(1, '#B8480C');
-  c.fillStyle = g;
-  c.beginPath(); c.ellipse(x - r * 0.45, y, r * 0.62, r * 0.85, 0, 0, 6.283); c.ellipse(x + r * 0.45, y, r * 0.62, r * 0.85, 0, 0, 6.283); c.ellipse(x, y, r * 0.7, r * 0.9, 0, 0, 6.283); c.fill();
-  c.fillStyle = '#3E5A1E'; c.fillRect(x - r * 0.1, y - r * 1.12, r * 0.2, r * 0.32);
-  /* face: glowing eyes and grin */
-  c.save();
-  c.shadowColor = 'rgba(255, 214, 90, ' + glow + ')'; c.shadowBlur = r * 0.9 * glow;
-  c.fillStyle = 'rgba(255, ' + Math.round(190 + 50 * glow) + ', 80, ' + (0.65 + 0.35 * glow) + ')';
-  const eye = (ex) => { c.beginPath(); c.moveTo(ex - r * 0.2, y - r * 0.1); c.lineTo(ex, y - r * 0.42); c.lineTo(ex + r * 0.2, y - r * 0.1); c.closePath(); c.fill(); };
-  eye(x - r * 0.32); eye(x + r * 0.32);
-  c.beginPath(); c.moveTo(x - r * 0.5, y + r * 0.22);
-  c.lineTo(x - r * 0.3, y + r * 0.34); c.lineTo(x - r * 0.18, y + r * 0.22); c.lineTo(x, y + r * 0.38); c.lineTo(x + r * 0.18, y + r * 0.22); c.lineTo(x + r * 0.3, y + r * 0.34); c.lineTo(x + r * 0.5, y + r * 0.22);
-  c.quadraticCurveTo(x, y + r * 0.62, x - r * 0.5, y + r * 0.22); c.fill();
+function seasonGhost(c, x, y, s, flip, t) {
+  c.save(); c.translate(x, y); if (flip) c.scale(-1, 1);
+  c.globalAlpha = 0.55;
+  c.fillStyle = '#F4F4F6';
+  c.beginPath();
+  c.moveTo(-s, 0); c.arc(0, 0, s, Math.PI, 0);
+  c.lineTo(s, s * 1.3);
+  /* a wavy hem that moves */
+  for (let i = 0; i <= 4; i++) { const xx = s - i * (s / 2); c.lineTo(xx, s * 1.3 + (i % 2 ? -s * 0.22 : s * 0.12) + Math.sin(t * 4 + i) * s * 0.06); }
+  c.lineTo(-s, s * 1.3); c.closePath(); c.fill();
+  c.globalAlpha = 0.8; c.fillStyle = '#16161A';
+  c.beginPath(); c.ellipse(-s * 0.35, -s * 0.1, s * 0.16, s * 0.24, 0, 0, 6.283); c.ellipse(s * 0.3, -s * 0.1, s * 0.16, s * 0.24, 0, 0, 6.283); c.fill();
+  c.beginPath(); c.ellipse(0, s * 0.42, s * 0.14, s * 0.2, 0, 0, 6.283); c.fill();
   c.restore();
+}
+/* the web, in the top left corner behind the logo */
+function seasonCobweb(c) {
+  const R = 210, spokes = 7, rings = 7;
+  c.save(); c.globalAlpha = 0.2; c.strokeStyle = '#E8E8EC'; c.lineWidth = 0.6;
+  const ang = (k) => (k / (spokes - 1)) * (Math.PI / 2);
+  c.beginPath();
+  for (let k = 0; k < spokes; k++) { c.moveTo(0, 0); c.lineTo(Math.cos(ang(k)) * R, Math.sin(ang(k)) * R); }
+  for (let r = 1; r <= rings; r++) {
+    const rr = R * r / (rings + 0.6);
+    for (let k = 0; k < spokes - 1; k++) {
+      const a1 = ang(k), a2 = ang(k + 1), am = (a1 + a2) / 2, sag = rr * 0.86;
+      c.moveTo(Math.cos(a1) * rr, Math.sin(a1) * rr);
+      c.quadraticCurveTo(Math.cos(am) * sag, Math.sin(am) * sag, Math.cos(a2) * rr, Math.sin(a2) * rr);
+    }
+  }
+  c.stroke(); c.restore();
+}
+/* the spider sits on its own small canvas above the page, over the X of the logo on Home */
+function seasonSpider(t) {
+  const logo = document.querySelector('#view .hlogo svg.logo');
+  let sp = SEASON.spider;
+  if (!logo) { if (sp) sp.cv.style.display = 'none'; return; }
+  if (!sp) {
+    const cv = document.createElement('canvas'); cv.className = 'season-spider'; cv.width = 60; cv.height = 150;
+    document.getElementById('stage').appendChild(cv);
+    sp = SEASON.spider = { cv: cv, ctx: cv.getContext('2d'), at: 0 };
+  }
+  /* place it over the X (about 61 % along the wordmark), refreshed now and then */
+  if (!sp.at || t - sp.at > 2) {
+    sp.at = t;
+    const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
+    const xX = (r.left - st.left) * k + r.width * k * 0.607, topX = (r.top - st.top) * k + r.height * k * 0.05;
+    sp.cv.style.left = Math.round(xX - 60) + 'px'; sp.cv.style.top = Math.round(topX + 26 - 276) + 'px';
+  }
+  sp.cv.style.display = '';
+  const c = sp.ctx; c.clearRect(0, 0, 60, 150);
+  /* down onto the X, a little wait, back up: a 14-second round */
+  const ph = (t % 14) / 14;
+  const drop = ph < 0.35 ? ph / 0.35 : ph < 0.65 ? 1 : ph < 0.9 ? 1 - (ph - 0.65) / 0.25 : 0;
+  const y = 10 + drop * 118 + Math.sin(t * 2.2) * 1.5 * drop;
+  c.strokeStyle = 'rgba(235,235,240,.55)'; c.lineWidth = 1;
+  c.beginPath(); c.moveTo(30, 0); c.lineTo(30, y - 5); c.stroke();
+  /* legs, with a little crawl */
+  c.strokeStyle = '#1B1B1F'; c.lineWidth = 1.6; c.lineCap = 'round';
+  const wig = Math.sin(t * 10) * 1.2;
+  c.beginPath();
+  [-1, 1].forEach((side) => {
+    for (let i = 0; i < 4; i++) {
+      const by = y - 2 + i * 2.2, kx = 30 + side * (7 + i * 0.6), ky = by - 4 + i * 2 + (i % 2 ? wig : -wig);
+      c.moveTo(30 + side * 3, by); c.quadraticCurveTo(kx, ky - 3, 30 + side * (11 + i * 0.4), ky + 4);
+    }
+  });
+  c.stroke();
+  c.fillStyle = '#1B1B1F';
+  c.beginPath(); c.ellipse(30, y + 3, 4.6, 5.6, 0, 0, 6.283); c.fill();   /* body */
+  c.beginPath(); c.arc(30, y - 3.5, 3, 0, 6.283); c.fill();               /* head */
+  c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 0.8;            /* a faint rim, so it shows on the dark background too */
+  c.beginPath(); c.ellipse(30, y + 3, 4.6, 5.6, 0, 0, 6.283); c.stroke();
+  c.fillStyle = '#E2342C'; c.beginPath(); c.arc(28.6, y - 4, 0.8, 0, 6.283); c.arc(31.4, y - 4, 0.8, 0, 6.283); c.fill();
 }
 
 /* start when the app is up, and look again every hour (a new season can begin while it runs) */
