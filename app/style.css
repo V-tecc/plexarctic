@@ -1779,7 +1779,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 
 /* ---------- player bottom as one grid of boxes (0.72) ---------- */
 .player.pg { --gl: rgba(242,242,238,0.13); --edge: 230px; --m: 48px; }
-.player.pg .panel { padding: 0; gap: 0; background: rgba(24,24,28,0.74); border-top: 1px solid var(--gl); }
+.player.pg .panel { padding: 0; gap: 0; background: rgba(24,24,28,0.55); border-top: 1px solid var(--gl); }
 .player.pg .tl { gap: 0; height: 104px; border-bottom: 1px solid var(--gl); }
 .player.pg .tl .time { flex: 0 0 var(--edge); width: auto; box-sizing: border-box; height: 100%; display: flex; align-items: center; padding-left: var(--m); }
 .player.pg .tl .time:first-child { border-right: 1px solid var(--gl); }
@@ -1792,7 +1792,9 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player.pg .pbtn.focus, #stage .player.pg .pbtn.focus { background: linear-gradient(90deg, #1E88E5, #14C8B0); color: #fff; box-shadow: none; transform: none; }
 .player.pg .pbtn.focus .lbl { color: rgba(255,255,255,0.8); }
 .player.pg .info { margin: 0; padding: 30px var(--m); border-top: 1px solid var(--gl); }
-.player.pg .ptop .ends { margin-top: 10px; align-items: flex-end; gap: 2px; }
+.player.pg .ptop .clock { display: grid; grid-template-columns: auto auto; column-gap: 28px; align-items: end; }
+.player.pg .ptop .clock .t, .player.pg .ptop .clock .d { grid-column: 2; justify-self: end; }
+.player.pg .ptop .ends { grid-column: 1; grid-row: 1 / span 2; align-self: center; margin: 0; padding-right: 28px; border-right: 1px solid rgba(242,242,238,0.3); align-items: flex-end; gap: 4px; }
 .player.pg .ptop .ends b { font-size: 24px; font-weight: var(--w300); line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 .player.pg .ptop .ends span { font-size: 19px; font-weight: var(--w500); }
 .player.pg .psub { display: none; }
@@ -1805,3 +1807,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player.pg .track .played { background: var(--grad); background-size: 100% 100%; }
 .player.pg .pbtn.focus, #stage .player.pg .pbtn.focus { background: var(--grad); }
 .player.pg .tl .time { white-space: nowrap; }
+
+/* the spotlight's title logo on its own layer, so the TV doesn't redraw (blink) it when the menu above changes */
+.spotin .tlogo { transform: translateZ(0); backface-visibility: hidden; will-change: transform; }
