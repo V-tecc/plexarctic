@@ -419,10 +419,10 @@ function playerClearart(m) {
       bottom.appendChild(img);
       /* stand it on the top edge of the control panel, just before the "Ends" time; keep the title clear of it */
       const place = () => {
-        const panel = $('.panel', bottom), ends = $('.ends', bottom), ptl = $('.ptl', bottom);
-        if (!panel || !ends || !document.contains(img)) return;
+        const panel = $('.panel', bottom), ptl = $('.ptl', bottom);
+        if (!panel || !document.contains(img)) return;
         img.style.bottom = panel.offsetHeight + 'px';
-        img.style.right = Math.max(96, bottom.clientWidth - ends.offsetLeft + 28) + 'px';
+        img.style.right = '48px';
         if (ptl) ptl.style.maxWidth = Math.max(560, img.offsetLeft - ptl.offsetLeft - 40) + 'px';
       };
       img._place = place; /* the player calls it again when the info panel opens or closes */
