@@ -1767,3 +1767,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .saver .svfact.on { opacity: 1; }
 .saver .svfacth { font-size: 17px; letter-spacing: .14em; text-transform: uppercase; color: var(--ac1, #2DD4BF); font-weight: var(--w600); }
 .saver .svfactt { font-size: 26px; line-height: 1.4; color: #E8E8EA; }
+/* seasonal effects: one canvas over the menus, half resolution, never in the way of the remote */
+#stage > canvas.season { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 40; }
