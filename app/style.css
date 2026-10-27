@@ -1794,7 +1794,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player.pg .info { margin: 0; padding: 30px var(--m); border-top: 1px solid var(--gl); }
 .player.pg .ptop .clock { display: grid; grid-template-columns: auto auto; column-gap: 28px; align-items: end; }
 .player.pg .ptop .clock .t, .player.pg .ptop .clock .d { grid-column: 2; justify-self: end; }
-.player.pg .ptop .ends { grid-column: 1; grid-row: 1 / span 2; align-self: center; margin: 0; padding-right: 28px; border-right: 1px solid rgba(242,242,238,0.3); align-items: flex-end; gap: 4px; }
+.player.pg .ptop .ends { grid-column: 1; grid-row: 1 / span 2; align-self: end; margin: 0; padding-right: 28px; border-right: 1px solid rgba(242,242,238,0.3); align-items: flex-end; gap: 4px; }
 .player.pg .ptop .ends b { font-size: 24px; font-weight: var(--w300); line-height: 1; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
 .player.pg .ptop .ends span { font-size: 19px; font-weight: var(--w500); }
 .player.pg .psub { display: none; }
