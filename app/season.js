@@ -199,7 +199,10 @@ function seasonGhost(c, x, y, s, flip, t) {
 /* the web, in the top left corner behind the logo */
 function seasonCobweb(c) {
   const R = 210, spokes = 7, rings = 7;
-  c.save(); c.globalAlpha = 0.2; c.strokeStyle = document.getElementById('stage').getAttribute('data-theme') === 'dark' ? '#E8E8EC' : '#1E1E24'; c.lineWidth = 0.6;
+  /* the same colour as the logo (white on dark, black on light), whatever theme or colours are picked */
+  let col = '#FFFFFF';
+  try { const lg = document.querySelector('#view .hlogo svg.logo') || document.querySelector('#view .logo'); if (lg) col = getComputedStyle(lg).color || col; } catch (e) { /* white */ }
+  c.save(); c.globalAlpha = 0.3; c.strokeStyle = col; c.lineWidth = 0.6;
   const ang = (k) => (k / (spokes - 1)) * (Math.PI / 2);
   c.beginPath();
   for (let k = 0; k < spokes; k++) { c.moveTo(0, 0); c.lineTo(Math.cos(ang(k)) * R, Math.sin(ang(k)) * R); }
