@@ -199,7 +199,7 @@ function seasonGhost(c, x, y, s, flip, t) {
 /* the web, in the top left corner behind the logo */
 function seasonCobweb(c) {
   const R = 210, spokes = 7, rings = 7;
-  c.save(); c.globalAlpha = 0.2; c.strokeStyle = '#E8E8EC'; c.lineWidth = 0.6;
+  c.save(); c.globalAlpha = 0.2; c.strokeStyle = document.getElementById('stage').getAttribute('data-theme') === 'dark' ? '#E8E8EC' : '#1E1E24'; c.lineWidth = 0.6;
   const ang = (k) => (k / (spokes - 1)) * (Math.PI / 2);
   c.beginPath();
   for (let k = 0; k < spokes; k++) { c.moveTo(0, 0); c.lineTo(Math.cos(ang(k)) * R, Math.sin(ang(k)) * R); }
@@ -229,6 +229,8 @@ function seasonSpider(t) {
     const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
     const xX = (r.left - st.left) * k + r.width * k * 0.683, yX = (r.top - st.top) * k + r.height * k * 0.94;
     sp.cv.style.left = Math.round(xX - 20) + 'px'; sp.cv.style.top = Math.round(yX) + 'px';
+    /* the same colour as the logo: white on the dark theme, black on the light one */
+    try { sp.col = getComputedStyle(logo).color || '#FFFFFF'; } catch (e) { sp.col = '#FFFFFF'; }
   }
   sp.cv.style.display = '';
   const c = sp.ctx; c.clearRect(0, 0, 40, 110);
@@ -239,9 +241,10 @@ function seasonSpider(t) {
   const y = 14 + ease * 70;
   const sway = Math.sin(t * 1.3) * 2.5 * ease;
   const x = 20 + sway;
-  c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 0.8;
+  const col = sp.col || '#FFFFFF';
+  c.globalAlpha = 0.7; c.strokeStyle = col; c.lineWidth = 0.8;
   c.beginPath(); c.moveTo(20, 0); c.lineTo(x, y - 3); c.stroke();
-  c.fillStyle = '#FFFFFF'; c.strokeStyle = '#FFFFFF'; c.lineWidth = 1; c.lineCap = 'round';
+  c.globalAlpha = 1; c.fillStyle = col; c.strokeStyle = col; c.lineWidth = 1; c.lineCap = 'round';
   const wig = Math.sin(t * 9) * 0.8;
   c.beginPath();
   [-1, 1].forEach((side) => {
