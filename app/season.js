@@ -200,7 +200,7 @@ function seasonSpider(t) {
   if (!sp.at || t - sp.at > 2) {
     sp.at = t;
     const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
-    const xX = (r.left - st.left) * k + r.width * k * 0.688, yX = (r.top - st.top) * k + r.height * k * 0.94;
+    const xX = (r.left - st.left) * k + r.width * k * 0.655, yX = (r.top - st.top) * k + r.height * k * 0.94;
     sp.cv.style.left = Math.round(xX - 20) + 'px'; sp.cv.style.top = Math.round(yX) + 'px';
   }
   sp.cv.style.display = '';
