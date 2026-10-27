@@ -201,7 +201,7 @@ function seasonCobweb(c) {
   const R = 210, spokes = 7, rings = 7;
   /* the same colour as the logo (white on dark, black on light), whatever theme or colours are picked */
   let col = '#FFFFFF';
-  try { const lg = document.querySelector('#view .hlogo svg.logo') || document.querySelector('#view .logo'); if (lg) col = getComputedStyle(lg).color || col; } catch (e) { /* white */ }
+  try { const lg = document.querySelector('#view .hlogo svg.logo') || document.querySelector('#view .logo') || document.querySelector('#view h1') || document.getElementById('stage'); col = getComputedStyle(lg).color || col; } catch (e) { /* white */ }   /* on pages without the logo: the page's own text colour */
   c.save(); c.globalAlpha = 0.42; c.strokeStyle = col; c.lineWidth = 1.1;   /* thick enough to survive a smaller TV scaling the picture down */
   const ang = (k) => (k / (spokes - 1)) * (Math.PI / 2);
   c.beginPath();
