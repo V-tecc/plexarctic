@@ -196,11 +196,11 @@ function seasonSpider(t) {
     document.getElementById('stage').appendChild(cv);
     sp = SEASON.spider = { cv: cv, ctx: cv.getContext('2d'), at: 0 };
   }
-  /* the notch at the bottom of the X: about 60.6 % along the wordmark, 69 % down */
+  /* the bottom right corner of the X: about 70 % along the wordmark, at its bottom edge */
   if (!sp.at || t - sp.at > 2) {
     sp.at = t;
     const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
-    const xX = (r.left - st.left) * k + r.width * k * 0.6058, yX = (r.top - st.top) * k + r.height * k * 0.692;
+    const xX = (r.left - st.left) * k + r.width * k * 0.688, yX = (r.top - st.top) * k + r.height * k * 0.94;
     sp.cv.style.left = Math.round(xX - 20) + 'px'; sp.cv.style.top = Math.round(yX) + 'px';
   }
   sp.cv.style.display = '';
