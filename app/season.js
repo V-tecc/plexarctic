@@ -44,7 +44,7 @@ function seasonStart() {
   if (!st) return;
   const cv = document.createElement('canvas');
   cv.className = 'season'; cv.width = SEA_W; cv.height = SEA_H;
-  st.appendChild(cv);
+  st.insertBefore(cv, st.firstChild);   /* behind the page: only the background shows it, not the tiles */
   SEASON.cv = cv; SEASON.ctx = cv.getContext('2d'); SEASON.kind = kind; SEASON.t0 = performance.now();
   SEASON.parts = seasonParts(kind);
   SEASON.bats = [];
