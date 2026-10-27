@@ -1770,4 +1770,4 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* seasonal effects: one canvas over the menus, half resolution, never in the way of the remote */
 #stage > canvas.season { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; z-index: 0; }
 #stage > #view { z-index: 1; }
-#stage > canvas.season-spider { position: absolute; width: 120px; height: 300px; pointer-events: none; z-index: 2; }
+#stage > canvas.season-spider { position: absolute; width: 48px; height: 132px; pointer-events: none; z-index: 2; }

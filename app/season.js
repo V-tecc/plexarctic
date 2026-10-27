@@ -59,7 +59,7 @@ function seasonStop() {
 }
 
 function seasonParts(kind) {
-  const n = { christmas: 70, halloween: 18, newyear: 45, valentine: 16, easter: 22, midsummer: 26 }[kind] || 0;
+  const n = { christmas: 70, halloween: 0, newyear: 45, valentine: 16, easter: 22, midsummer: 26 }[kind] || 0;
   const out = [];
   for (let i = 0; i < n; i++) out.push(seasonNew(kind, true));
   return out;
@@ -146,9 +146,9 @@ function seasonHalloween(c, t) {
   });
   /* ghosts: one at a time, now and then, from either side */
   SEASON.ghosts = SEASON.ghosts || [];
-  if (SEASON.ghosts.length < 2 && Math.random() < 0.0025) {
+  if (SEASON.ghosts.length < 1 && Math.random() < 0.003) {
     const left = Math.random() < 0.5;
-    SEASON.ghosts.push({ x: left ? -30 : SEA_W + 30, v: (left ? 1 : -1) * seaRnd(0.35, 0.7), y: seaRnd(22, 48), s: seaRnd(10, 14), ph: seaRnd(0, 6) });   /* along the top, where the page shows the background */
+    SEASON.ghosts.push({ x: left ? -30 : SEA_W + 30, v: (left ? 1 : -1) * seaRnd(1.0, 1.6), y: seaRnd(30, 140), s: seaRnd(10, 14), ph: seaRnd(0, 6) });   /* across the screen like the bats */
   }
   SEASON.ghosts = SEASON.ghosts.filter((g) => g.x > -40 && g.x < SEA_W + 40);
   SEASON.ghosts.forEach((g) => { g.x += g.v; seasonGhost(c, g.x, g.y + Math.sin(t * 1.6 + g.ph) * 6, g.s, g.v < 0, t + g.ph); });
@@ -186,48 +186,46 @@ function seasonCobweb(c) {
   }
   c.stroke(); c.restore();
 }
-/* the spider sits on its own small canvas above the page, over the X of the logo on Home */
+/* the spider sits on its own small canvas above the page, hanging on its thread from the bottom of the X on Home */
 function seasonSpider(t) {
   const logo = document.querySelector('#view .hlogo svg.logo');
   let sp = SEASON.spider;
   if (!logo) { if (sp) sp.cv.style.display = 'none'; return; }
   if (!sp) {
-    const cv = document.createElement('canvas'); cv.className = 'season-spider'; cv.width = 60; cv.height = 150;
+    const cv = document.createElement('canvas'); cv.className = 'season-spider'; cv.width = 40; cv.height = 110;
     document.getElementById('stage').appendChild(cv);
     sp = SEASON.spider = { cv: cv, ctx: cv.getContext('2d'), at: 0 };
   }
-  /* place it over the X (about 61 % along the wordmark), refreshed now and then */
+  /* the notch at the bottom of the X: about 60.6 % along the wordmark, 69 % down */
   if (!sp.at || t - sp.at > 2) {
     sp.at = t;
     const st = document.getElementById('stage').getBoundingClientRect(), r = logo.getBoundingClientRect(), k = 1920 / st.width;
-    const xX = (r.left - st.left) * k + r.width * k * 0.607, topX = (r.top - st.top) * k + r.height * k * 0.05;
-    sp.cv.style.left = Math.round(xX - 60) + 'px'; sp.cv.style.top = Math.round(topX + 26 - 276) + 'px';
+    const xX = (r.left - st.left) * k + r.width * k * 0.6058, yX = (r.top - st.top) * k + r.height * k * 0.692;
+    sp.cv.style.left = Math.round(xX - 20) + 'px'; sp.cv.style.top = Math.round(yX) + 'px';
   }
   sp.cv.style.display = '';
-  const c = sp.ctx; c.clearRect(0, 0, 60, 150);
-  /* down onto the X, a little wait, back up: a 14-second round */
-  const ph = (t % 14) / 14;
-  const drop = ph < 0.35 ? ph / 0.35 : ph < 0.65 ? 1 : ph < 0.9 ? 1 - (ph - 0.65) / 0.25 : 0;
-  const y = 10 + drop * 118 + Math.sin(t * 2.2) * 1.5 * drop;
-  c.strokeStyle = 'rgba(235,235,240,.55)'; c.lineWidth = 1;
-  c.beginPath(); c.moveTo(30, 0); c.lineTo(30, y - 5); c.stroke();
-  /* legs, with a little crawl */
-  c.strokeStyle = '#1B1B1F'; c.lineWidth = 1.6; c.lineCap = 'round';
-  const wig = Math.sin(t * 10) * 1.2;
+  const c = sp.ctx; c.clearRect(0, 0, 40, 110);
+  /* lets itself down, sways a little, climbs back up under the X: a 16-second round */
+  const ph = (t % 16) / 16;
+  const drop = ph < 0.3 ? ph / 0.3 : ph < 0.7 ? 1 : ph < 0.92 ? 1 - (ph - 0.7) / 0.22 : 0;
+  const ease = drop * drop * (3 - 2 * drop);
+  const y = 14 + ease * 70;
+  const sway = Math.sin(t * 1.3) * 2.5 * ease;
+  const x = 20 + sway;
+  c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 0.8;
+  c.beginPath(); c.moveTo(20, 0); c.lineTo(x, y - 3); c.stroke();
+  c.fillStyle = '#FFFFFF'; c.strokeStyle = '#FFFFFF'; c.lineWidth = 1; c.lineCap = 'round';
+  const wig = Math.sin(t * 9) * 0.8;
   c.beginPath();
   [-1, 1].forEach((side) => {
     for (let i = 0; i < 4; i++) {
-      const by = y - 2 + i * 2.2, kx = 30 + side * (7 + i * 0.6), ky = by - 4 + i * 2 + (i % 2 ? wig : -wig);
-      c.moveTo(30 + side * 3, by); c.quadraticCurveTo(kx, ky - 3, 30 + side * (11 + i * 0.4), ky + 4);
+      const by = y - 1 + i * 1.5, ky = by - 2.5 + i * 1.4 + (i % 2 ? wig : -wig);
+      c.moveTo(x + side * 2, by); c.quadraticCurveTo(x + side * (5 + i * 0.4), ky - 2, x + side * (7.5 + i * 0.3), ky + 3);
     }
   });
   c.stroke();
-  c.fillStyle = '#1B1B1F';
-  c.beginPath(); c.ellipse(30, y + 3, 4.6, 5.6, 0, 0, 6.283); c.fill();   /* body */
-  c.beginPath(); c.arc(30, y - 3.5, 3, 0, 6.283); c.fill();               /* head */
-  c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 0.8;            /* a faint rim, so it shows on the dark background too */
-  c.beginPath(); c.ellipse(30, y + 3, 4.6, 5.6, 0, 0, 6.283); c.stroke();
-  c.fillStyle = '#E2342C'; c.beginPath(); c.arc(28.6, y - 4, 0.8, 0, 6.283); c.arc(31.4, y - 4, 0.8, 0, 6.283); c.fill();
+  c.beginPath(); c.ellipse(x, y + 2, 3, 3.8, 0, 0, 6.283); c.fill();   /* body */
+  c.beginPath(); c.arc(x, y - 2.3, 2, 0, 6.283); c.fill();             /* head */
 }
 
 /* start when the app is up, and look again every hour (a new season can begin while it runs) */
