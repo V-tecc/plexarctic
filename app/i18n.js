@@ -317,8 +317,8 @@ const TEXT = {
   }
 };
 /* the player's control layout */
-Object.assign(TEXT.en, { playerStyle: 'Player controls', psGrid: 'Grid', psFrame: 'Frame' });
-Object.assign(TEXT.sv, { playerStyle: 'Spelarkontroller', psGrid: 'Rutnät', psFrame: 'Ram' });
-Object.assign(TEXT.cs, { playerStyle: 'Ovládání přehrávače', psGrid: 'Mřížka', psFrame: 'Rámeček' });
-Object.assign(TEXT.uk, { playerStyle: 'Керування плеєром', psGrid: 'Сітка', psFrame: 'Рамка' });
-Object.assign(TEXT.el, { playerStyle: 'Χειριστήρια', psGrid: 'Πλέγμα', psFrame: 'Πλαίσιο' });
+Object.assign(TEXT.en, { playerStyle: 'Player style', psGrid: 'Grid', psFrame: 'Compact' });
+Object.assign(TEXT.sv, { playerStyle: 'Spelarstil', psGrid: 'Rutnät', psFrame: 'Kompakt' });
+Object.assign(TEXT.cs, { playerStyle: 'Styl přehrávače', psGrid: 'Mřížka', psFrame: 'Kompaktní' });
+Object.assign(TEXT.uk, { playerStyle: 'Стиль плеєра', psGrid: 'Сітка', psFrame: 'Компактний' });
+Object.assign(TEXT.el, { playerStyle: 'Στυλ προβολής', psGrid: 'Πλέγμα', psFrame: 'Συμπαγές' });
