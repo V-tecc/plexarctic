@@ -1828,6 +1828,8 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player.pg.pframe .controls .pbtn.muted, .player.pg.pframe .controls .pbtn[data-key="wt"], .player.pg.pframe .controls .pbtn[data-key="song"] { flex: 0 0 auto; }
 .player.pg.pframe .controls .pbtn.muted { padding: 0 26px; }
 .player.pg.pframe .info { padding: 28px 26px; border-top: 1px solid rgba(255,255,255,0.09); }
-.player.pg .info #pstyle { margin-top: auto; }
+.player.pg .info #pstyle { margin-top: auto; display: flex; align-items: center; gap: 18px; }
+.player .info #pstyle .label { margin: 0; }
+.player .info #pstyle .seg { height: 54px; box-sizing: border-box; padding: 4px; align-items: stretch; }
+.player .info #pstyle .seg button { font-size: 20px; padding: 0 22px; height: auto; }
 .player.pg .ptop { align-items: flex-end; }
-.player .info #pstyle .psoff { font-weight: var(--w400); opacity: 0.6; }
