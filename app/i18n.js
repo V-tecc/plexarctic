@@ -322,3 +322,37 @@ Object.assign(TEXT.sv, { playerStyle: 'Spelarstil', psGrid: 'Rutnät', psFrame: 
 Object.assign(TEXT.cs, { playerStyle: 'Styl přehrávače', psGrid: 'Mřížka', psFrame: 'Kompaktní' });
 Object.assign(TEXT.uk, { playerStyle: 'Стиль плеєра', psGrid: 'Сітка', psFrame: 'Компактний' });
 Object.assign(TEXT.el, { playerStyle: 'Στυλ προβολής', psGrid: 'Πλέγμα', psFrame: 'Συμπαγές' });
+/* subtitle timing */
+Object.assign(TEXT.en, {
+  syncTiming: 'Timing', autoSyncRow: 'Auto-sync (Plex)', syncOn: 'On', syncOff: 'Off', autoSyncNote: 'Your Plex server lines up subtitle files to the speech · needs Plex Pass and voice analysis',
+  syncAutoTag: 'AUTO-SYNCED', syncHand: 'Adjust by hand…', syncHandNote: 'Move the subtitle earlier or later while you watch',
+  syncRef: 'Sync to another subtitle…', syncRefSub: 'Use one that is already in sync as the guide', syncRefShort: 'synced to another subtitle',
+  syncPicNote: 'Picture subtitles (PGS) can\'t be moved; pick a text subtitle or download one to sync it.',
+  syncPrep: 'Getting the subtitle ready to sync…', syncNoText: 'This subtitle could not be loaded as text, so it can\'t be synced',
+  syncTitle: 'Subtitle sync', syncEarlier: 'Earlier', syncLater: 'Later', syncBig: '1 s steps', syncSave: 'Save',
+  syncHint: '◀ ▶ 0.1 s · ▲ ▼ 1 s · OK saves for this film · Back cancels', syncAsFile: 'as the file has it',
+  syncIsLater: 'shown {s} s later than the file says', syncIsEarlier: 'shown {s} s earlier than the file says', syncSaved: 'Subtitle timing saved for this film',
+  syncNoRef: 'There is no other text subtitle on this film to sync to', syncRefTitle: 'Sync to another subtitle',
+  syncRefNote: 'Pick a subtitle that is in sync with the film. {l} is lined up to its timing, line by line.',
+  syncWorking: 'Lining up to {l}…', syncRefFail: 'Couldn\'t line it up to {l}: the two don\'t match well enough. Try another one, or adjust by hand.',
+  syncResult: 'Result', syncKeep: 'Keep: moved {o}', syncSpeed: 'speed corrected {p} %', syncStats: '{n} of {m} lines matched',
+  syncShifts: '{n} jumps found (an ad break or a different cut)', syncUndo: 'Undo'
+});
+Object.assign(TEXT.sv, {
+  syncTiming: 'Timing', autoSyncRow: 'Autosynk (Plex)', syncOn: 'På', syncOff: 'Av', autoSyncNote: 'Din Plex-server matchar undertextfiler mot talet · kräver Plex Pass och röstanalys',
+  syncAutoTag: 'AUTOSYNKAD', syncHand: 'Justera för hand…', syncHandNote: 'Flytta undertexten tidigare eller senare medan du tittar',
+  syncRef: 'Synka mot en annan undertext…', syncRefSub: 'Använd en som redan är i synk som guide', syncRefShort: 'synkad mot en annan undertext',
+  syncPicNote: 'Bildundertexter (PGS) går inte att flytta; välj en textundertext eller ladda ner en för att synka.',
+  syncPrep: 'Gör undertexten redo att synka…', syncNoText: 'Undertexten kunde inte läsas som text, så den går inte att synka',
+  syncTitle: 'Synka undertext', syncEarlier: 'Tidigare', syncLater: 'Senare', syncBig: '1 s steg', syncSave: 'Spara',
+  syncHint: '◀ ▶ 0,1 s · ▲ ▼ 1 s · OK sparar för filmen · Tillbaka avbryter', syncAsFile: 'som i filen',
+  syncIsLater: 'visas {s} s senare än filen säger', syncIsEarlier: 'visas {s} s tidigare än filen säger', syncSaved: 'Undertextens timing sparad för filmen',
+  syncNoRef: 'Filmen har ingen annan textundertext att synka mot', syncRefTitle: 'Synka mot en annan undertext',
+  syncRefNote: 'Välj en undertext som är i synk med filmen. {l} läggs efter dess timing, rad för rad.',
+  syncWorking: 'Synkar mot {l}…', syncRefFail: 'Kunde inte synka mot {l}: de stämmer inte tillräckligt bra. Prova en annan eller justera för hand.',
+  syncResult: 'Resultat', syncKeep: 'Behåll: flyttad {o}', syncSpeed: 'hastighet justerad {p} %', syncStats: '{n} av {m} rader matchade',
+  syncShifts: '{n} hopp hittade (reklampaus eller annan version)', syncUndo: 'Ångra'
+});
+Object.assign(TEXT.cs, { syncTiming: 'Časování', autoSyncRow: 'Automatická synchronizace (Plex)', syncOn: 'Zapnuto', syncOff: 'Vypnuto', syncHand: 'Upravit ručně…', syncRef: 'Synchronizovat s jinými titulky…', syncTitle: 'Synchronizace titulků', syncEarlier: 'Dříve', syncLater: 'Později', syncSave: 'Uložit', syncUndo: 'Zpět' });
+Object.assign(TEXT.uk, { syncTiming: 'Час', autoSyncRow: 'Автосинхронізація (Plex)', syncOn: 'Увімк.', syncOff: 'Вимк.', syncHand: 'Налаштувати вручну…', syncRef: 'Синхронізувати з іншими субтитрами…', syncTitle: 'Синхронізація субтитрів', syncEarlier: 'Раніше', syncLater: 'Пізніше', syncSave: 'Зберегти', syncUndo: 'Скасувати' });
+Object.assign(TEXT.el, { syncTiming: 'Χρονισμός', autoSyncRow: 'Αυτόματος συγχρονισμός (Plex)', syncOn: 'Ναι', syncOff: 'Όχι', syncHand: 'Χειροκίνητη ρύθμιση…', syncRef: 'Συγχρονισμός με άλλους υπότιτλους…', syncTitle: 'Συγχρονισμός υποτίτλων', syncEarlier: 'Νωρίτερα', syncLater: 'Αργότερα', syncSave: 'Αποθήκευση', syncUndo: 'Αναίρεση' });

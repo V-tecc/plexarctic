@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.73.3';
+const VERSION = '0.74.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -156,6 +156,84 @@ function durText(ms) {
   const m = Math.round(ms / 60000);
   const h = Math.floor(m / 60);
   return h ? h + ' h ' + (m % 60) + ' min' : m + ' min';
+}
+/* ---------- subtitle timing ---------- */
+/* Plex's own Auto-sync (server side, Plex Pass + voice activity data): on unless the profile switched it off */
+function autoSyncOn() { return store.get(userKey('subAutoSync'), true) !== false; }
+const canAuto = (s) => !!s && (s.canAutoSync === true || s.canAutoSync === 1 || s.canAutoSync === '1');
+/* a film's saved timing for one subtitle: o = moved by hand (s), segs = pieces found by "sync to another subtitle" */
+function subSyncGet(rk, id) { const v = store.get('subsync.' + rk + '.' + id, null); return v && v.segs ? v : { o: (v && v.o) || 0, segs: [{ s: 0, k: 1, o: 0 }] }; }
+function subSyncSet(rk, id, v) { if (!v || (!v.o && v.segs.length === 1 && v.segs[0].k === 1 && !v.segs[0].o)) store.del('subsync.' + rk + '.' + id); else store.set('subsync.' + rk + '.' + id, v); }
+function subSyncMap(x, v) { let g = v.segs[0]; for (const q of v.segs) if (x >= q.s) g = q; return x * g.k + g.o + (v.o || 0); }
+function syncText(sec) { const v = Math.round(sec * 10) / 10; return (v > 0 ? '+' : v < 0 ? '−' : '±') + Math.abs(v).toFixed(1) + ' s'; }
+/* Lines up one subtitle (src) to another that is in sync with the film (ref), from when their lines start and stop:
+   first the best overall shift and speed (24/25 fps differences), then the places where the shift jumps
+   (an ad break, a different cut), each piece with its own shift. */
+function subAlign(src, ref) {
+  if (src.length < 10 || !ref.length) return null;
+  const R = [];
+  ref.slice().sort((x, y) => x.a - y.a).forEach((c) => { const l = R[R.length - 1]; if (l && c.a <= l[1]) l[1] = Math.max(l[1], c.b); else R.push([c.a, c.b]); });
+  /* how much the (moved) lines overlap the reference's lines, in seconds */
+  const score = (list, k, o) => {
+    let lo = 0, hi = R.length;
+    const a0 = list[0].a * k + o;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (R[mid][1] <= a0) lo = mid + 1; else hi = mid; }
+    let j = lo, tot = 0;
+    for (const c of list) {
+      const a = c.a * k + o, b = c.b * k + o;
+      while (j < R.length && R[j][1] <= a) j++;
+      for (let q = j; q < R.length && R[q][0] < b; q++) tot += Math.min(b, R[q][1]) - Math.max(a, R[q][0]);
+    }
+    return tot;
+  };
+  /* prior: a piece's shift is taken far from the overall one only when it clearly fits better there */
+  const bestOff = (list, k, from, to, prior) => {
+    const pen = (o) => (prior == null ? 1 : 1 - Math.min(0.15, Math.abs(o - prior) * 0.002));
+    let b = { sc: -1, o: 0, raw: 0 };
+    for (let o = from; o <= to; o += 0.5) { const raw = score(list, k, o), sc = raw * pen(o); if (sc > b.sc) b = { sc: sc, o: o, raw: raw }; }
+    const c = b.o;
+    for (let o = c - 0.6; o <= c + 0.6; o += 0.05) { const raw = score(list, k, o), sc = raw * pen(o); if (sc > b.sc) b = { sc: sc, o: o, raw: raw }; }
+    return b;
+  };
+  /* 1) speed: a 24/25 fps difference stretches everything; only taken when it clearly fits better */
+  const ks = [1, 25 / 23.976, 23.976 / 25, 24 / 23.976, 23.976 / 24, 25 / 24, 24 / 25];
+  const g1 = bestOff(src, 1, -150, 150);
+  let k = 1, g = g1;
+  for (const kk of ks.slice(1)) { const b = bestOff(src, kk, -150, 150); if (b.sc > g.sc * 1.08 && b.sc > g1.sc * 1.08) { k = kk; g = b; } }
+  /* 2) the shift piece by piece (60 lines at a time), so jumps (an ad break, another cut) show up */
+  const C = 60, chunks = [];
+  for (let i = 0; i < src.length; i += C) {
+    const part = src.slice(i, Math.min(src.length, i + C));
+    if (part.length < 20 && chunks.length) { chunks[chunks.length - 1].to = src.length; break; }
+    chunks.push({ from: i, to: i + part.length, o: bestOff(part, k, g.o - 200, g.o + 200, g.o).o });
+  }
+  /* a single piece that disagrees with both neighbours (which agree) is a mistake */
+  for (let i = 1; i < chunks.length - 1; i++) {
+    const p = chunks[i - 1].o, n = chunks[i + 1].o;
+    if (Math.abs(p - n) < 0.6 && Math.abs(chunks[i].o - p) > 0.6) chunks[i].o = (p + n) / 2;
+  }
+  const segs = [];
+  chunks.forEach((c) => { const l = segs[segs.length - 1]; if (l && Math.abs(l.o - c.o) < 0.6) l.to = c.to; else segs.push({ from: c.from, to: c.to, o: c.o }); });
+  segs.forEach((sg) => { const part = src.slice(sg.from, sg.to); sg.o = bestOff(part, k, sg.o - 1, sg.o + 1).o; });
+  /* 3) where exactly each jump is: the line that splits the two shifts best */
+  const starts = ref.map((c) => c.a).sort((x, y) => x - y);
+  const near = (x) => { let lo = 0, hi = starts.length - 1; while (lo < hi) { const mid = (lo + hi) >> 1; if (starts[mid] < x) lo = mid + 1; else hi = mid; } let d = Math.abs(starts[lo] - x); if (lo > 0) d = Math.min(d, Math.abs(starts[lo - 1] - x)); return d; };
+  const hit = (c, o) => near(c.a * k + o) < 0.4;
+  for (let n = 1; n < segs.length; n++) {
+    const A = segs[n - 1], B = segs[n];
+    const lo = Math.max(A.from + 1, B.from - C), hi = Math.min(B.to - 1, B.from + C);
+    let best = B.from, bestN = -1;
+    for (let cut = lo; cut <= hi; cut++) {
+      let cnt = 0;
+      for (let i = lo - 1; i < cut; i++) if (hit(src[i], A.o)) cnt++;
+      for (let i = cut; i <= hi; i++) if (hit(src[i], B.o)) cnt++;
+      if (cnt > bestN) { bestN = cnt; best = cut; }
+    }
+    A.to = best; B.from = best;
+  }
+  let matched = 0;
+  segs.forEach((sg) => { for (let i = sg.from; i < sg.to; i++) if (hit(src[i], sg.o)) matched++; });
+  return { segs: segs.map((sg, n) => ({ s: n ? src[sg.from].a - 0.01 : 0, k: k, o: Math.round(sg.o * 1000) / 1000 })), matched: matched, total: src.length, k: k, o: Math.round(segs[0].o * 10) / 10, shifts: segs.length - 1 };
 }
 /* the player's times: "33 min 59 s", and "1 h 12 min" past an hour */
 function longTime(sec) {
@@ -3311,13 +3389,22 @@ function openSubPicker(o) {
     closeModal(true);
     o.onChosen(id, !!downloaded);
   };
-  const row = (s) => { const r = subRow(s); return optionRow('sp-' + s.id, r.name, r.tags, s.id === cur, A(() => choose(s.id)), r.sub); };
+  const row = (s) => { const r = subRow(s); return optionRow('sp-' + s.id, r.name, r.tags.concat(o.timing && o.timing.autoIds.has(s.id) ? [t('syncAutoTag')] : []), s.id === cur, A(() => choose(s.id)), r.sub); };
   const mine = o.subs.filter((s) => rank(s) >= 0).sort((a, b) => rank(a) - rank(b));
   const others = o.subs.filter((s) => rank(s) < 0);
   let html = sheetHeader(t('subtitles'), '') + '<div class="optlist">' + optionRow('sp-0', t('off'), [], cur === 0, A(() => choose(0))) + '</div>';
   if (mine.length) html += '<span class="label">' + esc(t('yourLangs')) + '</span><div class="optlist">' + mine.map(row).join('') + '</div>';
   html += '<div class="optlist"><div class="subrow dlrow-sub f" data-key="dl" data-act="' + A(pickDownloadLang) + '"><span class="chk">' + ICON.download + '</span><span class="lang">' + esc(t('downloadSubs')) + '<small>' + esc(t('downloadSubsNote')) + '</small></span></div></div>';
   if (others.length) html += '<span class="label">' + esc(t('otherLangs')) + '</span><div class="optlist">' + others.map(row).join('') + '</div>';
+  /* in the player: the timing of the chosen subtitle */
+  const tm = o.timing;
+  if (tm && (tm.autoAvail || tm.hasSub)) {
+    html += '<span class="label">' + esc(t('syncTiming')) + '</span><div class="optlist">' +
+      (tm.autoAvail ? optionRow('sp-auto', t('autoSyncRow') + ': ' + t(tm.auto ? 'syncOn' : 'syncOff'), [], false, A(tm.onAuto), t('autoSyncNote')) : '') +
+      (tm.canSync ? optionRow('sp-hand', t('syncHand') + (tm.offText ? ' · ' + tm.offText : ''), [], false, A(tm.hand), t('syncHandNote')) : '') +
+      (tm.canSync && tm.refAvail ? optionRow('sp-ref', t('syncRef'), [], false, A(tm.ref), t('syncRefSub')) : '') +
+      '</div>' + (tm.hasSub && !tm.canSync ? '<p class="sheettext small">' + esc(t('syncPicNote')) + '</p>' : '');
+  }
   if (o.second) pickDownloadLang();
   else if (o.guided) searchOnline(order[0]); else openModal(html, 'sp-' + cur);
 
@@ -3980,7 +4067,11 @@ async function viewPlayer(ratingKey, opts) {
     audioChanged: false,
     quality: S.quality,
     noText: new Set(), // subtitle files the server could not hand over: these are burned in instead
-    cues: [],          // subtitle lines drawn by the app itself
+    cues: [],          // subtitle lines drawn by the app itself (with the film's saved timing applied)
+    cuesRaw: [],       // the same lines as the file has them
+    drawIds: new Set(store.get('subdraw.' + m.ratingKey, [])), // text subtitles you synced: the app draws them so the timing can change
+    autoSynced: new Set(), // subtitles your Plex server lined up to the speech
+    syncBar: null,
     sub2Id: store.get('sub2.' + m.ratingKey, 0), // second subtitle (dual mode), always drawn by the app at the top
     cues2: [],
     hold: null,       // position shown while a stream restarts, so the timeline never jumps
@@ -3994,7 +4085,16 @@ async function viewPlayer(ratingKey, opts) {
   const canDirect = () => (S.forceDirect && st.quality === 'orig') || st.quality === 'orig' && media.container === 'mp4' && media.videoCodec === 'h264' && ['aac', 'mp3'].includes(media.audioCodec) && !burnNeeded() && st.audioId === audioDefault;
   /* Text subtitles that Plex can hand over as a file (downloaded or sidecar .srt) are shown by the player itself,
      so switching is instant and never restarts the stream. Everything else is burned in by the server. */
-  const textSub = (id) => { const ex = subs.find((x) => x.id === id && x.ext); if (ex) return ex; if (!S.subDraw && !(S.forceDirect && st.quality === 'orig')) return null; const s = subs.find((x) => x.id === id); return s && s.key && !st.noText.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null; };
+  const textSub = (id) => {
+    const ex = subs.find((x) => x.id === id && x.ext);
+    if (ex) return ex;
+    const s = subs.find((x) => x.id === id);
+    if (!s || st.noText.has(id)) return null;
+    /* one you synced is always drawn by the app (from the file, or pulled out of the video) */
+    if (st.drawIds.has(id) && /^(srt|subrip|vtt|webvtt|ass|ssa|mov_text|tx3g|text)$/i.test(s.codec || '')) return s;
+    if (!S.subDraw && !(S.forceDirect && st.quality === 'orig')) return null;
+    return s.key && /^(srt|subrip|vtt|webvtt|ass|ssa)$/i.test(s.codec || '') ? s : null;
+  };
   const burnNeeded = () => !!st.subId && !textSub(st.subId) && !st.burnFailed;
 
   const title = m.type === 'episode' ? m.grandparentTitle : m.title;
@@ -4143,6 +4243,7 @@ async function viewPlayer(ratingKey, opts) {
       location: S.server.local ? 'lan' : 'wan',
       subtitles: burnNeeded() ? 'burn' : 'none',
       subtitleStreamID: burnNeeded() ? st.subId : null,
+      autoAdjustSubtitle: burnNeeded() && autoSyncOn() && canAuto(subs.find((x) => x.id === st.subId)) ? 1 : null,
       audioStreamID: st.audioId || null,
       session: session,
       'X-Plex-Session-Identifier': session
@@ -4296,9 +4397,111 @@ async function viewPlayer(ratingKey, opts) {
     el._onclose = () => { if (wasPlaying && seq === viewSeq) vid.play().catch(() => {}); };
   }
 
+  /* ---------- subtitle timing: Plex Auto-sync, by hand, or lined up to another subtitle ---------- */
+  const textish = (x) => !!x && (!!x.ext || /^(srt|subrip|vtt|webvtt|ass|ssa|mov_text|tx3g|text)$/i.test(x.codec || ''));
+  const reloadAt = (extra) => {
+    const at = position();
+    vid.pause();
+    st.hold = at; $('#spin').hidden = false;
+    current.args = [m.ratingKey, Object.assign({ at: at }, extra || {})]; current.focusKey = null; run();
+  };
+  function timingOpts() {
+    const cur = subs.find((x) => x.id === st.subId);
+    const v = cur ? subSyncGet(m.ratingKey, cur.id) : null;
+    const pieces = v && (v.segs.length > 1 || v.segs[0].o || v.segs[0].k !== 1);
+    return {
+      auto: autoSyncOn(), autoAvail: subs.some(canAuto), autoIds: st.autoSynced,
+      onAuto: () => { store.set(userKey('subAutoSync'), !autoSyncOn()); closeModal(true); reloadAt(); },
+      canSync: !!cur && textish(cur), hasSub: !!cur,
+      offText: v ? (v.o ? syncText(v.o) : '') + (pieces ? (v.o ? ' · ' : '') + t('syncRefShort') : '') : '',
+      refAvail: !!cur && subs.some((x) => x.id !== cur.id && textish(x)),
+      hand: () => { closeModal(true); ensureDrawn('hand'); },
+      ref: () => { closeModal(true); ensureDrawn('ref'); }
+    };
+  }
+  /* syncing needs the app to draw the subtitle; one the server was burning in is switched over first */
+  function ensureDrawn(what) {
+    if (st.cuesRaw.length && textSub(st.subId)) { if (what === 'hand') startSyncBar(); else openRefSync(); return; }
+    st.drawIds.add(st.subId);
+    store.set('subdraw.' + m.ratingKey, Array.from(st.drawIds));
+    toast(t('syncPrep'), 4000);
+    reloadAt({ syncOpen: what });
+  }
+  function startSyncBar() {
+    if (!st.cuesRaw.length) { toast(t('syncNoText'), 5000); return; }
+    const v = subSyncGet(m.ratingKey, st.subId);
+    st.syncBar = { was: JSON.stringify(v), v: v };
+    clearTimeout(st.idleTimer);
+    pl.classList.add('idle', 'syncing');
+    pl.insertAdjacentHTML('beforeend', '<div class="synchint" id="synchint">' + esc(t('syncHint')) + '</div><div class="syncbar" id="syncbar"></div>');
+    drawSyncBar();
+  }
+  function drawSyncBar(lit) {
+    const b = $('#syncbar');
+    if (!b || !st.syncBar) return;
+    const v = st.syncBar.v, cur = subs.find((x) => x.id === st.subId);
+    const pieces = v.segs.length > 1 || v.segs[0].o || v.segs[0].k !== 1;
+    const cell = (key, html, cls) => '<div class="' + (cls || '') + (lit === key ? ' on' : '') + '">' + html + '</div>';
+    b.innerHTML = cell('', esc(t('syncTitle')) + '<small>' + esc(cur ? subLangName(cur) : '') + (pieces ? ' · ' + esc(t('syncRefShort')) : '') + '</small>', 'ttl') +
+      cell('e', ICON.back + esc(t('syncEarlier'))) +
+      cell('', '<b>' + esc(syncText(v.o)) + '</b><small>' + esc(v.o ? t(v.o > 0 ? 'syncIsLater' : 'syncIsEarlier', { s: Math.abs(Math.round(v.o * 10) / 10).toFixed(1) }) : t('syncAsFile')) + '</small>', 'val') +
+      cell('l', esc(t('syncLater')) + ICON.next) +
+      cell('', '<small>▲ ▼</small>' + esc(t('syncBig')), 'kb') +
+      cell('', '<small>OK</small>' + esc(t('syncSave')), 'kb');
+  }
+  let syncLitT = null;
+  function nudgeSync(d) {
+    const v = st.syncBar.v;
+    v.o = Math.round((v.o + d) * 10) / 10;
+    subSyncSet(m.ratingKey, st.subId, v); applySync();
+    drawSyncBar(d < 0 ? 'e' : 'l');
+    clearTimeout(syncLitT); syncLitT = setTimeout(() => drawSyncBar(), 220);
+  }
+  function endSyncBar(save) {
+    if (!st.syncBar) return;
+    if (!save) subSyncSet(m.ratingKey, st.subId, JSON.parse(st.syncBar.was));
+    st.syncBar = null;
+    ['#syncbar', '#synchint'].forEach((q) => { const e = $(q, pl); if (e) e.remove(); });
+    pl.classList.remove('syncing');
+    applySync();
+    if (save) toast(t('syncSaved'), 3000);
+  }
+  function openRefSync() {
+    const cur = subs.find((x) => x.id === st.subId);
+    const cands = subs.filter((x) => x.id !== st.subId && textish(x));
+    if (!cur || !cands.length) { toast(t('syncNoRef'), 5000); return; }
+    openModal(sheetHeader(t('syncRefTitle'), subLangName(cur)) + '<p class="sheettext">' + esc(t('syncRefNote', { l: subLangName(cur) })) + '</p><div class="optlist">' +
+      cands.map((x) => { const r = subRow(x); return optionRow('sr-' + x.id, subLangName(x), r.tags, false, A(() => runRefSync(x)), r.sub); }).join('') + '</div>', 'sr-' + cands[0].id);
+    pl.classList.remove('idle');
+  }
+  async function runRefSync(ref) {
+    closeModal(true);
+    const id = st.subId;
+    toast(t('syncWorking', { l: subLangName(ref) }), 6000);
+    let res = null;
+    try {
+      const txt = await subText(ref, true);
+      const rc = parseVTT(toVTT(txt || ''));
+      await sleep(30);
+      res = rc.length ? subAlign(st.cuesRaw, rc) : null;
+    } catch (e) { res = null; }
+    if (seq !== viewSeq || id !== st.subId) return;
+    if (!res || res.matched < Math.max(8, res.total * 0.25)) { toast(t('syncRefFail', { l: subLangName(ref) }), 8000); return; }
+    const before = subSyncGet(m.ratingKey, id);
+    subSyncSet(m.ratingKey, id, { o: 0, segs: res.segs });
+    applySync();
+    const speed = Math.abs(res.k - 1) > 0.0001 ? ', ' + t('syncSpeed', { p: Math.abs((res.k - 1) * 100).toFixed(1) }) : '';
+    const el = openModal(sheetHeader(t('syncRefTitle'), subLangName(subs.find((x) => x.id === id))) + '<span class="label">' + esc(t('syncResult')) + '</span><div class="optlist">' +
+      optionRow('srk', t('syncKeep', { o: syncText(res.o) }) + speed, [], false, A(() => { closeModal(); toast(t('syncSaved'), 3000); }),
+        t('syncStats', { n: res.matched, m: res.total }) + (res.shifts ? ' · ' + t('syncShifts', { n: res.shifts }) : '')) +
+      optionRow('sru', t('syncUndo'), [], false, A(() => { subSyncSet(m.ratingKey, id, before); applySync(); closeModal(); })) + '</div>', 'srk');
+    pl.classList.remove('idle');
+    return el;
+  }
   function openSubs() {
     openSubPicker({
       ratingKey: m.ratingKey, part: part, subs: subs, guided: !st.subId && subNeedsGuide(m.ratingKey, subs),
+      timing: timingOpts(),
       onChosen: (id, downloaded) => {
         /* Changing subtitles restarts the player from scratch at the same spot: the same path as opening
            the episode again, which is the one that works reliably. After a download the server needs a
@@ -4356,17 +4559,60 @@ async function viewPlayer(ratingKey, opts) {
     lastCue = txt;
     el.innerHTML = txt ? txt.split('\n').map((l) => '<span>' + esc(l) + '</span>').join('<br>') : '';
   }
+  /* the saved timing on top of the file's lines */
+  function applySync() {
+    const v = subSyncGet(m.ratingKey, st.subId);
+    st.cues = st.cuesRaw.map((c) => ({ a: subSyncMap(c.a, v), b: subSyncMap(c.b, v), text: c.text }));
+    lastCue = '\u0000'; drawCue();
+  }
+  /* a subtitle's text: downloaded, from its file (lined up by Plex when Auto-sync is on), or pulled out of the video */
+  async function subText(s, auto) {
+    if (s.extText) return s.extText;
+    if (s.key) {
+      if (auto && autoSyncOn() && canAuto(s)) {
+        try {
+          const txt = await fetchText(pmsURL(String(s.key).replace(/^(\/library\/streams\/\d+)$/, '$1.srt'), { format: 'srt', autoAdjustSubtitle: 1 }), { timeout: 30000, accept: '*/*' });
+          if (/-->/.test(txt)) { st.autoSynced.add(s.id); return txt; }
+        } catch (e) { /* not lined up: the file as it is */ }
+      }
+      return await fetchText(pmsURL(s.key), { timeout: 25000, accept: '*/*' });
+    }
+    const ck = m.ratingKey + ':' + s.id;
+    const saved = sub2Store(ck);
+    if (saved) return saved;
+    toast(t('sub2Extracting'), 7000);
+    const sess = newSession(), play = newSession();
+    const who = { 'X-Plex-Client-Identifier': clientId + '-subs', 'X-Plex-Client-Profile-Name': 'Web', 'X-Plex-Platform': 'Chrome', 'X-Plex-Session-Identifier': play };
+    const common = Object.assign({
+      hasMDE: 1, path: '/library/metadata/' + m.ratingKey, mediaIndex: 0, partIndex: 0, fastSeek: 1,
+      directPlay: 1, directStream: 1, directStreamAudio: 1, subtitleSize: 100, audioBoost: 100, videoQuality: 100,
+      videoResolution: '4096x2160', location: S.server.local ? 'lan' : 'wan', mediaBufferSize: 50000,
+      session: sess, subtitles: 'sidecar', subtitleStreamID: s.id
+    }, /^(ass|ssa)$/i.test(s.codec || '') ? { advancedSubtitles: 'text' } : {}, who);
+    try { await fetch(pmsURL('/library/parts/' + part.id, { subtitleStreamID: s.id, allParts: 1 }), { method: 'PUT' }); } catch (e) { /* ignore */ }
+    try {
+      await fetchText(pmsURL('/video/:/transcode/universal/decision', Object.assign({}, common, { protocol: 'hls' })), { timeout: 20000 });
+      const txt = await fetchText(pmsURL('/subtitles/:/transcode/universal/start', Object.assign({}, common, { protocol: 'http', copyts: 1, offset: 0 })), { timeout: 180000, accept: '*/*' });
+      if (/-->|Dialogue:/.test(txt)) sub2Store(ck, txt);
+      return txt;
+    } finally {
+      serverPick = null;
+      await syncServerStreams();
+      fetch(pmsURL('/video/:/transcode/universal/stop', Object.assign({ session: sess }, who))).catch(() => {});
+    }
+  }
   async function applyTrack() {
-    st.cues = []; lastCue = '\u0000'; drawCue();
+    st.cues = []; st.cuesRaw = []; lastCue = '\u0000'; drawCue();
     const id = st.subId;
     const s = textSub(id);
     if (!s) return;
     try {
-      const txt = s.extText || await fetchText(pmsURL(s.key), { timeout: 20000, accept: '*/*' });
+      const txt = await subText(s, true);
       if (id !== st.subId || seq !== viewSeq) return;
-      st.cues = parseVTT(toVTT(txt));
-      if (!st.cues.length) throw new Error('empty');
-      drawCue();
+      st.cuesRaw = parseVTT(toVTT(txt));
+      if (!st.cuesRaw.length) throw new Error('empty');
+      applySync();
+      if (st.autoSynced.has(id)) refreshStatic();
     } catch (e) {
       if (id !== st.subId || seq !== viewSeq) return;
       st.noText.add(id);
@@ -4519,6 +4765,16 @@ async function viewPlayer(ratingKey, opts) {
   keyHandler = (e) => {
     const k = e.key;
     if (modalOpen()) return false;
+    if (st.syncBar) {
+      if (k === 'ArrowLeft') nudgeSync(-0.1);
+      else if (k === 'ArrowRight') nudgeSync(0.1);
+      else if (k === 'ArrowUp') nudgeSync(1);
+      else if (k === 'ArrowDown') nudgeSync(-1);
+      else if (k === 'Enter') endSyncBar(true);
+      else if (k === 'Escape' || k === 'Backspace') endSyncBar(false);
+      else if (k === ' ') togglePlay();
+      return true;
+    }
     if (k === ' ') { togglePlay(); return true; }
     if (pl.classList.contains('idle')) {
       if (k === 'Escape' || k === 'Backspace') return false; /* controls hidden: Back leaves the player */
@@ -4593,7 +4849,10 @@ async function viewPlayer(ratingKey, opts) {
     start(at0);
     if (st.sub2Id) loadSub2();
   }
-  applyTrack();
+  applyTrack().then(() => {
+    if (seq !== viewSeq || !opts.syncOpen) return;
+    if (opts.syncOpen === 'hand') startSyncBar(); else openRefSync();
+  });
   if (opts.info) {
     setInfo(true);
     initFocus(opts.focusKey || 'more');

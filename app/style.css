@@ -1833,3 +1833,19 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player .info #pstyle .seg { height: 54px; box-sizing: border-box; padding: 4px; align-items: stretch; }
 .player .info #pstyle .seg button { font-size: 20px; padding: 0 22px; height: auto; }
 .player.pg .ptop { align-items: flex-end; }
+
+/* ---------- subtitle sync bar (adjust by hand) ---------- */
+.player .syncbar { position: absolute; left: 48px; right: 48px; bottom: 40px; z-index: 6; display: flex; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; background: rgba(60,60,66,0.55); backdrop-filter: blur(10px); color: #F2F2EE; height: 96px; }
+.player .syncbar > div { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 0 30px; border-left: 1px solid rgba(255,255,255,0.09); font-size: 25px; font-weight: 700; }
+.player .syncbar > div:first-child { border-left: 0; }
+.player .syncbar .ttl { flex-direction: column; align-items: flex-start; gap: 4px; min-width: 260px; background: rgba(255,255,255,0.07); }
+.player .syncbar .ttl small, .syncbar .val small { font-size: 17px; font-weight: 400; opacity: 0.7; }
+.player .syncbar .val { flex: 1; flex-direction: column; gap: 2px; }
+.player .syncbar .val b { font-size: 40px; font-weight: 300; font-variant-numeric: tabular-nums; }
+.player .syncbar .on { background: var(--grad) !important; background: linear-gradient(90deg, #1A8CE8, #10C4A6); color: #fff; }
+.player .syncbar svg { width: 26px; height: 26px; }
+.player .synchint { position: absolute; right: 48px; bottom: 150px; z-index: 6; font-size: 20px; color: rgba(242,242,238,0.8); }
+.player .syncbar .kb { flex-direction: column; gap: 2px; font-size: 21px; }
+.player .syncbar .kb small { font-size: 15px; font-weight: 700; opacity: 0.6; letter-spacing: 0.08em; }
+.player .syncbar .val small { min-width: 380px; text-align: center; }
+.player.syncing .psubs { bottom: 190px; }
