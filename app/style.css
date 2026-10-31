@@ -1849,3 +1849,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .player .syncbar .kb small { font-size: 15px; font-weight: 700; opacity: 0.6; letter-spacing: 0.08em; }
 .player .syncbar .val small { min-width: 380px; text-align: center; }
 .player.syncing .psubs { bottom: 190px; }
+
+/* Continue watching: four in view like before, the rest further right */
+.hrow.controw { margin: -18px -24px; padding: 18px 24px; gap: 28px; scroll-padding: 0 24px; }
+.hrow.controw > .spc { flex: 0 0 calc((100% - 84px) / 4); min-width: 0; }
