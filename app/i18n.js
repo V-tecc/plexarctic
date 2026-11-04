@@ -374,3 +374,29 @@ Object.assign(TEXT.sv, { speakers: 'Högtalare', speakersSub: 'Vad ditt ljudsyst
 Object.assign(TEXT.cs, { speakers: 'Reproduktory', spkStereo: 'Stereo (TV)', audioBoostRow: 'Zesílení hlasitosti' });
 Object.assign(TEXT.uk, { speakers: 'Динаміки', spkStereo: 'Стерео (ТВ)', audioBoostRow: 'Підсилення гучності' });
 Object.assign(TEXT.el, { speakers: 'Ηχεία', spkStereo: 'Στερεοφωνικό (TV)', audioBoostRow: 'Ενίσχυση έντασης' });
+/* more colours (0.76) */
+Object.assign(TEXT.en, {
+  palCrimson: 'Crimson', palAmber: 'Gold', palLagoon: 'Lagoon', palViolet: 'Violet', palCopper: 'Copper', palMint: 'Mint',
+  palCrimsonNote: 'Red focus, soft rose highlights', palAmberNote: 'Warm gold, cream highlights', palLagoonNote: 'Teal focus, sky-blue highlights',
+  palVioletNote: 'Violet focus, blue highlights', palCopperNote: 'Orange focus, pink highlights', palMintNote: 'Calm mint, light-blue highlights',
+  bgRow: 'Background', bgRowNote: 'The colour behind everything, in a dark and a light version', bgMatch: 'Matches the accent', bgGraphite: 'Graphite', bgOled: 'OLED black',
+  bgMidnight: 'Midnight', bgForest: 'Forest', bgPlum: 'Plum', bgEspresso: 'Espresso',
+  lookPresets: 'Ready-made looks', lookPresetsNote: 'Mode, background and accent in one press; change any of them below',
+  preNordic: 'Nordic night', preCinema: 'Cinema', preForest: 'Forest walk', preNeon: 'Neon', preSunset: 'Sunset', preOcean: 'Ocean', prePaper: 'Paper', preFrost: 'Frost',
+  filmTintRow: 'Match the film', filmTintNote: 'A film\'s or show\'s page takes a faint tint from its poster',
+  seasonAccentRow: 'Seasonal accent', seasonAccentNote: 'Halloween, Christmas, New Year and Valentine\'s get their own colours for a few days', seasonAccentNow: 'Right now: {a}'
+});
+Object.assign(TEXT.sv, {
+  palCrimson: 'Karmin', palAmber: 'Guld', palLagoon: 'Lagun', palViolet: 'Viol', palCopper: 'Koppar', palMint: 'Mint',
+  palCrimsonNote: 'Röd markering, mjukt rosa detaljer', palAmberNote: 'Varmt guld, gräddvita detaljer', palLagoonNote: 'Turkos markering, himmelsblå detaljer',
+  palVioletNote: 'Lila markering, blå detaljer', palCopperNote: 'Orange markering, rosa detaljer', palMintNote: 'Lugn mint, ljusblå detaljer',
+  bgRow: 'Bakgrund', bgRowNote: 'Färgen bakom allt, i en mörk och en ljus version', bgMatch: 'Följer accenten', bgGraphite: 'Grafit', bgOled: 'OLED-svart',
+  bgMidnight: 'Midnatt', bgForest: 'Skog', bgPlum: 'Plommon', bgEspresso: 'Espresso',
+  lookPresets: 'Färdiga utseenden', lookPresetsNote: 'Läge, bakgrund och accent med ett tryck; ändra vilken som helst nedan',
+  preNordic: 'Nordisk natt', preCinema: 'Biograf', preForest: 'Skogspromenad', preNeon: 'Neon', preSunset: 'Solnedgång', preOcean: 'Hav', prePaper: 'Papper', preFrost: 'Frost',
+  filmTintRow: 'Matcha filmen', filmTintNote: 'En films eller series sida får en svag ton från sin poster',
+  seasonAccentRow: 'Säsongsaccent', seasonAccentNote: 'Halloween, jul, nyår och alla hjärtans dag får egna färger några dagar', seasonAccentNow: 'Just nu: {a}'
+});
+Object.assign(TEXT.cs, { palCrimson: 'Karmín', palAmber: 'Zlatá', palLagoon: 'Laguna', palViolet: 'Fialová', palCopper: 'Měď', palMint: 'Máta', bgRow: 'Pozadí', bgMatch: 'Podle akcentu', bgOled: 'OLED černá', lookPresets: 'Hotové vzhledy', filmTintRow: 'Podle filmu', seasonAccentRow: 'Sezónní akcent' });
+Object.assign(TEXT.uk, { palCrimson: 'Багряний', palAmber: 'Золото', palLagoon: 'Лагуна', palViolet: 'Фіолетовий', palCopper: 'Мідь', palMint: 'М’ята', bgRow: 'Фон', bgMatch: 'Як акцент', bgOled: 'OLED чорний', lookPresets: 'Готові стилі', filmTintRow: 'Під фільм', seasonAccentRow: 'Сезонний акцент' });
+Object.assign(TEXT.el, { palCrimson: 'Βυσσινί', palAmber: 'Χρυσό', palLagoon: 'Λιμνοθάλασσα', palViolet: 'Βιολετί', palCopper: 'Χάλκινο', palMint: 'Μέντα', bgRow: 'Φόντο', bgMatch: 'Όπως το χρώμα', bgOled: 'Μαύρο OLED', lookPresets: 'Έτοιμες εμφανίσεις', filmTintRow: 'Ταίριασμα με την ταινία', seasonAccentRow: 'Εποχικό χρώμα' });

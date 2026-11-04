@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.75.2';
+const VERSION = '0.76.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -77,6 +77,8 @@ function loadUserPrefs() {
   /* a profile that never chose gets this device's default, never the previous profile's choice */
   S.accent = store.get(userKey('accent'), null) || store.get('accent', 'color');
   S.theme = store.get(userKey('theme'), null) || store.get('theme', 'dark');
+  S.bg = store.get(userKey('bg'), null) || 'match';
+  S.seasonAccent = store.get(userKey('seasonAccent'), false) === true;
   S.playerStyle = store.get(userKey('playerStyle'), null) || 'frame';
   /* the look is each profile's own; a profile that never chose starts from what this TV had */
   S.font = store.get(userKey('font'), null) || store.get('font', 'Questrial');
@@ -518,6 +520,7 @@ function rerun() {
 }
 function run() {
   viewSeq++;
+  if (typeof clearFilmTint === 'function') clearFilmTint();
   if (cleanup) { try { cleanup(); } catch (e) { /* ignore */ } cleanup = null; }
   keyHandler = null;
   focused = null;
@@ -855,15 +858,38 @@ function effectiveTheme() {
   const now = new Date(), st = sunTimes(now);
   return now >= st.rise && now < st.set ? 'light' : 'dark';
 }
-setInterval(() => { if (S.theme === 'auto' && stage.dataset.theme !== effectiveTheme()) applyTheme(); }, 60000);
+setInterval(() => { if ((S.theme === 'auto' && stage.dataset.theme !== effectiveTheme()) || (S.seasonAccent && (stage.dataset.palette || (stage.dataset.accent === 'mono' ? 'mono' : 'color')) !== accentNow())) applyTheme(); }, 60000);
 /* colour themes on the same base: black & white, Arctic (teal & purple), Ember, Aurora, Cinema, Sakura */
-const ACCENTS = [['mono', 'accentMono'], ['color', 'accentColor'], ['ember', 'palEmber'], ['aurora', 'palAurora'], ['gold', 'palGold'], ['sakura', 'palSakura'], ['cobalt', 'palCobalt']];
+const ACCENTS = [['mono', 'accentMono'], ['color', 'accentColor'], ['ember', 'palEmber'], ['aurora', 'palAurora'], ['gold', 'palGold'], ['sakura', 'palSakura'], ['cobalt', 'palCobalt'],
+  ['crimson', 'palCrimson'], ['amber', 'palAmber'], ['lagoon', 'palLagoon'], ['violet', 'palViolet'], ['copper', 'palCopper'], ['mint', 'palMint']];
+/* backgrounds: "match" uses the accent's own base; the others replace it (dark and light versions) */
+const BGS = [['match', 'bgMatch'], ['graphite', 'bgGraphite'], ['oled', 'bgOled'], ['midnight', 'bgMidnight'], ['forest', 'bgForest'], ['plum', 'bgPlum'], ['espresso', 'bgEspresso']];
+const BG_SW = { graphite: ['#111113', '#1C1C1F', '#F4F4F1'], oled: ['#000000', '#121214', '#FFFFFF'], midnight: ['#0B1020', '#151C30', '#EEF2F8'], forest: ['#0B130F', '#142019', '#EFF4F0'], plum: ['#130D17', '#201726', '#F4EFF6'], espresso: ['#15100C', '#231B15', '#F6F1E9'] };
+function bgSwatch(id) { return BG_SW[id] ? '<span class="bgsw" aria-hidden="true">' + BG_SW[id].map((c) => '<i style="background: ' + c + '"></i>').join('') + '</span>' : ''; }
+/* ready-made looks: mode, background and accent in one press */
+const PRESETS = [
+  ['nordic', 'preNordic', 'dark', 'midnight', 'color'], ['cinema', 'preCinema', 'dark', 'espresso', 'gold'], ['forest', 'preForest', 'dark', 'forest', 'aurora'],
+  ['neon', 'preNeon', 'dark', 'oled', 'sakura'], ['sunset', 'preSunset', 'dark', 'plum', 'copper'], ['ocean', 'preOcean', 'dark', 'midnight', 'lagoon'],
+  ['paper', 'prePaper', 'light', 'espresso', 'ember'], ['frost', 'preFrost', 'light', 'midnight', 'cobalt']
+];
+/* the accent of the season, when "Seasonal accent" is on: Halloween, Christmas, New Year, Valentine's */
+function seasonalAccent(d) {
+  const m = d.getMonth() + 1, day = d.getDate();
+  if ((m === 10 && day >= 15) || (m === 11 && day <= 1)) return 'ember';
+  if (m === 12 && day <= 26) return 'crimson';
+  if ((m === 12 && day >= 27) || (m === 1 && day <= 2)) return 'amber';
+  if (m === 2 && day >= 7 && day <= 14) return 'sakura';
+  return null;
+}
+function accentNow() { return (S.seasonAccent && seasonalAccent(new Date())) || S.accent; }
 /* the colour squares shown next to each theme: background, surface, selection, highlight (dark theme) */
 const ACCENT_SW = {
   mono: ['#111113', '#1C1C1F', '#F1F1EC', '#8A8A90'], color: ['#111113', '#1C1C1F', '#29F5DC', '#C084FC'],
   ember: ['#14110F', '#211C18', '#FFB547', '#FF7A45'], aurora: ['#0E1311', '#17201B', '#6BF2A0', '#E879F9'],
   gold: ['#0A0A0A', '#161514', '#E8C468', '#D9CBA6'], sakura: ['#121014', '#1E1A21', '#FF7EB6', '#A78BFA'],
-  cobalt: ['#0E1218', '#18202B', '#4DA3FF', '#FF9F43']
+  cobalt: ['#0E1218', '#18202B', '#4DA3FF', '#FF9F43'],
+  crimson: ['#140F11', '#221A1D', '#FF5A76', '#FFB4A2'], amber: ['#13110C', '#201C14', '#FFC53D', '#FFE08A'], lagoon: ['#0C1314', '#152022', '#2EE6C5', '#5AD1FF'],
+  violet: ['#100F17', '#1B1926', '#A78BFA', '#60A5FA'], copper: ['#14100F', '#231B19', '#FF9466', '#F9A8D4'], mint: ['#0E1412', '#18211E', '#8AF0C8', '#9CC7FF']
 };
 function accentSwatch(id) { return '<span class="acsw" aria-hidden="true">' + (ACCENT_SW[id] || []).map((c) => '<i style="background: ' + c + '"></i>').join('') + '</span>'; }
 /* light / dark / auto is each profile's own, like the accent */
@@ -884,9 +910,69 @@ function surroundExtra(vid) {
 function setAccent(x) { S.accent = x; if (!S.user) store.set('accent', x); try { store.set(userKey('accent'), x); } catch (e) { /* no profile yet */ } applyTheme(); }
 function autoNote() { const st = sunTimes(new Date()); return t('themeAutoNote', { a: hhmm(st.set), b: hhmm(st.rise) }); }
 function applyTheme() {
+  const acc = accentNow();
   stage.dataset.theme = effectiveTheme();
-  stage.dataset.accent = S.accent === 'mono' ? 'mono' : 'color';
-  stage.dataset.palette = S.accent === 'mono' || S.accent === 'color' ? '' : S.accent;
+  stage.dataset.accent = acc === 'mono' ? 'mono' : 'color';
+  stage.dataset.palette = acc === 'mono' || acc === 'color' ? '' : acc;
+  stage.dataset.bg = S.bg && S.bg !== 'match' ? S.bg : '';
+}
+function setBg(x) { S.bg = x; store.set(userKey('bg'), x); applyTheme(); }
+function applyPreset(p) {
+  S.theme = p[2]; store.set(userKey('theme'), p[2]);
+  S.bg = p[3]; store.set(userKey('bg'), p[3]);
+  S.accent = p[4]; store.set(userKey('accent'), p[4]);
+  applyTheme();
+}
+/* "Match the film": on a film's or show's page the background takes a faint tint from its poster */
+let filmTintOn = false;
+function clearFilmTint() {
+  if (!filmTintOn) return;
+  filmTintOn = false;
+  ['--bg', '--surface', '--img', '--chip', '--line', '--line3', '--bg-rgb', '--surface-rgb', '--panel-rgb', 'background'].forEach((v) => stage.style.removeProperty(v));
+}
+function filmTint(url, seq) {
+  if (store.get(userKey('filmTint'), true) === false || !url) return;
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    if (seq !== viewSeq) return;
+    let data;
+    try {
+      const c = document.createElement('canvas'); c.width = 24; c.height = 36;
+      const x = c.getContext('2d'); x.drawImage(img, 0, 0, 24, 36);
+      data = x.getImageData(0, 0, 24, 36).data;
+    } catch (e) { return; } /* the picture can't be read (no permission from the server): leave the page as it is */
+    /* the most colourful part of the poster decides the hue */
+    let r = 0, g = 0, b = 0, wsum = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const R = data[i], G = data[i + 1], B = data[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+      const w = (mx - mn) / 255 * (mx / 255) + 0.02;
+      r += R * w; g += G * w; b += B * w; wsum += w;
+    }
+    r /= wsum; g /= wsum; b /= wsum;
+    const mx = Math.max(r, g, b) / 255, mn = Math.min(r, g, b) / 255, l0 = (mx + mn) / 2;
+    let h = 0, s0 = mx === mn ? 0 : (l0 > 0.5 ? (mx - mn) / (2 - mx - mn) : (mx - mn) / (mx + mn));
+    if (mx !== mn) {
+      const R = r / 255, G = g / 255, B = b / 255, d = mx - mn;
+      h = mx === R ? ((G - B) / d + (G < B ? 6 : 0)) : mx === G ? ((B - R) / d + 2) : ((R - G) / d + 4);
+      h *= 60;
+    }
+    const hsl = (H, S2, L) => {
+      const k = (n) => (n + H / 30) % 12, a = S2 * Math.min(L, 1 - L), f = (n) => L - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+      return [f(0), f(8), f(4)].map((v) => Math.round(v * 255));
+    };
+    const dark = stage.dataset.theme === 'dark';
+    const sat = Math.min(dark ? 0.34 : 0.3, s0 * 0.7);
+    const L = dark ? { bg: 0.075, surface: 0.12, img: 0.16, chip: 0.14, line: 0.19, panel: 0.095 } : { bg: 0.95, surface: 0.995, img: 0.87, chip: 0.91, line: 0.86, panel: 0.97 };
+    const col = {}; Object.keys(L).forEach((k) => { col[k] = hsl(h, sat, L[k]); });
+    const css = (a) => 'rgb(' + a.join(',') + ')';
+    filmTintOn = true;
+    stage.style.setProperty('--bg', css(col.bg)); stage.style.setProperty('--surface', css(col.surface)); stage.style.setProperty('--img', css(col.img));
+    stage.style.setProperty('--chip', css(col.chip)); stage.style.setProperty('--line', css(col.line)); stage.style.setProperty('--line3', css(col.chip));
+    stage.style.setProperty('--bg-rgb', col.bg.join(',')); stage.style.setProperty('--surface-rgb', col.surface.join(',')); stage.style.setProperty('--panel-rgb', col.panel.join(','));
+    if (!dark) stage.style.setProperty('background', 'linear-gradient(180deg, var(--bg) 0%, var(--chip) 100%)');
+  };
+  img.src = url;
 }
 function pickTheme() {
   const draw = (prefer) => openModal(sheetHeader(t('theme')) +
@@ -1060,8 +1146,13 @@ function viewSettings() {
     row(t('subLang'), segLang(S.subLang, (c) => { S.subLang = c; store.set(userKey('subLang'), c); if (!S.user) store.set('subLang', c); rerun(); }, true)) +
     (typeof osSettingsHTML === 'function' ? row(t('osTitle'), osSettingsHTML()) : '') },
     { id: 'look', label: 'setLook', html: () =>
-    row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { setTheme(x[0]); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' +
-      '<div class="seg wrap">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + accentSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
+    row(t('lookPresets'), '<div class="seg wrap">' + PRESETS.map((p) => '<button type="button" class="f' + (S.theme === p[2] && S.bg === p[3] && S.accent === p[4] ? ' on' : '') + '" data-key="pre-' + p[0] + '" data-act="' + A(() => { applyPreset(p); rerun(); }) + '">' + accentSwatch(p[4]) + esc(t(p[1])) + '</button>').join('') + '</div>', t('lookPresetsNote')) +
+    row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { setTheme(x[0]); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="sval">' + esc(autoNote()) + '</span>' : '')) +
+    row(t('bgRow'), '<div class="seg wrap">' + BGS.map((x) => '<button type="button" class="f' + ((S.bg || 'match') === x[0] ? ' on' : '') + '" data-key="bg-' + x[0] + '" data-act="' + A(() => { setBg(x[0]); rerun(); }) + '">' + bgSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>', t('bgRowNote')) +
+    row(t('accent'), '<div class="seg wrap">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + accentSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>') +
+    row(t('filmTintRow'), '<div class="seg">' + [[true, t('swOn')], [false, t('off')]].map((x) => '<button type="button" class="f' + ((store.get(userKey('filmTint'), true) !== false) === x[0] ? ' on' : '') + '" data-key="ft-' + x[0] + '" data-act="' + A(() => { store.set(userKey('filmTint'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>', t('filmTintNote')) +
+    row(t('seasonAccentRow'), '<div class="seg">' + [[true, t('swOn')], [false, t('off')]].map((x) => '<button type="button" class="f' + (!!S.seasonAccent === x[0] ? ' on' : '') + '" data-key="sa-' + x[0] + '" data-act="' + A(() => { S.seasonAccent = x[0]; store.set(userKey('seasonAccent'), x[0]); applyTheme(); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
+      (S.seasonAccent && seasonalAccent(new Date()) ? '<span class="sval">' + esc(t('seasonAccentNow', { a: t((ACCENTS.find((a) => a[0] === seasonalAccent(new Date())) || [0, ''])[1]) })) + '</span>' : ''), t('seasonAccentNote')) +
     row(t('font'), '<div class="seg wrap">' + FONTS.map((f) => '<button type="button" class="f' + (S.font === f ? ' on' : '') + '" data-key="font-' + esc(f) + '" data-act="' + A(async () => {
       const prev = S.font;
       S.font = f;
@@ -3813,6 +3904,7 @@ async function viewDetails(ratingKey, opts) {
   const m = (mres.Metadata || [])[0];
   if (!m) throw new Error(t('notFound'));
   const artPath = m.type === 'episode' ? (m.grandparentThumb || m.parentThumb || m.thumb) : m.thumb;
+  filmTint(artPath ? imgURL(artPath, 120, 180) : '', seq);
   const isShow = m.type === 'show';
   const isEp = m.type === 'episode';
   const extras = xres.Metadata || [];

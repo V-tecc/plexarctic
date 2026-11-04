@@ -1002,7 +1002,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 
 /* v0.19 — main menu panels toned down: sections get a faint frame, "This week" keeps the stronger gray */
 #stage[data-theme="dark"] .homescroll > section.hub,
-#stage[data-theme="dark"] .homescroll > section.finish { background: #17181B; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+#stage[data-theme="dark"] .homescroll > section.finish { background: rgb(var(--panel-rgb)); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 #stage[data-theme="dark"] .homescroll .spotlibs .head-tile { background: var(--surface); }
 /* settings: long option rows wrap instead of running out of their frame */
 .seg.wrap { flex-wrap: wrap; gap: 4px; max-width: 1180px; }
@@ -1050,7 +1050,7 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .skipbtn svg { width: 24px; height: 24px; }
 .skipbtn small { margin-left: 6px; padding: 2px 8px; border: 1.5px solid rgba(255,255,255,0.7); font-size: 15px; font-weight: var(--w700); }
 .skipbtn { transition: bottom 220ms ease; }
-#stage[data-theme="dark"] .homescroll > div > section.hub { box-sizing: border-box; padding: 26px 32px 32px; background: #17181B; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+#stage[data-theme="dark"] .homescroll > div > section.hub { box-sizing: border-box; padding: 26px 32px 32px; background: rgb(var(--panel-rgb)); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
 /* shows with unwatched episodes: how many are left, in the poster corner */
 .watched.leftn { width: auto; min-width: 26px; padding: 0 7px; box-sizing: border-box; color: var(--fg); font-size: 15px; font-weight: var(--w700); }
 /* Watch Together */
@@ -1889,3 +1889,42 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* labels line up with the top of their controls */
 .setpane .srow { align-items: flex-start; }
 .setpane .slabel { padding-top: 12px; }
+
+/* ---------- more accents (0.76): light theme accents, then dark theme accents on a matching tinted base ---------- */
+#stage[data-palette="crimson"] { --focus: #D61F45; --ring: #D61F45; --on-focus: #FFFFFF; --primary: #9F1239; --hl: #9F1239; --on-hl: #FFFFFF; --hl-text: #9F1239; --ac1: #D61F45; --ac1-rgb: 214,31,69; --ac2: #9F1239; --grad: linear-gradient(90deg, #E11D48 0%, #FB7185 100%); }
+#stage[data-theme="dark"][data-palette="crimson"] { --bg: #140F11; --surface: #221A1D; --img: #2D2226; --chip: #281E22; --line: #382A30; --line3: #281E22; --bg-rgb: 20,15,17; --surface-rgb: 34,26,29; --panel-rgb: 27,20,23;
+  --focus: #FF5A76; --ring: #FF5A76; --on-focus: #101010; --primary: #FFB4A2; --hl: #FFB4A2; --on-hl: #101010; --hl-text: #FFB4A2; --ac1: #FF5A76; --ac1-rgb: 255,90,118; --ac2: #FFB4A2; }
+#stage[data-palette="amber"] { --focus: #B7791F; --ring: #B7791F; --on-focus: #FFFFFF; --primary: #92400E; --hl: #92400E; --on-hl: #FFFFFF; --hl-text: #92400E; --ac1: #B7791F; --ac1-rgb: 183,121,31; --ac2: #92400E; --grad: linear-gradient(90deg, #D97706 0%, #F59E0B 100%); }
+#stage[data-theme="dark"][data-palette="amber"] { --bg: #13110C; --surface: #201C14; --img: #2B261B; --chip: #262118; --line: #352E22; --line3: #262118; --bg-rgb: 19,17,12; --surface-rgb: 32,28,20; --panel-rgb: 26,23,17;
+  --focus: #FFC53D; --ring: #FFC53D; --on-focus: #101010; --primary: #FFE08A; --hl: #FFE08A; --on-hl: #101010; --hl-text: #FFE08A; --ac1: #FFC53D; --ac1-rgb: 255,197,61; --ac2: #FFE08A; }
+#stage[data-palette="lagoon"] { --focus: #0F9F8C; --ring: #0F9F8C; --on-focus: #FFFFFF; --primary: #0369A1; --hl: #0369A1; --on-hl: #FFFFFF; --hl-text: #0369A1; --ac1: #0F9F8C; --ac1-rgb: 15,159,140; --ac2: #0369A1; --grad: linear-gradient(90deg, #0D9488 0%, #22C55E 100%); }
+#stage[data-theme="dark"][data-palette="lagoon"] { --bg: #0C1314; --surface: #152022; --img: #1D2B2E; --chip: #182528; --line: #243437; --line3: #182528; --bg-rgb: 12,19,20; --surface-rgb: 21,32,34; --panel-rgb: 17,26,27;
+  --focus: #2EE6C5; --ring: #2EE6C5; --on-focus: #101010; --primary: #5AD1FF; --hl: #5AD1FF; --on-hl: #101010; --hl-text: #5AD1FF; --ac1: #2EE6C5; --ac1-rgb: 46,230,197; --ac2: #5AD1FF; }
+#stage[data-palette="violet"] { --focus: #6D28D9; --ring: #6D28D9; --on-focus: #FFFFFF; --primary: #1D4ED8; --hl: #1D4ED8; --on-hl: #FFFFFF; --hl-text: #1D4ED8; --ac1: #6D28D9; --ac1-rgb: 109,40,217; --ac2: #1D4ED8; --grad: linear-gradient(90deg, #7C3AED 0%, #3B82F6 100%); }
+#stage[data-theme="dark"][data-palette="violet"] { --bg: #100F17; --surface: #1B1926; --img: #252233; --chip: #201D2D; --line: #2D2A3E; --line3: #201D2D; --bg-rgb: 16,15,23; --surface-rgb: 27,25,38; --panel-rgb: 21,20,30;
+  --focus: #A78BFA; --ring: #A78BFA; --on-focus: #101010; --primary: #60A5FA; --hl: #60A5FA; --on-hl: #101010; --hl-text: #60A5FA; --ac1: #A78BFA; --ac1-rgb: 167,139,250; --ac2: #60A5FA; }
+#stage[data-palette="copper"] { --focus: #C2410C; --ring: #C2410C; --on-focus: #FFFFFF; --primary: #BE185D; --hl: #BE185D; --on-hl: #FFFFFF; --hl-text: #BE185D; --ac1: #C2410C; --ac1-rgb: 194,65,12; --ac2: #BE185D; --grad: linear-gradient(90deg, #EA580C 0%, #EC4899 100%); }
+#stage[data-theme="dark"][data-palette="copper"] { --bg: #14100F; --surface: #231B19; --img: #2E2421; --chip: #291F1C; --line: #392C28; --line3: #291F1C; --bg-rgb: 20,16,15; --surface-rgb: 35,27,25; --panel-rgb: 27,21,19;
+  --focus: #FF9466; --ring: #FF9466; --on-focus: #101010; --primary: #F9A8D4; --hl: #F9A8D4; --on-hl: #101010; --hl-text: #F9A8D4; --ac1: #FF9466; --ac1-rgb: 255,148,102; --ac2: #F9A8D4; }
+#stage[data-palette="mint"] { --focus: #0E9F6E; --ring: #0E9F6E; --on-focus: #FFFFFF; --primary: #0F766E; --hl: #0F766E; --on-hl: #FFFFFF; --hl-text: #0F766E; --ac1: #0E9F6E; --ac1-rgb: 14,159,110; --ac2: #0F766E; --grad: linear-gradient(90deg, #059669 0%, #10B981 100%); }
+#stage[data-theme="dark"][data-palette="mint"] { --bg: #0E1412; --surface: #18211E; --img: #212C28; --chip: #1C2622; --line: #29362F; --line3: #1C2622; --bg-rgb: 14,20,18; --surface-rgb: 24,33,30; --panel-rgb: 19,27,24;
+  --focus: #8AF0C8; --ring: #8AF0C8; --on-focus: #101010; --primary: #9CC7FF; --hl: #9CC7FF; --on-hl: #101010; --hl-text: #9CC7FF; --ac1: #8AF0C8; --ac1-rgb: 138,240,200; --ac2: #9CC7FF; }
+/* backgrounds you pick yourself (default "match" keeps the accent's own base); they come after the accents so they win */
+#stage[data-bg="graphite"] { --bg: #F4F4F1; --surface: #FFFFFF; --img: #DDDDD8; --chip: #E8E8E3; --line: #D9D9D3; --line2: #CFCFC9; --line3: #E8E8E3; --bg-rgb: 244,244,241; --surface-rgb: 255,255,255; --panel-rgb: 250,250,247; }
+#stage[data-theme="dark"][data-bg="graphite"] { --bg: #111113; --surface: #1C1C1F; --img: #2A2A2F; --chip: #26262B; --line: #2E2E33; --line2: #3C3C42; --line3: #26262B; --bg-rgb: 17,17,19; --surface-rgb: 28,28,31; --panel-rgb: 22,22,25; }
+#stage[data-bg="oled"] { --bg: #FFFFFF; --surface: #F5F5F5; --img: #E4E4E4; --chip: #ECECEC; --line: #DEDEDE; --line2: #D2D2D2; --line3: #ECECEC; --bg-rgb: 255,255,255; --surface-rgb: 245,245,245; --panel-rgb: 250,250,250; }
+#stage[data-theme="dark"][data-bg="oled"] { --bg: #000000; --surface: #121214; --img: #1C1C1F; --chip: #18181B; --line: #232327; --line2: #2E2E33; --line3: #18181B; --bg-rgb: 0,0,0; --surface-rgb: 18,18,20; --panel-rgb: 9,9,10; }
+#stage[data-bg="midnight"] { --bg: #EEF2F8; --surface: #FFFFFF; --img: #D9E0EB; --chip: #E2E8F1; --line: #D3DBE7; --line2: #C7D0DE; --line3: #E2E8F1; --bg-rgb: 238,242,248; --surface-rgb: 255,255,255; --panel-rgb: 245,248,252; }
+#stage[data-theme="dark"][data-bg="midnight"] { --bg: #0B1020; --surface: #151C30; --img: #1E2740; --chip: #19213A; --line: #263050; --line2: #313C60; --line3: #19213A; --bg-rgb: 11,16,32; --surface-rgb: 21,28,48; --panel-rgb: 16,22,42; }
+#stage[data-bg="forest"] { --bg: #EFF4F0; --surface: #FFFFFF; --img: #D9E3DC; --chip: #E3EBE5; --line: #D3DED6; --line2: #C6D3CA; --line3: #E3EBE5; --bg-rgb: 239,244,240; --surface-rgb: 255,255,255; --panel-rgb: 246,249,246; }
+#stage[data-theme="dark"][data-bg="forest"] { --bg: #0B130F; --surface: #142019; --img: #1C2B22; --chip: #18251D; --line: #23342A; --line2: #2D4035; --line3: #18251D; --bg-rgb: 11,19,15; --surface-rgb: 20,32,25; --panel-rgb: 15,25,19; }
+#stage[data-bg="plum"] { --bg: #F4EFF6; --surface: #FFFFFF; --img: #E3DAE7; --chip: #EBE4EE; --line: #DED4E3; --line2: #D2C6D8; --line3: #EBE4EE; --bg-rgb: 244,239,246; --surface-rgb: 255,255,255; --panel-rgb: 249,246,250; }
+#stage[data-theme="dark"][data-bg="plum"] { --bg: #130D17; --surface: #201726; --img: #2B2033; --chip: #251C2C; --line: #33283D; --line2: #40334C; --line3: #251C2C; --bg-rgb: 19,13,23; --surface-rgb: 32,23,38; --panel-rgb: 25,17,29; }
+#stage[data-bg="espresso"] { --bg: #F6F1E9; --surface: #FFFDF9; --img: #E6DDD0; --chip: #EEE6DA; --line: #E0D6C7; --line2: #D5C9B8; --line3: #EEE6DA; --bg-rgb: 246,241,233; --surface-rgb: 255,253,249; --panel-rgb: 250,247,241; }
+#stage[data-theme="dark"][data-bg="espresso"] { --bg: #15100C; --surface: #231B15; --img: #2E251D; --chip: #29201A; --line: #382D24; --line2: #45382D; --line3: #29201A; --bg-rgb: 21,16,12; --surface-rgb: 35,27,21; --panel-rgb: 27,21,16; }
+/* the colour squares for backgrounds and presets */
+.bgsw { display: inline-flex; gap: 3px; margin-right: 10px; vertical-align: middle; }
+.bgsw i { width: 16px; height: 16px; box-shadow: 0 0 0 1px rgba(128,128,128,.45); }
+
+/* light backgrounds you pick: the page itself takes the colour (the default light page keeps its soft grey) */
+#stage:not([data-theme="dark"])[data-bg="graphite"], #stage:not([data-theme="dark"])[data-bg="oled"], #stage:not([data-theme="dark"])[data-bg="midnight"], #stage:not([data-theme="dark"])[data-bg="forest"], #stage:not([data-theme="dark"])[data-bg="plum"], #stage:not([data-theme="dark"])[data-bg="espresso"] { background: linear-gradient(180deg, var(--bg) 0%, var(--chip) 100%); }
