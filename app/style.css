@@ -1853,3 +1853,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 /* Continue watching: four in view like before, the rest further right */
 .hrow.controw { margin: -18px -24px; padding: 18px 24px; gap: 28px; scroll-padding: 0 24px; }
 .hrow.controw > .spc { flex: 0 0 calc((100% - 84px) / 4); min-width: 0; }
+
+/* messages in the player: smaller and see-through, at the top, so they don't cover the picture or the controls */
+#stage.inplayer #toast { top: 44px; bottom: auto; max-width: 900px; padding: 12px 20px; font-size: 18px; background: rgba(20,20,24,0.55); color: rgba(255,255,255,0.92); box-shadow: none; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(6px); text-align: center; }
