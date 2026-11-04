@@ -4,7 +4,7 @@
    in the background. Settings → Seasonal effects (Automatic / Off, plus a preview of each). */
 'use strict';
 
-function seasonSetting() { return store.get('season', 'auto'); }
+function seasonSetting() { return store.get(userKey('season'), null) || store.get('season', 'auto'); }
 /* the season for a date, or null */
 function seasonFor(d) {
   const y = d.getFullYear(), m = d.getMonth() + 1, day = d.getDate();
@@ -268,7 +268,7 @@ setInterval(seasonStart, 3600000);
 /* Settings row */
 function seasonSettingsHTML() {
   const cur = seasonSetting();
-  const seg = '<div class="seg">' + [['auto', t('seasonAuto')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (cur === x[0] && !seasonPreview ? ' on' : '') + '" data-key="sea-' + x[0] + '" data-act="' + A(() => { store.set('season', x[0]); seasonPreview = null; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
+  const seg = '<div class="seg">' + [['auto', t('seasonAuto')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (cur === x[0] && !seasonPreview ? ' on' : '') + '" data-key="sea-' + x[0] + '" data-act="' + A(() => { store.set(userKey('season'), x[0]); seasonPreview = null; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>';
   const tries = (SEASON_MORE ? ['halloween', 'christmas', 'newyear', 'valentine', 'easter', 'midsummer'] : ['halloween']).map((k) => '<button type="button" class="chip f' + (seasonPreview === k ? ' on' : '') + '" data-key="sea-p-' + k + '" data-act="' + A(() => { seasonPreview = seasonPreview === k ? null : k; seasonStop(); seasonStart(); rerun(); }) + '">' + esc(t('season_' + k)) + '</button>').join('');
   const now = seasonFor(new Date());
   return seg + '<div class="chips">' + tries + '</div><span class="sval">' + esc(now ? t('seasonNow', { s: t('season_' + now) }) : t('seasonNone')) + '</span>';

@@ -362,3 +362,9 @@ Object.assign(TEXT.sv, { setProfile: 'Profil & språk', setSubs: 'Undertexter', 
 Object.assign(TEXT.cs, { setProfile: 'Profil a jazyk', setSubs: 'Titulky', setLook: 'Vzhled', setHome: 'Úvodní obrazovka', setPlay: 'Přehrávání a zvuk', setArt: 'Obrázky a doplňky', setServer: 'Server a záloha' });
 Object.assign(TEXT.uk, { setProfile: 'Профіль і мова', setSubs: 'Субтитри', setLook: 'Вигляд', setHome: 'Головний екран', setPlay: 'Відтворення і звук', setArt: 'Зображення і додатки', setServer: 'Сервер і резервна копія' });
 Object.assign(TEXT.el, { setProfile: 'Προφίλ και γλώσσα', setSubs: 'Υπότιτλοι', setLook: 'Εμφάνιση', setHome: 'Αρχική', setPlay: 'Αναπαραγωγή και ήχος', setArt: 'Εικόνες και επιπλέον', setServer: 'Διακομιστής και αντίγραφα' });
+/* Most watched */
+Object.assign(TEXT.en, { topTitle: 'Most watched', topP_week: 'Week', topP_month: 'Month', topP_year: 'Year', topP_all: 'All time', topWho: 'Who', topWhen: 'When', topMore: '… and {n} more', topNone: 'Nothing watched in this period' });
+Object.assign(TEXT.sv, { topTitle: 'Mest sett', topP_week: 'Vecka', topP_month: 'Månad', topP_year: 'År', topP_all: 'Totalt', topWho: 'Vem', topWhen: 'När', topMore: '… och {n} till', topNone: 'Inget sett under den här perioden' });
+Object.assign(TEXT.cs, { topTitle: 'Nejsledovanější', topP_week: 'Týden', topP_month: 'Měsíc', topP_year: 'Rok', topP_all: 'Celkem', topWho: 'Kdo', topWhen: 'Kdy' });
+Object.assign(TEXT.uk, { topTitle: 'Найпопулярніше', topP_week: 'Тиждень', topP_month: 'Місяць', topP_year: 'Рік', topP_all: 'Увесь час', topWho: 'Хто', topWhen: 'Коли' });
+Object.assign(TEXT.el, { topTitle: 'Τα πιο δημοφιλή', topP_week: 'Εβδομάδα', topP_month: 'Μήνας', topP_year: 'Έτος', topP_all: 'Όλα', topWho: 'Ποιος', topWhen: 'Πότε' });

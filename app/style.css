@@ -1874,3 +1874,15 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .setpane .sctl { flex: 1; min-width: 0; row-gap: 12px; }
 .setpane .sval { flex-basis: 100%; margin: 0; font-size: 18px; line-height: 1.4; }
 .setver { padding: 28px 0 0; }
+
+/* Most watched: the period switch, and who watched what (server managers) */
+.hubhead .topseg { margin-left: auto; }
+.hubhead .topseg .f { height: 40px; font-size: 16px; padding: 0 16px; }
+.topwho { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 18px; }
+.topwho .tag { font-size: 16px; padding: 6px 12px; }
+.toplog { display: flex; flex-direction: column; margin-bottom: 20px; }
+.toprow { display: grid; grid-template-columns: 200px 1fr auto; gap: 18px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 19px; align-items: baseline; }
+.toprow b { font-weight: var(--w700); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toprow span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toprow .tw { font-variant-numeric: tabular-nums; }
+.toprow.more { display: block; color: var(--muted); border: 0; }

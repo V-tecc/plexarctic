@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.75.0';
+const VERSION = '0.75.1';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -77,6 +77,12 @@ function loadUserPrefs() {
   S.accent = store.get(userKey('accent'), null) || store.get('accent', 'color');
   S.theme = store.get(userKey('theme'), null) || store.get('theme', 'dark');
   S.playerStyle = store.get(userKey('playerStyle'), null) || 'frame';
+  /* the look is each profile's own; a profile that never chose starts from what this TV had */
+  S.font = store.get(userKey('font'), null) || store.get('font', 'Questrial');
+  S.titleStyle = store.get(userKey('titleStyle'), null) || store.get('titleStyle', 'logo');
+  S.seasonStyle = store.get(userKey('seasonStyle'), null) || store.get('seasonStyle', 'picker');
+  S.clearart = store.get(userKey('clearart'), null) || store.get('clearart', 'on');
+  try { if (typeof applyFont === 'function' && document.body) applyFont(); } catch (e) { /* drawn later */ }
   try { applyTheme(); } catch (e) { /* drawn later */ }
   S.calHidden = mine('calHidden', []);
   S.calExtra = mine('calExtra', []);
@@ -1059,12 +1065,12 @@ function viewSettings() {
       S.font = f;
       const ok = await applyFont();
       if (!ok) { S.font = prev; applyFont(); toast(t('fontCustomMissing'), 8000); return; }
-      store.set('font', f); rerun();
+      store.set(userKey('font'), f); rerun();
     }) + '"' + (f === 'custom' ? '' : ' style="font-family: \'' + esc(f.replace(' Bold', '')) + '\', sans-serif' + (f.endsWith('Bold') ? '; font-weight: 800' : '') + '"') + '>' + esc(f === 'Questrial' ? t('fontTheme') : f) + '</button>').join('') + '</div>') +
-    row(t('titleStyle'), '<div class="seg">' + [['logo', t('titleLogo')], ['text', t('titleText')]].map((x) => '<button type="button" class="f' + (S.titleStyle === x[0] ? ' on' : '') + '" data-key="ts-' + x[0] + '" data-act="' + A(() => { S.titleStyle = x[0]; store.set('titleStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
-    row(t('seasonStyle'), '<div class="seg">' + [['numbers', t('ssNumbers')], ['picker', t('ssPicker')], ['posters', t('ssPosters')]].map((x) => '<button type="button" class="f' + (S.seasonStyle === x[0] ? ' on' : '') + '" data-key="ss-' + x[0] + '" data-act="' + A(() => { S.seasonStyle = x[0]; store.set('seasonStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('titleStyle'), '<div class="seg">' + [['logo', t('titleLogo')], ['text', t('titleText')]].map((x) => '<button type="button" class="f' + (S.titleStyle === x[0] ? ' on' : '') + '" data-key="ts-' + x[0] + '" data-act="' + A(() => { S.titleStyle = x[0]; store.set(userKey('titleStyle'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('seasonStyle'), '<div class="seg">' + [['numbers', t('ssNumbers')], ['picker', t('ssPicker')], ['posters', t('ssPosters')]].map((x) => '<button type="button" class="f' + (S.seasonStyle === x[0] ? ' on' : '') + '" data-key="ss-' + x[0] + '" data-act="' + A(() => { S.seasonStyle = x[0]; store.set(userKey('seasonStyle'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     (typeof seasonSettingsHTML === 'function' ? row(t('seasonTitle'), seasonSettingsHTML()) : '') +
-    row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set('saverMin', n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') },
+    row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set(userKey('saverMin'), n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') },
     { id: 'home', label: 'setHome', html: () =>
     row(t('wlSetting'), '<div class="seg">' + [[true, t('wlShow')], [false, t('wlHide')]].map((x) => '<button type="button" class="f' + ((store.get(userKey('wlHome'), true) !== false) === x[0] ? ' on' : '') + '" data-key="wlh-' + x[0] + '" data-act="' + A(() => { store.set(userKey('wlHome'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('tasteSettings'), '<button type="button" class="btn f" data-key="tastereset" data-act="' + A(() => { tasteReset(); rerun(); }) + '">' + esc(t('tasteResetBtn', { n: tasteCount() })) + '</button>', t('tasteSettingsNote')) },
@@ -1086,7 +1092,7 @@ function viewSettings() {
       '<button type="button" class="btn f" data-key="tmdbsave" data-act="' + A(() => { S.tmdb = $('#tmdb').value.trim(); store.set('tmdb', S.tmdb); trendingCache = null; toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
     row(t('fanartKeyLabel'), '<input class="input f" id="fanartkey" data-key="fanartkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.fanartKey) + '">' +
       '<button type="button" class="btn f" data-key="fanartsave" data-act="' + A(() => { S.fanartKey = $('#fanartkey').value.trim(); store.set('fanartKey', S.fanartKey); store.del('fanartCache'); toast(t('save') + ' ✓', 2000); rerun(); }) + '">' + esc(t('save')) + '</button>') +
-    row(t('clearartSetting'), '<div class="seg">' + [['on', t('clearartOn')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (S.clearart === x[0] ? ' on' : '') + '" data-key="ca-' + x[0] + '" data-act="' + A(() => { S.clearart = x[0]; store.set('clearart', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
+    row(t('clearartSetting'), '<div class="seg">' + [['on', t('clearartOn')], ['off', t('off')]].map((x) => '<button type="button" class="f' + (S.clearart === x[0] ? ' on' : '') + '" data-key="ca-' + x[0] + '" data-act="' + A(() => { S.clearart = x[0]; store.set(userKey('clearart'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
       (S.fanartKey ? '' : '<span class="sval">' + esc(t('clearartNeedsKey')) + '</span>')) +
     row(t('auddKeyLabel'), '<input class="input f" id="auddkey" data-key="auddkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.auddKey) + '">' +
       '<button type="button" class="btn f" data-key="auddsave" data-act="' + A(() => { S.auddKey = $('#auddkey').value.trim(); store.set('auddKey', S.auddKey); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>' +
@@ -2042,29 +2048,58 @@ function ownerURL(path, extra) {
   return S.server.uri + path + (path.includes('?') ? '&' : '?') + plexParams(Object.assign({ 'X-Plex-Token': S.adminToken || S.server.token }, extra));
 }
 let statsCache = { at: 0, top: null, now: null, nowAt: 0 };
-async function loadTopWeek() {
-  if (statsCache.top && Date.now() - statsCache.at < 15 * 60000) return statsCache.top;
-  const since = Math.floor(Date.now() / 1000) - 7 * 86400;
-  const [hist, accts] = await Promise.all([
-    getJSON(ownerURL('/status/sessions/history/all', { 'viewedAt>': since, sort: 'viewedAt:desc', 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 1000 })),
-    getJSON(ownerURL('/accounts')).catch(() => ({}))
-  ]);
+/* Most watched: this week, month, year or ever, from the server's play history (the owner's server only) */
+const TOP_PERIODS = [['week', 7], ['month', 30], ['year', 365], ['all', 0]];
+function topPeriod() { const v = store.get(userKey('topPeriod'), 'week'); return TOP_PERIODS.some((x) => x[0] === v) ? v : 'week'; }
+async function loadTopWeek(period) {
+  period = period || 'week';
+  statsCache.tops = statsCache.tops || {};
+  const c = statsCache.tops[period];
+  if (c && Date.now() - c.at < 15 * 60000) return c.top;
+  const days = (TOP_PERIODS.find((x) => x[0] === period) || TOP_PERIODS[0])[1];
+  const since = days ? Math.floor(Date.now() / 1000) - days * 86400 : 0;
+  const accts = await getJSON(ownerURL('/accounts')).catch(() => ({}));
   const names = {};
   (((accts.MediaContainer || {}).Account) || []).forEach((a) => { names[a.id] = a.name; });
+  /* the history comes newest first, a page at a time; a long period reads further back (up to 20 000 plays) */
+  let rows = [];
+  const size = days && days <= 30 ? 1000 : 2500;
+  for (let start = 0; start < 20000; start += size) {
+    const q = { sort: 'viewedAt:desc', 'X-Plex-Container-Start': start, 'X-Plex-Container-Size': size };
+    if (since) q['viewedAt>'] = since;
+    const page = (((await getJSON(ownerURL('/status/sessions/history/all', q))).MediaContainer || {}).Metadata) || [];
+    rows = rows.concat(page);
+    if (page.length < size || (since && page.length && page[page.length - 1].viewedAt < since)) break;
+  }
   const groups = new Map();
-  (((hist.MediaContainer || {}).Metadata) || []).forEach((h) => {
-    if (h.viewedAt && h.viewedAt < since) return;
+  rows.forEach((h) => {
+    if (since && h.viewedAt && h.viewedAt < since) return;
     const ep = h.type === 'episode';
     const key = ep ? (h.grandparentRatingKey || h.grandparentKey || h.grandparentTitle) : (h.ratingKey || h.title);
     if (!key) return;
-    if (!groups.has(key)) groups.set(key, { key: String(key).replace(/^\/library\/metadata\//, ''), title: ep ? h.grandparentTitle : h.title, type: ep ? 'show' : 'movie', thumb: ep ? (h.grandparentThumb || h.thumb) : h.thumb, plays: 0, users: new Set() });
+    if (!groups.has(key)) groups.set(key, { key: String(key).replace(/^\/library\/metadata\//, ''), title: ep ? h.grandparentTitle : h.title, type: ep ? 'show' : 'movie', thumb: ep ? (h.grandparentThumb || h.thumb) : h.thumb, plays: 0, users: new Set(), views: [] });
     const g = groups.get(key);
+    const who = names[h.accountID] || String(h.accountID || '?');
     g.plays++;
-    g.users.add(names[h.accountID] || h.accountID);
+    g.users.add(who);
+    g.views.push({ who: who, at: h.viewedAt || 0, ep: ep ? [h.parentIndex != null && h.index != null ? epCode(h) : '', h.title || ''].filter(Boolean).join(' · ') : '' });
   });
   const top = Array.from(groups.values()).sort((a, b) => b.plays - a.plays || b.users.size - a.users.size).slice(0, 8);
-  statsCache.top = top; statsCache.at = Date.now();
+  statsCache.tops[period] = { at: Date.now(), top: top };
   return top;
+}
+/* who watched it and when (server managers) */
+function topViewsSheet(g) {
+  const byUser = new Map();
+  g.views.forEach((v) => byUser.set(v.who, (byUser.get(v.who) || 0) + 1));
+  const when = (sec) => { const d = new Date(sec * 1000); return d.toLocaleDateString(lang().locale, { day: 'numeric', month: 'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) + ' ' + hhmm(d); };
+  const el = openModal(sheetHeader(g.title, (g.plays === 1 ? t('onePlay') : t('nPlays', { n: g.plays })) + ' · ' + (g.users.size === 1 ? t('oneUser') : t('nUsers', { n: g.users.size }))) +
+    '<div class="optlist">' + optionRow('tv-open', t(g.type === 'show' ? 'ctxShow' : 'ctxDetails'), [], false, A(() => { closeModal(true); go(viewDetails, [g.key]); })) + '</div>' +
+    '<span class="label">' + esc(t('topWho')) + '</span><div class="topwho">' + Array.from(byUser.entries()).sort((a, b) => b[1] - a[1]).map((x) => '<span class="tag">' + esc(x[0]) + ' · ' + x[1] + '</span>').join('') + '</div>' +
+    '<span class="label">' + esc(t('topWhen')) + '</span><div class="toplog">' +
+    g.views.slice(0, 60).map((v) => '<div class="toprow"><b>' + esc(v.who) + '</b><span>' + esc(v.ep) + '</span><span class="tw">' + esc(when(v.at)) + '</span></div>').join('') +
+    (g.views.length > 60 ? '<div class="toprow more">' + esc(t('topMore', { n: g.views.length - 60 })) + '</div>' : '') + '</div>', 'tv-open');
+  return el;
 }
 /* Watching now (server managers): drawn again whenever someone starts, stops, pauses or switches;
    focus stays on the same stream if it's still there. */
@@ -2131,20 +2166,28 @@ async function fillHomeStats() {
       if (seq === viewSeq) npRender(l, seq);
     }, 10000);
   });
-  /* Most watched this week: for everyone, if the server is the owner's */
+  /* Most watched: for everyone, if the server is the owner's; this week, month, year or ever */
   if (!S.adminToken) return;
-  try {
-    const top = await loadTopWeek();
+  const admin = await isAdmin().catch(() => false);
+  const drawTop = async (period, focusKey) => {
+    let top;
+    try { top = await loadTopWeek(period); } catch (e) { return; } /* not the owner's server, or no history: leave it out */
     const box = $('#topweek');
-    if (!box || seq !== viewSeq || !top.length) return;
-    box.innerHTML = '<section class="hub"><div class="hubhead"><h2>' + esc(t('topWeek')) + '</h2><span>' + esc(t('topWeekSub')) + '</span></div><div class="grid8">' +
-      top.map((g, i) => {
+    if (!box || seq !== viewSeq) return;
+    if (!top.length && period === 'week' && !box.innerHTML) return;
+    const seg = '<div class="seg topseg">' + TOP_PERIODS.map((x) => '<button type="button" class="f' + (x[0] === period ? ' on' : '') + '" data-key="twp-' + x[0] + '" data-act="' + A(() => {
+      store.set(userKey('topPeriod'), x[0]); drawTop(x[0], 'twp-' + x[0]);
+    }) + '">' + esc(t('topP_' + x[0])) + '</button>').join('') + '</div>';
+    box.innerHTML = '<section class="hub"><div class="hubhead"><h2>' + esc(t('topTitle')) + '</h2><span>' + esc(t('topWeekSub')) + '</span>' + seg + '</div>' +
+      (top.length ? '<div class="grid8">' + top.map((g, i) => {
         const th = imgURL(g.thumb, 300, 450);
-        return '<div class="card f" data-key="tw-' + i + '" data-act="' + A(() => go(viewDetails, [g.key])) + '" data-ctx="' + A(() => itemMenuByKey(g.key)) + '"><div class="cimg">' +
+        return '<div class="card f" data-key="tw-' + i + '" data-act="' + A(() => (admin ? topViewsSheet(g) : go(viewDetails, [g.key]))) + '" data-ctx="' + A(() => itemMenuByKey(g.key)) + '"><div class="cimg">' +
           (th ? '<img class="img" loading="lazy" src="' + esc(th) + '" alt="">' : '<div class="img"></div>') + '<span class="badge">#' + (i + 1) + '</span></div>' +
           '<div class="t">' + esc(g.title) + '</div><div class="s">' + esc((g.plays === 1 ? t('onePlay') : t('nPlays', { n: g.plays })) + ' · ' + (g.users.size === 1 ? t('oneUser') : t('nUsers', { n: g.users.size }))) + '</div></div>';
-      }).join('') + '</div></section>';
-  } catch (e) { /* not the owner's server, or no history: leave it out */ }
+      }).join('') + '</div>' : '<p class="sheettext">' + esc(t('topNone')) + '</p>') + '</section>';
+    if (focusKey) { const f = $('[data-key="' + focusKey + '"]', box); if (f) setFocus(f, true); }
+  };
+  drawTop(topPeriod());
 }
 /* Holding OK on "All Movies" / "All TV Shows": open it, or (server managers) scan it for new files. */
 async function libraryMenu(sec, label) {

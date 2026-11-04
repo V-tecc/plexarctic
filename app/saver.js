@@ -8,7 +8,7 @@ const SAVER_STEP = 14000;          /* each picture stays this long */
 let saverLast = Date.now();        /* last key press */
 let saverOn = false, saverTimer = null, saverPics = [], saverIdx = 0, saverLayer = 0, saverPaused = null;
 
-function saverMinutes() { const v = store.get('saverMin', 10); return v == null ? 10 : Number(v); }
+function saverMinutes() { let v = store.get(userKey('saverMin'), null); if (v == null) v = store.get('saverMin', 10); return v == null ? 10 : Number(v); }
 
 /* a key: note it, and if the saver is up, just close it (the key does nothing else) */
 window.addEventListener('keydown', (e) => {
