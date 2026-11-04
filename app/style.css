@@ -1886,3 +1886,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .toprow span { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .toprow .tw { font-variant-numeric: tabular-nums; }
 .toprow.more { display: block; color: var(--muted); border: 0; }
+/* labels line up with the top of their controls */
+.setpane .srow { align-items: flex-start; }
+.setpane .slabel { padding-top: 12px; }
