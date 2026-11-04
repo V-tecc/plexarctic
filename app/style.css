@@ -1928,3 +1928,5 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 
 /* light backgrounds you pick: the page itself takes the colour (the default light page keeps its soft grey) */
 #stage:not([data-theme="dark"])[data-bg="graphite"], #stage:not([data-theme="dark"])[data-bg="oled"], #stage:not([data-theme="dark"])[data-bg="midnight"], #stage:not([data-theme="dark"])[data-bg="forest"], #stage:not([data-theme="dark"])[data-bg="plum"], #stage:not([data-theme="dark"])[data-bg="espresso"] { background: linear-gradient(180deg, var(--bg) 0%, var(--chip) 100%); }
+.player .info #pstyle .pbtn.small { margin: 0; align-self: center; height: 54px; }
+.player .info #pstyle .label { white-space: nowrap; }
