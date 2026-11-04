@@ -400,3 +400,38 @@ Object.assign(TEXT.sv, {
 Object.assign(TEXT.cs, { palCrimson: 'Karmín', palAmber: 'Zlatá', palLagoon: 'Laguna', palViolet: 'Fialová', palCopper: 'Měď', palMint: 'Máta', bgRow: 'Pozadí', bgMatch: 'Podle akcentu', bgOled: 'OLED černá', lookPresets: 'Hotové vzhledy', filmTintRow: 'Podle filmu', seasonAccentRow: 'Sezónní akcent' });
 Object.assign(TEXT.uk, { palCrimson: 'Багряний', palAmber: 'Золото', palLagoon: 'Лагуна', palViolet: 'Фіолетовий', palCopper: 'Мідь', palMint: 'М’ята', bgRow: 'Фон', bgMatch: 'Як акцент', bgOled: 'OLED чорний', lookPresets: 'Готові стилі', filmTintRow: 'Під фільм', seasonAccentRow: 'Сезонний акцент' });
 Object.assign(TEXT.el, { palCrimson: 'Βυσσινί', palAmber: 'Χρυσό', palLagoon: 'Λιμνοθάλασσα', palViolet: 'Βιολετί', palCopper: 'Χάλκινο', palMint: 'Μέντα', bgRow: 'Φόντο', bgMatch: 'Όπως το χρώμα', bgOled: 'Μαύρο OLED', lookPresets: 'Έτοιμες εμφανίσεις', filmTintRow: 'Ταίριασμα με την ταινία', seasonAccentRow: 'Εποχικό χρώμα' });
+/* screen saver: Plex stats */
+Object.assign(TEXT.en, {
+  stLib: 'Your library', stMe: 'Your viewing', stSrv: 'On this server', stThis: 'This one', stH: '{h} h {m} min', stM: '{m} min',
+  stSeenN: 'You\'ve watched {t} {n} times', stLastTime: '– last time in {d}', stSeen1: 'You watched {t} on {d}', stUnseen: 'You haven\'t seen {t} yet',
+  stWho: '{t} has been watched by {w}', stEpsLeft: '{t}: {n} of {m} episodes still to watch', stEpsAll: 'You\'ve seen every one of the {m} episodes of {t}',
+  stEpsWatched: '{n} episodes of {t} watched on this server this past year', stAdded: '{t} has been in your library since {d}', stEndsAt: 'Start {t} now and it ends at {h}',
+  stShorter: '{t} is {n} min shorter than your average film', stLonger: '{t} is {n} min longer than your average film', stTopTen: '{t} is number {n} of your most watched films',
+  stRated: '{t} is rated {r} – one of the best in your library', stLibSize: '{f} films and {s} shows in your library', stLibHours: '{h} hours of film – {d} days non-stop',
+  stUnseenLib: '{n} films you haven\'t seen yet – about {d} days of watching', stNewest: 'Newest addition: {t}, added {n} days ago', stNewestToday: 'Newest addition: {t}, added today',
+  stNewestYday: 'Newest addition: {t}, added yesterday', stOldest: 'The oldest film in your library: {t} ({y})', stDecade: 'Most of your films are from the {d}s – {n} of them',
+  stBest: 'Highest rated in your library: {t}, {r}', stLongest: 'Your longest film: {t}, {d}', stShortest: 'Your shortest feature: {t}, {d}', stLibGenre: 'Your library\'s biggest genre: {g}, {n} films',
+  stAdded30: '{n} new titles added this past month', stSeenPct: 'You\'ve seen {p} % of your films – {n} of {m}', stFav: 'Your most rewatched film: {t}, {n} times',
+  stShowsDone: '{n} shows watched all the way through', stShowsStarted: '{n} shows on the go right now', stWeek: 'This week: {d} watched – {f} and {e}', stFilm1: '1 film', stFilmN: '{n} films', stEp1: '1 episode', stEpN: '{n} episodes',
+  stMonth: 'Last 30 days: {n} plays, {d}', stYear: 'So far in {y}: {f} and {e}', stBusyDay: 'Your favourite day for watching: {d}', stBusyHour: 'You usually start watching around {h}',
+  stBinge: 'Your longest binge: {n} episodes of {s} in one evening', stTopShow: 'Your most watched show this past year: {s}, {n} episodes', stLastWatched: 'Last watched: {t}, on {d}',
+  stGenreMonth: 'Your genre of the month: {g}', stFilmsYear: '{n} films watched this past year', stSrvTop: 'Most watched here this month: {t}, {n} plays',
+  stSrvPeople: '{n} people watched this month – {w} the most', stSrvPlays: '{n} plays on this server this month'
+});
+Object.assign(TEXT.sv, {
+  stLib: 'Ditt bibliotek', stMe: 'Ditt tittande', stSrv: 'På den här servern', stThis: 'Den här', stH: '{h} h {m} min', stM: '{m} min',
+  stSeenN: 'Du har sett {t} {n} gånger', stLastTime: '– senast i {d}', stSeen1: 'Du såg {t} den {d}', stUnseen: 'Du har inte sett {t} än',
+  stWho: '{t} har setts av {w}', stEpsLeft: '{t}: {n} av {m} avsnitt kvar att se', stEpsAll: 'Du har sett alla {m} avsnitt av {t}',
+  stEpsWatched: '{n} avsnitt av {t} sedda på servern det senaste året', stAdded: '{t} har funnits i biblioteket sedan {d}', stEndsAt: 'Startar du {t} nu är den slut {h}',
+  stShorter: '{t} är {n} min kortare än din genomsnittliga film', stLonger: '{t} är {n} min längre än din genomsnittliga film', stTopTen: '{t} är nummer {n} bland dina mest sedda filmer',
+  stRated: '{t} har betyget {r} – en av de bästa i biblioteket', stLibSize: '{f} filmer och {s} serier i ditt bibliotek', stLibHours: '{h} timmar film – {d} dygn i sträck',
+  stUnseenLib: '{n} filmer du inte har sett än – ungefär {d} dygns tittande', stNewest: 'Senast tillagd: {t}, för {n} dagar sedan', stNewestToday: 'Senast tillagd: {t}, i dag',
+  stNewestYday: 'Senast tillagd: {t}, i går', stOldest: 'Äldsta filmen i biblioteket: {t} ({y})', stDecade: 'De flesta av dina filmer är från {d}-talet – {n} stycken',
+  stBest: 'Högst betyg i biblioteket: {t}, {r}', stLongest: 'Din längsta film: {t}, {d}', stShortest: 'Din kortaste långfilm: {t}, {d}', stLibGenre: 'Bibliotekets största genre: {g}, {n} filmer',
+  stAdded30: '{n} nya titlar tillagda den senaste månaden', stSeenPct: 'Du har sett {p} % av dina filmer – {n} av {m}', stFav: 'Filmen du sett om mest: {t}, {n} gånger',
+  stShowsDone: '{n} serier sedda hela vägen', stShowsStarted: '{n} serier på gång just nu', stWeek: 'Den här veckan: {d} – {f} och {e}', stFilm1: '1 film', stFilmN: '{n} filmer', stEp1: '1 avsnitt', stEpN: '{n} avsnitt',
+  stMonth: 'Senaste 30 dagarna: {n} visningar, {d}', stYear: 'Hittills {y}: {f} och {e}', stBusyDay: 'Din favoritdag för att titta: {d}', stBusyHour: 'Du brukar börja titta runt {h}',
+  stBinge: 'Ditt längsta maraton: {n} avsnitt av {s} på en kväll', stTopShow: 'Din mest sedda serie det senaste året: {s}, {n} avsnitt', stLastWatched: 'Senast sett: {t}, i {d}s',
+  stGenreMonth: 'Månadens genre för dig: {g}', stFilmsYear: '{n} filmer sedda det senaste året', stSrvTop: 'Mest sett här den här månaden: {t}, {n} visningar',
+  stSrvPeople: '{n} personer har tittat den här månaden – {w} mest', stSrvPlays: '{n} visningar på servern den här månaden'
+});
