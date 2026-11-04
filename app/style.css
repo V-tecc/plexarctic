@@ -1856,3 +1856,21 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 
 /* messages in the player: smaller and see-through, at the top, so they don't cover the picture or the controls */
 #stage.inplayer #toast { top: 44px; bottom: auto; max-width: 900px; padding: 12px 20px; font-size: 18px; background: rgba(20,20,24,0.55); color: rgba(255,255,255,0.92); box-shadow: none; border: 1px solid rgba(255,255,255,0.08); backdrop-filter: blur(6px); text-align: center; }
+
+/* ---------- Settings: groups on the left, the chosen group's settings on the right ---------- */
+.setwrap { flex: 1; min-height: 0; display: flex; gap: 56px; }
+.setnav { flex: 0 0 340px; display: flex; flex-direction: column; gap: 6px; padding-top: 2px; }
+.setnavbtn { height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 22px 0 26px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); font-size: 24px; font-weight: var(--w700); text-align: left; cursor: pointer; transition: background 120ms ease; }
+.setnavbtn svg { width: 22px; height: 22px; opacity: 0; flex: none; }
+.setnavbtn.on { background: var(--surface); color: var(--fg); }
+.setnavbtn.on svg { opacity: 0.55; }
+.setnavbtn.focus { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--focus); color: var(--fg); }
+.setpane.scroll { flex: 1; min-width: 0; margin: -24px -48px 0 0; padding: 24px 48px 80px 6px; }
+.setsech { margin: 0 0 6px; font-size: 34px; font-weight: var(--w800); }
+.setpane .settings { max-width: none; }
+.setpane .srow { padding: 20px 0; min-height: 0; gap: 48px; }
+.setpane .slabel { width: 300px; display: flex; flex-direction: column; gap: 6px; }
+.setpane .slabel small { font-size: 17px; font-weight: var(--w400); color: var(--muted); line-height: 1.35; }
+.setpane .sctl { flex: 1; min-width: 0; row-gap: 12px; }
+.setpane .sval { flex-basis: 100%; margin: 0; font-size: 18px; line-height: 1.4; }
+.setver { padding: 28px 0 0; }

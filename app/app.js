@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.74.2';
+const VERSION = '0.75.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -503,7 +503,12 @@ async function confirmExit() {
     optionRow('ex-yes', t('exitYes'), [], false, A(() => { closeModal(true); if (window.tvExit) window.tvExit(); else toast(t('exitPc'), 3000); })) +
     '</div>', 'ex-no'));
 }
-function rerun() { current.focusKey = focused && focused.dataset.key; run(); }
+function rerun() {
+  current.focusKey = focused && focused.dataset.key;
+  /* settings keep their place: a change redraws them without jumping back to the top */
+  if (current.fn === viewSettings) { const p = $('#setpane', viewEl); setTop = p ? p.scrollTop : 0; }
+  run();
+}
 function run() {
   viewSeq++;
   if (cleanup) { try { cleanup(); } catch (e) { /* ignore */ } cleanup = null; }
@@ -1031,17 +1036,24 @@ async function switchUser(u, pin) {
 }
 
 /* ---------- settings ---------- */
+let setCat = 'profile', setTop = 0; /* the settings group shown, and where its list was scrolled to */
 function viewSettings() {
+  const seq = viewSeq;
   const segLang = (cur, set, withApp) => '<div class="seg">' +
     (withApp ? '<button type="button" class="f' + (cur === 'app' ? ' on' : '') + '" data-key="sl-app" data-act="' + A(() => set('app')) + '">' + esc(t('sameAsApp')) + '</button>' : '') +
     LANGS.map((l) => '<button type="button" class="f' + (cur === l.code ? ' on' : '') + '" data-key="' + (withApp ? 'sl-' : 'l-') + l.code + '" data-act="' + A(() => set(l.code)) + '">' + esc(l.name) + '</button>').join('') + '</div>';
-  const row = (label, control) => '<div class="srow"><span class="slabel">' + esc(label) + '</span><div class="sctl">' + control + '</div></div>';
-  render('<div class="screen"><div class="top"><div style="display: flex; flex-direction: column; gap: 4px"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(t('home')) + '</button><h1>' + esc(t('settings')) + '</h1></div>' + clockHTML() + '</div>' +
-    '<div class="scroll hide-scroll"><div class="settings">' +
+  const row = (label, control, note) => '<div class="srow"><span class="slabel">' + esc(label) + (note ? '<small>' + esc(note) + '</small>' : '') + '</span><div class="sctl">' + control + '</div></div>';
+  const SECTIONS = [
+    { id: 'profile', label: 'setProfile', html: () =>
     row(t('language'), segLang(S.lang, (c) => { S.lang = c; store.set(userKey('lang'), c); if (!S.user) store.set('lang', c); applyLangChange(); rerun(); }, false)) +
+    row(t('account'), '<span class="sval">' + esc((S.user && S.user.title) || (S.account && S.account.title) || '') + '</span><button type="button" class="btn f" data-key="sw" data-act="' + A(() => go(viewUsers)) + '">' + esc(t('switchUser')) + '</button><button type="button" class="btn f" data-key="out" data-act="' + A(signOut) + '">' + esc(t('signOut')) + '</button>') +
+    '<div id="exitsw"></div>' },
+    { id: 'subs', label: 'setSubs', html: () =>
     row(t('subLang'), segLang(S.subLang, (c) => { S.subLang = c; store.set(userKey('subLang'), c); if (!S.user) store.set('subLang', c); rerun(); }, true)) +
-    (typeof osSettingsHTML === 'function' ? row(t('osTitle'), osSettingsHTML()) : '') +
-    (typeof tpdbSettingsHTML === 'function' ? row(t('tpdbTitle'), tpdbSettingsHTML()) : '') +
+    (typeof osSettingsHTML === 'function' ? row(t('osTitle'), osSettingsHTML()) : '') },
+    { id: 'look', label: 'setLook', html: () =>
+    row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { setTheme(x[0]); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' +
+      '<div class="seg wrap">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + accentSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
     row(t('font'), '<div class="seg wrap">' + FONTS.map((f) => '<button type="button" class="f' + (S.font === f ? ' on' : '') + '" data-key="font-' + esc(f) + '" data-act="' + A(async () => {
       const prev = S.font;
       S.font = f;
@@ -1050,18 +1062,26 @@ function viewSettings() {
       store.set('font', f); rerun();
     }) + '"' + (f === 'custom' ? '' : ' style="font-family: \'' + esc(f.replace(' Bold', '')) + '\', sans-serif' + (f.endsWith('Bold') ? '; font-weight: 800' : '') + '"') + '>' + esc(f === 'Questrial' ? t('fontTheme') : f) + '</button>').join('') + '</div>') +
     row(t('titleStyle'), '<div class="seg">' + [['logo', t('titleLogo')], ['text', t('titleText')]].map((x) => '<button type="button" class="f' + (S.titleStyle === x[0] ? ' on' : '') + '" data-key="ts-' + x[0] + '" data-act="' + A(() => { S.titleStyle = x[0]; store.set('titleStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
-    row(t('playerStyle'), '<div class="seg">' + [['frame', t('psFrame')], ['grid', t('psGrid')]].map((x) => '<button type="button" class="f' + (S.playerStyle === x[0] ? ' on' : '') + '" data-key="ps-' + x[0] + '" data-act="' + A(() => { S.playerStyle = x[0]; store.set(userKey('playerStyle'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('seasonStyle'), '<div class="seg">' + [['numbers', t('ssNumbers')], ['picker', t('ssPicker')], ['posters', t('ssPosters')]].map((x) => '<button type="button" class="f' + (S.seasonStyle === x[0] ? ' on' : '') + '" data-key="ss-' + x[0] + '" data-act="' + A(() => { S.seasonStyle = x[0]; store.set('seasonStyle', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
-    row(t('theme'), '<div class="seg">' + THEMES.map((x) => '<button type="button" class="f' + (S.theme === x[0] ? ' on' : '') + '" data-key="th-' + x[0] + '" data-act="' + A(() => { setTheme(x[0]); rerun(); }) + '">' + esc(t(x[1])) + '</button>').join('') + '</div>' +
-      '<div class="seg wrap">' + ACCENTS.map((x) => '<button type="button" class="f' + (S.accent === x[0] ? ' on' : '') + '" data-key="ac-' + x[0] + '" data-act="' + A(() => { setAccent(x[0]); rerun(); }) + '">' + accentSwatch(x[0]) + esc(t(x[1])) + '</button>').join('') + '</div>' + (S.theme === 'auto' ? '<span class="count">' + esc(autoNote()) + '</span>' : '')) +
-    '<div id="exitsw"></div>' +
     (typeof seasonSettingsHTML === 'function' ? row(t('seasonTitle'), seasonSettingsHTML()) : '') +
-    row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set('saverMin', n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') +
+    row(t('saver'), '<div class="seg">' + [0, 5, 10, 20, 30].map((n) => '<button type="button" class="f' + (saverMinutes() === n ? ' on' : '') + '" data-key="sv-' + n + '" data-act="' + A(() => { store.set('saverMin', n); rerun(); }) + '">' + esc(n ? t('saverMin', { n: n }) : t('off')) + '</button>').join('') + '</div>') },
+    { id: 'home', label: 'setHome', html: () =>
+    row(t('wlSetting'), '<div class="seg">' + [[true, t('wlShow')], [false, t('wlHide')]].map((x) => '<button type="button" class="f' + ((store.get(userKey('wlHome'), true) !== false) === x[0] ? ' on' : '') + '" data-key="wlh-' + x[0] + '" data-act="' + A(() => { store.set(userKey('wlHome'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('tasteSettings'), '<button type="button" class="btn f" data-key="tastereset" data-act="' + A(() => { tasteReset(); rerun(); }) + '">' + esc(t('tasteResetBtn', { n: tasteCount() })) + '</button>', t('tasteSettingsNote')) },
+    { id: 'play', label: 'setPlay', html: () =>
+    row(t('playerStyle'), '<div class="seg">' + [['frame', t('psFrame')], ['grid', t('psGrid')]].map((x) => '<button type="button" class="f' + (S.playerStyle === x[0] ? ' on' : '') + '" data-key="ps-' + x[0] + '" data-act="' + A(() => { S.playerStyle = x[0]; store.set(userKey('playerStyle'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
     row(t('defQuality'), '<button type="button" class="btn f" data-key="q" data-act="' + A(() => pickQuality(S.quality, (id) => { S.quality = id; store.set('quality', id); closeModal(true); rerun(); })) + '">' + ICON.quality + esc(qLabel(S.quality)) + '</button>' +
       '<button type="button" class="chip f' + (S.forceDirect ? ' on' : '') + '" data-key="fd" data-act="' + A(() => { S.forceDirect = !S.forceDirect; store.set('forceDirect', S.forceDirect); rerun(); }) + '">' + (S.forceDirect ? ICON.check : '') + esc(t('forceDirect')) + '</button>') +
     row(t('audioConv'), '<div class="seg">' + [['surround', t('audSurround')], ['stereo', t('audStereo')]].map((x) => '<button type="button" class="f' + (S.audioMode === x[0] ? ' on' : '') + '" data-key="am-' + x[0] + '" data-act="' + A(() => { S.audioMode = x[0]; store.set('audioMode', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
       '<div class="seg">' + [[100, t('boostOff')], [200, t('boostMore')], [300, t('boostMax')]].map((x) => '<button type="button" class="f' + (S.audioBoost === x[0] ? ' on' : '') + '" data-key="ab-' + x[0] + '" data-act="' + A(() => { S.audioBoost = x[0]; store.set('audioBoost', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>' +
       '<span class="sval">' + esc(t('audioConvNote')) + '</span>') +
+    row(t('trailerSrc'), '<div class="seg">' + [['youtube', t('trailerYt')], ['plex', t('trailerPlex')]].map((x) => '<button type="button" class="f' + (S.trailerSrc === x[0] ? ' on' : '') + '" data-key="tr-' + x[0] + '" data-act="' + A(() => { S.trailerSrc = x[0]; store.set('trailerSrc', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
+    row(t('ytWhere'), '<div class="seg">' + [['app', t('ytWhereApp')], ['yt', t('ytWhereYt')]].map((x) => '<button type="button" class="f' + (S.ytWhere === x[0] ? ' on' : '') + '" data-key="ytw-' + x[0] + '" data-act="' + A(() => { S.ytWhere = x[0]; store.set('ytWhere', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div><span class="sval">' + esc(t('ytWhereNote')) + '</span>') +
+    row(t('ytPage'), '<input class="input f" id="ytpage" data-key="ytpage" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="https://…github.io/…/yt.html" value="' + esc(S.ytPage) + '">' +
+      '<button type="button" class="btn f" data-key="ytsave" data-act="' + A(() => { S.ytPage = $('#ytpage').value.trim(); store.set('ytPage', S.ytPage); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
+    row(t('wt'), '<button type="button" class="btn f" data-key="wtjoin" data-act="' + A(() => wtPanel()) + '">' + ICON.people + esc(t('wtJoinCode')) + '</button>') },
+    { id: 'art', label: 'setArt', html: () =>
+    (typeof tpdbSettingsHTML === 'function' ? row(t('tpdbTitle'), tpdbSettingsHTML()) : '') +
     row(t('tmdbKey'), '<input class="input f" id="tmdb" data-key="tmdb" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.tmdb) + '">' +
       '<button type="button" class="btn f" data-key="tmdbsave" data-act="' + A(() => { S.tmdb = $('#tmdb').value.trim(); store.set('tmdb', S.tmdb); trendingCache = null; toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
     row(t('fanartKeyLabel'), '<input class="input f" id="fanartkey" data-key="fanartkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.fanartKey) + '">' +
@@ -1070,25 +1090,45 @@ function viewSettings() {
       (S.fanartKey ? '' : '<span class="sval">' + esc(t('clearartNeedsKey')) + '</span>')) +
     row(t('auddKeyLabel'), '<input class="input f" id="auddkey" data-key="auddkey" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="' + esc(t('notSet')) + '" value="' + esc(S.auddKey) + '">' +
       '<button type="button" class="btn f" data-key="auddsave" data-act="' + A(() => { S.auddKey = $('#auddkey').value.trim(); store.set('auddKey', S.auddKey); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>' +
-      '<button type="button" class="btn f" data-key="songhist" data-act="' + A(songHistorySheet) + '">' + ICON.music + esc(t('songHistory')) + '</button>') +
-    row(t('wlSetting'), '<div class="seg">' + [[true, t('wlShow')], [false, t('wlHide')]].map((x) => '<button type="button" class="f' + ((store.get(userKey('wlHome'), true) !== false) === x[0] ? ' on' : '') + '" data-key="wlh-' + x[0] + '" data-act="' + A(() => { store.set(userKey('wlHome'), x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
-    row(t('tasteSettings'), '<button type="button" class="btn f" data-key="tastereset" data-act="' + A(() => { tasteReset(); rerun(); }) + '">' + esc(t('tasteResetBtn', { n: tasteCount() })) + '</button>', t('tasteSettingsNote')) +
-    row(t('trailerSrc'), '<div class="seg">' + [['youtube', t('trailerYt')], ['plex', t('trailerPlex')]].map((x) => '<button type="button" class="f' + (S.trailerSrc === x[0] ? ' on' : '') + '" data-key="tr-' + x[0] + '" data-act="' + A(() => { S.trailerSrc = x[0]; store.set('trailerSrc', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div>') +
-    row(t('ytWhere'), '<div class="seg">' + [['app', t('ytWhereApp')], ['yt', t('ytWhereYt')]].map((x) => '<button type="button" class="f' + (S.ytWhere === x[0] ? ' on' : '') + '" data-key="ytw-' + x[0] + '" data-act="' + A(() => { S.ytWhere = x[0]; store.set('ytWhere', x[0]); rerun(); }) + '">' + esc(x[1]) + '</button>').join('') + '</div><span class="sval">' + esc(t('ytWhereNote')) + '</span>') +
-    row(t('ytPage'), '<input class="input f" id="ytpage" data-key="ytpage" data-okfocus data-act="' + A((el) => el.focus()) + '" type="text" spellcheck="false" autocomplete="off" placeholder="https://…github.io/…/yt.html" value="' + esc(S.ytPage) + '">' +
-      '<button type="button" class="btn f" data-key="ytsave" data-act="' + A(() => { S.ytPage = $('#ytpage').value.trim(); store.set('ytPage', S.ytPage); toast(t('save') + ' ✓', 2000); }) + '">' + esc(t('save')) + '</button>') +
-    row(t('wt'), '<button type="button" class="btn f" data-key="wtjoin" data-act="' + A(() => wtPanel()) + '">' + ICON.people + esc(t('wtJoinCode')) + '</button>') +
+      '<button type="button" class="btn f" data-key="songhist" data-act="' + A(songHistorySheet) + '">' + ICON.music + esc(t('songHistory')) + '</button>') },
+    { id: 'server', label: 'setServer', html: () =>
     row(t('server'), '<span class="sval">' + esc(S.server ? S.server.name : '') + '</span><button type="button" class="btn f" data-key="srv" data-act="' + A(() => { S.server = null; store.del('server'); libIndex = null; replaceView(viewServers); }) + '">' + esc(t('changeServer')) + '</button>') +
     '<div id="adminrow"></div>' +
     (typeof lbSettingsHTML === 'function' ? row(t('lbTitle'), lbSettingsHTML()) : '') +
-    row(t('account'), '<span class="sval">' + esc((S.user && S.user.title) || (S.account && S.account.title) || '') + '</span><button type="button" class="btn f" data-key="sw" data-act="' + A(() => go(viewUsers)) + '">' + esc(t('switchUser')) + '</button><button type="button" class="btn f" data-key="out" data-act="' + A(signOut) + '">' + esc(t('signOut')) + '</button>') +
-    '<div class="count" style="padding: 24px 0">' + esc(t('version', { v: VERSION })) + '</div>' +
-    '</div></div></div>');
-  initFocus();
-  /* server managers: scan libraries for new files */
-  const seq = viewSeq;
+      '<div class="count setver">' + esc(t('version', { v: VERSION })) + '</div>' },
+  ];
+  if (!SECTIONS.some((x) => x.id === setCat)) setCat = 'profile';
+  const navHTML = SECTIONS.map((x) => '<button type="button" class="setnavbtn f' + (x.id === setCat ? ' on' : '') + '" data-key="sc-' + x.id + '" data-onfocus="' + A(() => showSec(x.id)) + '" data-act="' + A(() => { const f = $('.setpane .f', viewEl); if (f) setFocus(f); }) + '">' + esc(t(x.label)) + ICON.next + '</button>').join('');
+  render('<div class="screen"><div class="top"><div style="display: flex; flex-direction: column; gap: 4px"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(t('home')) + '</button><h1>' + esc(t('settings')) + '</h1></div>' + clockHTML() + '</div>' +
+    '<div class="setwrap"><nav class="setnav">' + navHTML + '</nav><div class="setpane scroll hide-scroll" id="setpane"></div></div></div>');
+  /* one group at a time: moving along the list on the left shows its settings on the right */
+  function showSec(id) {
+    const pane = $('#setpane', viewEl);
+    if (!pane || (pane.dataset.sec === id && pane.innerHTML)) return;
+    setCat = id;
+    const sec = SECTIONS.find((x) => x.id === id);
+    pane.dataset.sec = id;
+    pane.innerHTML = '<h2 class="setsech">' + esc(t(sec.label)) + '</h2><div class="settings">' + sec.html() + '</div>';
+    pane.scrollTop = 0;
+    $$('.setnavbtn', viewEl).forEach((b) => b.classList.toggle('on', b.dataset.key === 'sc-' + id));
+    if (id === 'profile') fillExit();
+    if (id === 'server') fillAdmin();
+  }
+  showSec(setCat);
+  const keepTop = setTop; setTop = 0;
+  /* back on the setting that was changed, at the same scroll; rows filled in a moment later (admin tools) catch up in refocus() */
+  let wantKey = current.focusKey && !$('[data-key="' + current.focusKey + '"]', viewEl) ? current.focusKey : null;
+  initFocus(current.focusKey && !wantKey ? current.focusKey : 'sc-' + setCat);
+  const keepScroll = () => { const p = $('#setpane', viewEl); if (p && keepTop) p.scrollTop = keepTop; };
+  keepScroll();
+  function refocus() {
+    if (!wantKey || seq !== viewSeq) return;
+    const el = $('[data-key="' + wantKey + '"]', viewEl);
+    if (!el) return;
+    wantKey = null; keepScroll(); setFocus(el, true); keepScroll();
+  }
   /* Switch profile when leaving: on/off, and which profiles (none ticked = all) */
-  if (S.adminToken) homeUsers().then((all) => {
+  function fillExit() { if (S.adminToken) homeUsers().then((all) => {
     const box = $('#exitsw');
     if (!box || seq !== viewSeq || all.length < 2) return;
     const drawSw = (focusKey) => {
@@ -1104,8 +1144,10 @@ function viewSettings() {
       if (focusKey) { const f = $('[data-key="' + focusKey + '"]'); if (f) setFocus(f); }
     };
     drawSw();
-  }).catch(() => {});
-  isAdmin().then(async (admin) => {
+    refocus();
+  }).catch(() => {}); }
+  /* server managers: scan libraries for new files, collections, backups */
+  function fillAdmin() { isAdmin().then(async (admin) => {
     const box = $('#adminrow');
     if (!admin || !box || seq !== viewSeq) return;
     let secs = [];
@@ -1121,6 +1163,7 @@ function viewSettings() {
       (typeof asSettingsHTML === 'function' ? row(t('asTitle'), asSettingsHTML()) : '') +
       (typeof ghSettingsHTML === 'function' ? row(t('ghTitle'), ghSettingsHTML()) : '') +
       '<div id="adminusers"></div>';
+    refocus();
     /* the main account (signed in as itself) chooses which Home profiles get the admin tools on this TV */
     if (!S.adminToken) return;
     const isHomeAdmin = (u) => u.admin === true || u.admin === '1' || u.admin === 1;
@@ -1144,7 +1187,8 @@ function viewSettings() {
       if (focusKey) setFocus($('[data-key="' + focusKey + '"]'));
     };
     drawUsers();
-  });
+    refocus();
+  }); }
 }
 function pickQuality(cur, onPick, note, extra) {
   openModal(sheetHeader(t('quality'), note || '') +
