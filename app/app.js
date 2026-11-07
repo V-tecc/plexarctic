@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.77.0';
+const VERSION = '0.77.1';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -3903,6 +3903,7 @@ async function viewDetails(ratingKey, opts) {
   ]);
   const m = (mres.Metadata || [])[0];
   if (!m) throw new Error(t('notFound'));
+  if (current) current.epKey = m.type === 'episode' ? String(m.ratingKey) : null; /* an episode's own page (the player may replace it on the way back) */
   const artPath = m.type === 'episode' ? (m.grandparentThumb || m.parentThumb || m.thumb) : m.thumb;
   filmTint(artPath ? imgURL(artPath, 120, 180) : '', seq);
   const isShow = m.type === 'show';
@@ -4243,11 +4244,11 @@ async function viewPlayer(ratingKey, opts) {
   const credits = creditsMarkers.find((x) => x.final) || creditsMarkers[creditsMarkers.length - 1] || null;
   const intro = (m.Marker || []).find((x) => x.type === 'intro') || null;
   /* the episode after this one (for "Next episode" at the credits) */
-  let nextEp = null;
+  let nextEp = null, nextP = Promise.resolve();
   const woNext = (m.type === 'episode' && typeof woNextKey === 'function') ? woNextKey(m.ratingKey) : undefined;
-  if (woNext) api('/library/metadata/' + woNext).then((r) => { nextEp = (r.Metadata || [])[0] || null; }).catch(() => {});
+  if (woNext) nextP = api('/library/metadata/' + woNext).then((r) => { nextEp = (r.Metadata || [])[0] || null; }).catch(() => {});
   else if (woNext === undefined && m.type === 'episode' && m.grandparentRatingKey) {
-    api('/library/metadata/' + m.grandparentRatingKey + '/allLeaves').then((r) => {
+    nextP = api('/library/metadata/' + m.grandparentRatingKey + '/allLeaves').then((r) => {
       const all = (r.Metadata || []).slice().sort((a, b) => (a.parentIndex - b.parentIndex) || (a.index - b.index));
       const i = all.findIndex((x) => String(x.ratingKey) === String(m.ratingKey));
       nextEp = i >= 0 ? all[i + 1] || null : null;
@@ -4255,7 +4256,7 @@ async function viewPlayer(ratingKey, opts) {
   }
   /* a binge (a collection back to back): the next film in line takes the place of "next episode" */
   const queue = m.type !== 'episode' && opts.queue && opts.queue.length ? opts.queue : null;
-  if (queue) api('/library/metadata/' + queue[0]).then((r) => { nextEp = (r.Metadata || [])[0] || null; }).catch(() => {});
+  if (queue) nextP = api('/library/metadata/' + queue[0]).then((r) => { nextEp = (r.Metadata || [])[0] || null; }).catch(() => {});
   const goNext = () => {
     clearTimeout(st.upNextT);
     /* the page underneath (a show's episodes) will have the new episode selected when you come back */
@@ -4952,8 +4953,17 @@ async function viewPlayer(ratingKey, opts) {
 
   vid.addEventListener('seeked', drawCue);
   const cueTimer = setInterval(() => { if ((st.cues.length || st.cues2.length) && !vid.paused) drawCue(); }, 150);
+  let lastT = -1, stuckFor = 0;
   const ticker = setInterval(() => {
     updateUI();
+    /* the picture stands still while playing (the TV lost the stream, often after a pause): a fresh stream at the same spot */
+    const ct = vid.currentTime || 0;
+    if (!vid.paused && !vid.seeking && st.hold == null && !modalOpen()) {
+      if (Math.abs(ct - lastT) < 0.05) stuckFor += 500; else stuckFor = 0;
+      if (durMs && ct * 1000 >= durMs - 2500 && stuckFor >= 1500) { stuckFor = 0; if (!st.endedDone) vid.dispatchEvent(new Event('ended')); }
+      else if (stuckFor >= 8000 && (st.stalls || 0) < 4) { stuckFor = 0; st.stalls = (st.stalls || 0) + 1; toast(t('streamResume'), 3000); start(ct); }
+    } else stuckFor = 0;
+    lastT = ct;
     if (Date.now() - lastReport > 10000 && !vid.paused && st.hold == null) { lastReport = Date.now(); report('playing'); }
   }, 500);
 
@@ -4966,12 +4976,16 @@ async function viewPlayer(ratingKey, opts) {
      still hangs for 10 seconds after pressing play is restarted the same way. */
   vid.addEventListener('play', () => {
     const was = st.pausedAt; st.pausedAt = 0;
-    if (!st.direct && was && Date.now() - was > 60000) { const at = position(); start(at); return; }
+    if (was && Date.now() - was > (st.direct ? 180000 : 30000)) { const at = position(); start(at); return; }
     clearTimeout(st.stallT);
     st.stallT = setTimeout(() => { if (seq === viewSeq && !vid.paused && vid.readyState < 3 && !vid.seeking && st.hold == null && (st.stalls || 0) < 3) { st.stalls = (st.stalls || 0) + 1; start(position()); } }, 10000);
   });
-  vid.addEventListener('ended', () => {
+  vid.addEventListener('ended', async () => {
+    if (st.endedDone) return;
+    st.endedDone = true;
     report('stopped');
+    try { await nextP; } catch (e) { /* none */ }
+    if (seq !== viewSeq) return;
     if (queue && nextEp) { goNext(); return; }
     /* an episode with one after it: that one starts in a few seconds (OK now, Back to stop) */
     if (nextEp && m.type === 'episode') {
@@ -5050,12 +5064,19 @@ async function viewPlayer(ratingKey, opts) {
       lastPlayback = { key: String(m.ratingKey), show: String(m.grandparentRatingKey), next: nextEp ? String(nextEp.ratingKey) : null, done: !!done, at: Date.now() };
       const under = stack[stack.length - 1];
       if (done && nextEp && under && under.focusKey === 'e-' + m.ratingKey) under.focusKey = 'e-' + nextEp.ratingKey;
-      /* started from Home (spotlight, Continue watching): Back goes to the show, on the episode to watch next */
+      /* Back goes to the show, on the episode to watch next (this one, or the next if it's finished):
+         from Home (spotlight, Continue watching) and from an episode's own page alike */
+      const ep = done && nextEp ? nextEp : m;
+      const showPage = { fn: viewDetails, args: [m.grandparentRatingKey, { season: ep.parentIndex != null ? ep.parentIndex : m.parentIndex }], focusKey: 'e-' + ep.ratingKey };
+      const isShow = (x) => x && x.fn === viewDetails && !x.epKey && String(x.args[0]) === String(m.grandparentRatingKey);
       if (current && current.fn === viewHome && m.grandparentRatingKey) {
-        const ep = done && nextEp ? nextEp : m;
         stack.push(current);
-        current = { fn: viewDetails, args: [m.grandparentRatingKey, { season: ep.parentIndex != null ? ep.parentIndex : m.parentIndex }], focusKey: 'e-' + ep.ratingKey };
-      }
+        current = showPage;
+      } else if (current && current.fn === viewDetails && current.epKey && m.grandparentRatingKey) {
+        /* the episode page you started from: the show is underneath already, or takes the page's place */
+        if (isShow(stack[stack.length - 1])) { current = stack.pop(); current.focusKey = showPage.focusKey; current.args = showPage.args; }
+        else current = showPage;
+      } else if (isShow(current)) { current.focusKey = showPage.focusKey; current.args = showPage.args; }
     }
     stage.classList.remove('inplayer');
     if (typeof wtOnPlayerClosed === 'function') wtOnPlayerClosed(vid);

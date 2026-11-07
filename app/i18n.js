@@ -435,3 +435,5 @@ Object.assign(TEXT.sv, {
   stGenreMonth: 'Månadens genre för dig: {g}', stFilmsYear: '{n} filmer sedda det senaste året', stSrvTop: 'Mest sett här den här månaden: {t}, {n} visningar',
   stSrvPeople: '{n} personer har tittat den här månaden – {w} mest', stSrvPlays: '{n} visningar på servern den här månaden'
 });
+Object.assign(TEXT.en, { streamResume: 'Picking the stream up again…' });
+Object.assign(TEXT.sv, { streamResume: 'Hämtar strömmen igen…' });
