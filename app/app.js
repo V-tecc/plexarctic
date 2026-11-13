@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.77.1';
+const VERSION = '0.78.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -3515,6 +3515,13 @@ function castSheet(roles, title, ctx, beforeGo) {
       '<div class="face f" data-key="cp-' + i + '" data-act="' + A(() => { closeModal(true); if (beforeGo) beforeGo(i); go(viewPerson, [p.tag, p.thumb, Object.assign({}, ctx || {}, { kind: p.k }), title]); }) + '">' +
       (p.thumb ? '<img class="img" loading="lazy" src="' + esc(imgURL(p.thumb, 400, 400)) + '" alt="">' : '<div class="img"></div>') +
       '<b>' + esc(p.tag) + '</b><span>' + esc(p.role || p.kind || '') + '</span></div>').join('') + '</div>', null, true);
+  /* Back from the cast: the page's Play button, not the "All cast" button */
+  const seq = viewSeq, el = $('.modal', viewEl);
+  if (el) el._onclose = () => setTimeout(() => {
+    if (seq !== viewSeq || modalOpen()) return;
+    const p = $('#pp', viewEl) || $('[data-default]', viewEl);
+    if (p) setFocus(p, true);
+  }, 0);
   tickClock();
 }
 function crewOf(m) {
@@ -3800,6 +3807,38 @@ function mergeCredits(cc) {
   (cc.crew || []).forEach((c) => add(c, c.department === 'Directing' || c.department === 'Writing' || c.department === 'Production' ? c.department : 'Crew', c.job || ''));
   return Array.from(map.values()).sort((a, b) => (!a.date ? -1 : !b.date ? 1 : b.date.localeCompare(a.date)));
 }
+/* A film or show that isn't in your library (from an actor's page): what it is and who is in it, from TMDB.
+   Each person opens their own page, so you can keep going from actor to film to actor. */
+async function viewTmdbTitle(type, id, from) {
+  const seq = viewSeq;
+  const top = '<div class="top"><div class="htitle"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(from || t('back')) + '</button></div>' + clockHTML() + '</div>';
+  render('<div class="screen">' + top + '<div class="empty">' + esc(t('loading')) + '</div></div>');
+  let d;
+  try { d = await tmdbGet('/' + type + '/' + id, { language: tmdbLang(), append_to_response: type === 'tv' ? 'aggregate_credits' : 'credits' }); } catch (e) { d = null; }
+  if (seq !== viewSeq) return;
+  if (!d) { render('<div class="screen">' + top + '<div class="empty">' + esc(t('notFound')) + '</div></div>'); initFocus(); return; }
+  if (!d.overview && S.lang !== 'en') { const en = await tmdbGet('/' + type + '/' + id, { language: 'en-US' }).catch(() => null); if (en) d.overview = en.overview; }
+  if (seq !== viewSeq) return;
+  const title = d.title || d.name || '';
+  const date = d.release_date || d.first_air_date || '';
+  const run = type === 'movie' ? (d.runtime ? durText(d.runtime * 60000) : '') : (d.number_of_seasons ? t('seasonsN', { n: d.number_of_seasons }) : '');
+  const meta = [date.slice(0, 4), run, (d.genres || []).slice(0, 3).map((g) => g.name).join(', '), d.vote_count >= 20 ? '★ ' + Number(d.vote_average).toFixed(1) : ''].filter(Boolean).join(' · ');
+  const cr = type === 'tv' ? (d.aggregate_credits || {}) : (d.credits || {});
+  const cast = (cr.cast || []).slice(0, 24).map((c) => ({ id: c.id, name: c.name, img: c.profile_path, role: c.character || ((c.roles || [])[0] || {}).character || '' }));
+  const crew = (cr.crew || []).filter((c) => c.job === 'Director' || (c.jobs || []).some((j) => j.job === 'Director') || c.job === 'Screenplay' || c.job === 'Writer' || c.job === 'Creator')
+    .slice(0, 4).map((c) => ({ id: c.id, name: c.name, img: c.profile_path, role: c.job || t('director'), kind: /Writer|Screenplay/.test(c.job || '') ? 'writer' : 'director' }));
+  const face = (c, i) => '<div class="face f" data-key="tc-' + i + '" data-act="' + A(() => go(viewPerson, [c.name, null, { type: type, id: id, pid: c.id, kind: c.kind }, title])) + '">' +
+    (c.img ? '<img class="img" loading="lazy" src="https://image.tmdb.org/t/p/w185' + esc(c.img) + '" alt="">' : '<div class="img"></div>') +
+    '<b>' + esc(c.name) + '</b><span>' + esc(c.role) + '</span></div>';
+  const people = cast.concat(crew);
+  render('<div class="screen">' + top + '<div class="scroll hide-scroll">' +
+    '<div class="tmdbhead">' + (d.poster_path ? '<img src="https://image.tmdb.org/t/p/w342' + esc(d.poster_path) + '" alt="">' : '') +
+    '<div><h1>' + esc(title) + '</h1><p class="tmeta">' + esc(meta) + '</p><span class="tag">' + esc(t('notInLibrary')) + '</span>' +
+    (d.tagline ? '<p class="ttag">' + esc(d.tagline) + '</p>' : '') + '<p class="tov">' + esc(d.overview || t('noOverview')) + '</p></div></div>' +
+    (people.length ? '<h2 class="tcasth">' + esc(t('allCast')) + '</h2><div class="castgrid tcast">' + people.map(face).join('') + '</div>' : '') +
+    '</div></div>');
+  initFocus(current.focusKey || (people.length ? 'tc-0' : 'crumb'));
+}
 async function viewPerson(name, thumb, ctx, from) {
   const seq = viewSeq;
   const head = (count) => '<div class="top"><div class="htitle"><button type="button" class="crumb f" data-key="crumb" data-act="' + A(back) + '">' + ICON.back + esc(from || t('back')) + '</button><h1>' + esc(name) + '</h1></div>' +
@@ -3812,7 +3851,7 @@ async function viewPerson(name, thumb, ctx, from) {
     return;
   }
   const secs = (await api('/library/sections')).Directory || [];
-  const [pid, idx] = await Promise.all([findPerson(name, ctx), loadLibIndex(secs)]);
+  const [pid, idx] = await Promise.all([ctx && ctx.pid ? Promise.resolve(ctx.pid) : findPerson(name, ctx), loadLibIndex(secs)]);
   if (seq !== viewSeq) return;
   if (!pid) {
     render('<div class="screen">' + head('') + '<div class="empty">' + esc(t('personNotFound', { n: name })) + '</div></div>');
@@ -3854,7 +3893,7 @@ async function viewPerson(name, thumb, ctx, from) {
     const role = e.roles.filter(Boolean).slice(0, 3).join(', ');
     const sub = [role, e.type === 'tv' && e.eps ? t('episodesN', { n: e.eps }) : ''].filter(Boolean).join(' · ');
     const poster = e.own ? imgURL(e.own.thumb, 120, 180) : (e.poster ? 'https://image.tmdb.org/t/p/w92' + e.poster : '');
-    return '<div class="frow f' + (e.own ? ' own' : '') + '" data-key="fr-' + e.key + '" data-act="' + A(() => (e.own ? openItem(e.own) : focused && focused.classList.toggle('open'))) + '">' +
+    return '<div class="frow f' + (e.own ? ' own' : '') + '" data-key="fr-' + e.key + '" data-act="' + A(() => (e.own ? openItem(e.own) : go(viewTmdbTitle, [e.type, e.id, name]))) + '">' +
       '<span class="fy">' + esc(yr) + '</span>' +
       '<span class="fp">' + (poster ? '<img loading="lazy" src="' + esc(poster) + '" alt="">' : '') + (e.own ? '<i>' + ICON.play + '</i>' : '') + '</span>' +
       '<span class="ft"><b>' + esc(e.title) + '</b>' + (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
@@ -4046,7 +4085,8 @@ async function viewDetails(ratingKey, opts) {
         actions += '<button type="button" class="btn primary f" data-default data-key="play" data-act="' + A(() => go(viewPlayer, [m.ratingKey])) + '" data-ctx="' + A(() => itemMenu(m)) + '">' + ICON.play + esc(t('play')) + '</button>';
       }
     } else {
-      const next = state.episodes.find((e) => e.viewOffset) || state.episodes.find((e) => !e.viewCount) || state.episodes[0];
+      /* just back from the player: the episode it ended on (the server may not have caught up yet) */
+      const next = (opts.ep && state.episodes.find((e) => String(e.ratingKey) === String(opts.ep))) || state.episodes.find((e) => e.viewOffset) || state.episodes.find((e) => !e.viewCount) || state.episodes[0];
       if (next) actions += '<button type="button" class="btn primary f" data-default data-key="playnext" data-act="' + A(() => go(viewPlayer, [next.ratingKey])) + '" data-ctx="' + A(() => itemMenu(m)) + '">' + ICON.play + esc(next.viewOffset ? t('resume') : t('play')) + ' ' + esc(epCode(next)) + '</button>';
     }
     if (subs.length || part) {
@@ -4140,7 +4180,7 @@ async function viewDetails(ratingKey, opts) {
       '<div class="face f" data-key="p-' + i + '" data-act="' + A(() => go(viewPerson, [p.tag, p.thumb, personCtx(m), m.title])) + '">' +
       (p.thumb ? '<img class="img" loading="lazy" src="' + esc(imgURL(p.thumb, 280, 280)) + '" alt="">' : '<div class="img"></div>') +
       '<b>' + esc(p.tag) + '</b><span>' + esc(p.role || '') + '</span></div>').join('') +
-      '<div class="castmore f" data-key="allcast" data-act="' + A(() => castSheet(crewOf(m), m.title, personCtx(m))) + '"><div class="img">' + ICON.next + '</div><b>' + esc(t('allCast')) + '</b></div></div>' : '';
+      '<div class="castmore f" data-key="allcast" data-act="' + A(() => castSheet(crewOf(m), m.title, personCtx(m), () => { const d = $('[data-default]', viewEl); if (d) focused = d; })) + '"><div class="img">' + ICON.next + '</div><b>' + esc(t('allCast')) + '</b></div></div>' : '';
     const heroSrc = isEp ? (m.thumb || m.grandparentArt) : m.art;
     render('<div class="dscroll hide-scroll">' +
       '<div class="hero">' + (heroSrc ? '<img src="' + esc(imgURL(heroSrc, 1600, 900)) + '" alt="">' : '') + '</div>' +
@@ -4970,13 +5010,14 @@ async function viewPlayer(ratingKey, opts) {
   vid.addEventListener('playing', () => { clearTimeout(st.stallT); st.stalls = 0; st.recover = 0; st.hold = null; $('#spin').hidden = true; updateUI(); wake(); });
   vid.addEventListener('seeked', () => { st.hold = null; updateUI(); });
   vid.addEventListener('waiting', () => { $('#spin').hidden = false; });
-  vid.addEventListener('pause', () => { updateUI(); if (st.hold == null) report('paused'); st.pausedAt = Date.now(); wake(); });
+  vid.addEventListener('pause', () => { updateUI(); if (st.hold == null) { report('paused'); st.pausedAt = Date.now(); } wake(); });
   /* After a long pause the server has often closed the converted stream, and the TV can sit waiting a long time.
      Resuming after more than a minute starts a fresh stream at the same spot right away; a stream that
      still hangs for 10 seconds after pressing play is restarted the same way. */
   vid.addEventListener('play', () => {
     const was = st.pausedAt; st.pausedAt = 0;
-    if (was && Date.now() - was > (st.direct ? 180000 : 30000)) { const at = position(); start(at); return; }
+    /* a converted stream always restarts fresh after a pause (resuming the old one can hang, even after a short pause) */
+    if (was && (!st.direct || Date.now() - was > 120000)) { const at = position(); start(at); return; }
     clearTimeout(st.stallT);
     st.stallT = setTimeout(() => { if (seq === viewSeq && !vid.paused && vid.readyState < 3 && !vid.seeking && st.hold == null && (st.stalls || 0) < 3) { st.stalls = (st.stalls || 0) + 1; start(position()); } }, 10000);
   });
@@ -5067,7 +5108,7 @@ async function viewPlayer(ratingKey, opts) {
       /* Back goes to the show, on the episode to watch next (this one, or the next if it's finished):
          from Home (spotlight, Continue watching) and from an episode's own page alike */
       const ep = done && nextEp ? nextEp : m;
-      const showPage = { fn: viewDetails, args: [m.grandparentRatingKey, { season: ep.parentIndex != null ? ep.parentIndex : m.parentIndex }], focusKey: 'e-' + ep.ratingKey };
+      const showPage = { fn: viewDetails, args: [m.grandparentRatingKey, { season: ep.parentIndex != null ? ep.parentIndex : m.parentIndex, ep: String(ep.ratingKey) }], focusKey: 'e-' + ep.ratingKey };
       const isShow = (x) => x && x.fn === viewDetails && !x.epKey && String(x.args[0]) === String(m.grandparentRatingKey);
       if (current && current.fn === viewHome && m.grandparentRatingKey) {
         stack.push(current);
