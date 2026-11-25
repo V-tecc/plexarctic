@@ -165,7 +165,7 @@ async function songFindNow(pl, m, at, audioStreamID) {
   if (!document.contains(card)) return;
   card.classList.remove('listening');
   if (err) {
-    card.innerHTML = '<div class="songtx"><b>' + esc(t('songFailed')) + '</b><span>' + esc(err.code === 900 || err.code === 901 ? t('songBadKey') : err.code === 902 ? t('songOutOfLookups') : (err.message || '')) + '</span></div>';
+    card.innerHTML = '<div class="songtx"><b>' + esc(t('songFailed')) + '</b><span>' + esc(err.code === 901 ? t('songNoQuota') : err.code === 900 || err.code === 903 ? t('songBadKey') : err.code === 902 ? t('songOutOfLookups') : (err.message || '')) + (err.code ? ' (AudD #' + esc(String(err.code)) + ')' : '') + '</span></div>';
   } else if (!res) {
     card.innerHTML = '<div class="songtx"><b>' + esc(t('songNone')) + '</b><span>' + esc(t('songNoneSub')) + '</span></div>';
   } else {

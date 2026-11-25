@@ -437,3 +437,11 @@ Object.assign(TEXT.sv, {
 });
 Object.assign(TEXT.en, { streamResume: 'Picking the stream up again…' });
 Object.assign(TEXT.sv, { streamResume: 'Hämtar strömmen igen…' });
+/* a film's series */
+Object.assign(TEXT.en, { nextInSeries: 'Next in the series', seriesPos: 'Film {i} of {n}' });
+Object.assign(TEXT.sv, { nextInSeries: 'Nästa i serien', seriesPos: 'Film {i} av {n}' });
+Object.assign(TEXT.cs, { nextInSeries: 'Další v sérii', seriesPos: 'Film {i} z {n}' });
+Object.assign(TEXT.uk, { nextInSeries: 'Далі в серії', seriesPos: 'Фільм {i} з {n}' });
+Object.assign(TEXT.el, { nextInSeries: 'Επόμενη στη σειρά', seriesPos: 'Ταινία {i} από {n}' });
+Object.assign(TEXT.en, { songNoQuota: 'AudD did not accept the lookup: the token is missing or its free lookups are used up. Check dashboard.audd.io' });
+Object.assign(TEXT.sv, { songNoQuota: 'AudD godkände inte sökningen: token saknas eller de fria sökningarna är slut. Kolla dashboard.audd.io' });

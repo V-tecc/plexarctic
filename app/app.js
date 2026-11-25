@@ -6,7 +6,7 @@
 const APP = 'PLEX arctic';
 /* PLEX:arctic wordmark (Archivo Expanded Black + Orbitron), outlined so it needs no font. */
 const LOGO = '<svg class="logo" viewBox="-4.6 30.6 549.5 86.1" role="img" aria-label="PLEX:arctic"><path fill="currentColor" d="M8.2 112.0V34.9H70.2Q77.8 34.9 83.6 38.3Q89.4 41.7 92.7 47.8Q95.9 53.9 95.9 61.9Q95.9 70.1 92.6 76.2Q89.3 82.4 83.5 85.7Q77.7 89.1 70.2 89.1H35.9V112.0ZM35.9 70.0H62.4Q66.7 70.0 68.8 67.9Q70.8 65.9 70.8 62.0Q70.8 59.3 69.9 57.6Q68.9 55.8 67.1 54.9Q65.2 54.0 62.4 54.0H35.9ZM102.9 112.0V34.9H130.5V90.8H180.5V112.0ZM188.7 112.0V34.9H271.0V54.0H216.4V64.0H263.5V82.2H216.4V92.8H271.9V112.0ZM275.8 112.0 312.5 72.2 279.2 34.9H314.9L330.0 53.1H330.9L347.0 34.9H379.7L346.1 71.1L382.8 112.0H347.2L328.8 90.2H327.8L308.7 112.0Z"/><path class="logo-colon" d="M396.5 112.0V107.0H401.4V112.0ZM396.5 94.8V89.8H401.4V94.8Z"/><path fill="currentColor" d="M421.7 112.0Q420.4 112.0 419.2 111.3Q418.1 110.6 417.5 109.5Q416.8 108.4 416.8 107.0V98.9H435.1V95.0Q435.1 94.6 434.8 94.3Q434.5 94.0 434.2 94.0H416.8V89.9H434.3Q435.6 89.9 436.8 90.6Q437.9 91.2 438.6 92.4Q439.2 93.5 439.2 94.9V112.0ZM421.9 107.8H435.1V102.7H420.9V106.9Q420.9 107.3 421.2 107.6Q421.5 107.8 421.9 107.8ZM443.4 112.0V94.9Q443.4 93.5 444.1 92.4Q444.8 91.3 445.9 90.6Q447.0 89.9 448.4 89.9H460.7V94.0H448.5Q448.1 94.0 447.8 94.3Q447.5 94.6 447.5 95.0V112.0ZM468.7 112.0Q467.4 112.0 466.3 111.3Q465.2 110.6 464.5 109.5Q463.8 108.4 463.8 107.0V94.9Q463.8 93.5 464.5 92.4Q465.2 91.3 466.3 90.6Q467.4 89.9 468.7 89.9H486.1V94.0H468.9Q468.5 94.0 468.2 94.3Q467.9 94.6 467.9 95.0V106.9Q467.9 107.3 468.2 107.6Q468.5 107.8 468.9 107.8H486.2V112.0ZM495.0 112.0Q493.6 112.0 492.5 111.3Q491.4 110.6 490.7 109.5Q490.1 108.4 490.1 107.0V83.0H494.2V89.9H503.2V94.0H494.2V106.9Q494.2 107.3 494.4 107.6Q494.7 107.8 495.1 107.8H503.2V112.0ZM507.0 112.0V89.9H511.2V112.0ZM507.0 86.8V82.7H511.2V86.8ZM520.7 112.0Q519.3 112.0 518.2 111.3Q517.1 110.6 516.4 109.5Q515.7 108.4 515.7 107.0V94.9Q515.7 93.5 516.4 92.4Q517.1 91.3 518.2 90.6Q519.3 89.9 520.7 89.9H538.1V94.0H520.8Q520.4 94.0 520.1 94.3Q519.9 94.6 519.9 95.0V106.9Q519.9 107.3 520.1 107.6Q520.4 107.8 520.8 107.8H538.2V112.0Z"/></svg>';
-const VERSION = '0.78.6';
+const VERSION = '0.79.0';
 
 /* ---------- storage and settings ---------- */
 const store = {
@@ -165,6 +165,31 @@ function durText(ms) {
   const m = Math.round(ms / 60000);
   const h = Math.floor(m / 60);
   return h ? h + ' h ' + (m % 60) + ' min' : m + ' min';
+}
+/* ---------- a film's series: the collection it belongs to (Back to the Future, Part II, Part III…) ---------- */
+const seriesCache = { secs: {}, kids: {} };
+async function filmSeries(m) {
+  if (!m || m.type !== 'movie' || !(m.Collection || []).length || !m.librarySectionID) return null;
+  const sid = m.librarySectionID;
+  let c = seriesCache.secs[sid];
+  if (!c || Date.now() - c.at > 600000) {
+    c = seriesCache.secs[sid] = { at: Date.now(), list: ((await api('/library/sections/' + sid + '/collections', { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 2000 })).Metadata || []) };
+  }
+  const names = m.Collection.map((x) => String(x.tag).toLowerCase());
+  /* the film's smallest collection with at least two films is its series (a big "Marvel" one comes second) */
+  const mine = c.list.filter((x) => names.includes(String(x.title).toLowerCase()) && Number(x.childCount || 2) >= 2 && Number(x.childCount || 2) <= 40)
+    .sort((a, b) => Number(a.childCount || 99) - Number(b.childCount || 99));
+  for (const col of mine.slice(0, 3)) {
+    let k = seriesCache.kids[col.ratingKey];
+    if (!k || Date.now() - k.at > 600000) {
+      k = seriesCache.kids[col.ratingKey] = { at: Date.now(), items: ((await api('/library/collections/' + col.ratingKey + '/children', { 'X-Plex-Container-Start': 0, 'X-Plex-Container-Size': 60 })).Metadata || []).filter((x) => x.type === 'movie') };
+    }
+    const when = (x) => x.originallyAvailableAt || (x.year ? x.year + '-06-30' : '9999');
+    const items = k.items.slice().sort((a, b) => (when(a) < when(b) ? -1 : when(a) > when(b) ? 1 : 0));
+    const i = items.findIndex((x) => String(x.ratingKey) === String(m.ratingKey));
+    if (i >= 0 && items.length >= 2) return { title: col.title, key: col.ratingKey, items: items, index: i, next: items[i + 1] || null };
+  }
+  return null;
 }
 /* ---------- subtitle timing ---------- */
 /* Plex's own Auto-sync (server side, Plex Pass + voice activity data): on unless the profile switched it off */
@@ -3948,6 +3973,9 @@ async function viewDetails(ratingKey, opts) {
   const isShow = m.type === 'show';
   const isEp = m.type === 'episode';
   const extras = xres.Metadata || [];
+  /* the other films of its series (collection), in release order; drawn when they arrive */
+  let series = null;
+  if (m.type === 'movie') filmSeries(m).then((sr) => { if (sr && seq === viewSeq) { series = sr; if (!modalOpen()) redraw(); } }).catch(() => {});
   const localTrailer = extras.find((x) => x.subtype === 'trailer' || String(x.extraType) === '1') || null;
   const part = !isShow && m.Media && m.Media[0] && m.Media[0].Part && m.Media[0].Part[0];
   const subs = part ? (part.Stream || []).filter((s) => s.streamType === 3) : [];
@@ -4111,6 +4139,11 @@ async function viewDetails(ratingKey, opts) {
       const onWl = WL.ids.has(wlId(m));
       actions += '<button type="button" class="btn icon f' + (onWl ? ' on' : '') + '" data-key="wlbtn" aria-label="' + esc(t(onWl ? 'wlRemove' : 'wlAdd')) + '" data-act="' + A(async () => { await wlToggle(m); redraw('wlbtn'); }) + '">' + (onWl ? ICON.bookmarkOn : ICON.bookmark) + '</button>';
     }
+    const seriesBlock = series ? '<h2 class="section-h">' + esc(series.title) + '<small>' + esc(t('seriesPos', { i: series.index + 1, n: series.items.length })) + '</small></h2><div class="hrow hide-scroll seriesrow">' +
+      series.items.map((x) => {
+        const here = String(x.ratingKey) === String(m.ratingKey);
+        return cardHTML(x, 'sr-' + x.ratingKey, A(() => { if (!here) go(viewDetails, [x.ratingKey]); }), { sub: String(x.year || '') }).replace('class="card', 'class="card' + (here ? ' here' : ''));
+      }).join('') + '</div>' : '';
     const extrasBlock = extras.length ? '<h2 class="section-h">' + esc(t('extras')) + '</h2><div class="hrow hide-scroll">' + extras.map((x) => {
       const th = imgURL(x.thumb, 480, 270);
       return '<div class="card ep f" data-key="x-' + x.ratingKey + '" data-act="' + A(() => go(viewPlayer, [x.ratingKey, { fromStart: true }])) + '">' +
@@ -4196,7 +4229,7 @@ async function viewDetails(ratingKey, opts) {
       '<div class="ratings">' + ratingsHTML(m) + (tags.length ? '<div class="tags">' + tagsHTML(tags) + '</div>' : '') + statusHTML() + '</div>' +
       (m.summary ? '<p class="summary">' + esc(m.summary) + '</p>' : '') +
       '<div class="actions"' + (isShow ? '' : ' data-nav-d="p-0"') + '>' + actions + '</div>' +
-      seasonBlock + castBlock + extrasBlock +
+      seasonBlock + castBlock + seriesBlock + extrasBlock +
       '</div></div>');
     initFocus();
     if (wantKey) { if (focused && focused.dataset.key === wantKey) wantKey = null; else autoKey = focused && focused.dataset.key; }
@@ -4297,6 +4330,10 @@ async function viewPlayer(ratingKey, opts) {
   /* a binge (a collection back to back): the next film in line takes the place of "next episode" */
   const queue = m.type !== 'episode' && opts.queue && opts.queue.length ? opts.queue : null;
   if (queue) nextP = api('/library/metadata/' + queue[0]).then((r) => { nextEp = (r.Metadata || [])[0] || null; }).catch(() => {});
+  /* a film in a series: the next one is offered beside "Skip credits" and when the film ends (never started by itself) */
+  let nextFilm = null;
+  if (!queue && m.type === 'movie') nextP = filmSeries(m).then((sr) => { nextFilm = sr && sr.next ? sr.next : null; }).catch(() => {});
+  const goNextFilm = () => { clearTimeout(st.upNextT); current.args = [nextFilm.ratingKey, { fromStart: true }]; current.focusKey = null; run(); };
   const goNext = () => {
     clearTimeout(st.upNextT);
     /* the page underneath (a show's episodes) will have the new episode selected when you come back */
@@ -4357,7 +4394,7 @@ async function viewPlayer(ratingKey, opts) {
   render('<div class="player pg' + (S.playerStyle === 'frame' ? ' pframe' : '') + '" id="pl">' +
     '<video id="vid" playsinline></video><div class="psubs" id="psubs"></div><div class="psubs psubs2" id="psubs2"></div><div class="spinner" id="spin"></div>' +
     '<div class="pfade" aria-hidden="true"></div><div class="pfadetop" aria-hidden="true"></div>' +
-    '<button type="button" class="skipbtn" id="skipbtn" hidden></button>' +
+    '<button type="button" class="skipbtn" id="skipbtn" hidden></button><button type="button" class="skipbtn alt" id="nextfilm" hidden></button>' +
     '<div class="ptop"><span class="pcrumb">' + esc(isEpP ? m.grandparentTitle + ' · ' + bigSub : bigSub) + '</span><button type="button" class="wtbadge" hidden data-act="' + A(() => wtPanel()) + '"></button>' +
     clockHTML(true).replace(/<\/div>$/, '<div class="ends"><b id="ends"></b><span id="ends2"></span></div></div>') + '</div>' +
     '<div class="pbottom">' +
@@ -4455,6 +4492,19 @@ async function viewPlayer(ratingKey, opts) {
     else if (credits && ms >= credits.startTimeOffset && ms < (credits.endTimeOffset || durMs) - 1500) skip = nextEp ? 'next' : 'credits';
     /* no credits found in the file: offer the next episode in the last 40 seconds anyway */
     else if (!credits && nextEp && durMs && durMs - ms < 40000) skip = 'next';
+    /* dismissed with Back: gone until a different one comes up, or you jump back before it */
+    if (st.skipGone && ((skip && st.skipGone !== skip) || ms < st.skipGoneAt - 5000)) st.skipGone = null;
+    if (skip && st.skipGone === skip) skip = null;
+    /* in the credits of a film with a sequel in your library: "Next: <film>" beside "Skip credits" (Left/Right picks) */
+    if (st.ended) skip = null; /* the film is over: only the sequel offer stays */
+    const wantNF = st.ended ? !!st.nf : !!(nextFilm && (skip === 'credits' || (!credits && !st.skipGone && durMs && durMs - ms < 40000)));
+    if (wantNF !== !!st.nf) {
+      st.nf = wantNF; st.nfSel = false;
+      const nb = $('#nextfilm');
+      nb.hidden = !wantNF;
+      if (wantNF) nb.innerHTML = '<span><small class="up">' + esc(t('nextInSeries')) + '</small>' + esc(nextFilm.title) + '</span>' + ICON.next;
+      pl.classList.toggle('nfsel', false);
+    }
     if (skip !== st.skip) {
       st.skip = skip;
       const b = $('#skipbtn');
@@ -4464,10 +4514,14 @@ async function viewPlayer(ratingKey, opts) {
     /* the clearart stands on the panel's top edge, whatever its height */
     { const pc = $('.pclear', pl); if (pc && pc._place) { const ph = ($('.panel', pl) || {}).offsetHeight; if (pc._ph !== ph) { pc._ph = ph; pc._place(); } } }
     /* the skip button sits just above whatever is showing at the bottom (controls, or controls + info) */
-    if (st.skip) {
-      const b = $('#skipbtn'), pb = $('.pbottom', pl);
+    if (st.skip || st.nf) {
+      const b = $('#skipbtn'), nb = $('#nextfilm'), pb = $('.pbottom', pl);
       const want = pl.classList.contains('idle') || !pb ? '' : (pb.offsetHeight + 28) + 'px';
       if (b && b.style.bottom !== want) b.style.bottom = want;
+      if (nb && nb.style.bottom !== want) nb.style.bottom = want;
+      /* the two sit side by side: the sequel to the left of "Skip credits" */
+      const r = st.skip && st.nf ? (96 + b.offsetWidth + 16) + 'px' : '';
+      if (nb && nb.style.right !== r) nb.style.right = r;
     }
     const ppHTML = vid.paused ? ICON.play + '<span>' + esc(t('play')) + '</span>' : ICON.pause + '<span>' + esc(t('pause')) + '</span>';
     if ($('#pp').innerHTML !== ppHTML) $('#pp').innerHTML = ppHTML;
@@ -4601,6 +4655,7 @@ async function viewPlayer(ratingKey, opts) {
     wake(1500); /* after skipping, the controls get out of the way quickly */
   }
   function doSkip() {
+    if (st.nf && nextFilm && (st.nfSel || !st.skip)) { goNextFilm(); return; }
     if (st.skip === 'intro') { st.pending = null; seekTo(intro.endTimeOffset / 1000); return; }
     if (st.skip === 'next' && nextEp) { goNext(); return; }
     if (st.skip === 'credits') { if (credits.endTimeOffset && credits.endTimeOffset < durMs - 5000) seekTo(credits.endTimeOffset / 1000); else back(); }
@@ -5053,6 +5108,16 @@ async function viewPlayer(ratingKey, opts) {
       st.upNextT = setTimeout(goNext, 8000);
       return;
     }
+    /* a film with a sequel: it is offered for 20 seconds (OK plays it, Back leaves); it never starts by itself */
+    if (nextFilm) {
+      st.skip = null; $('#skipbtn').hidden = true;
+      st.nf = true; st.nfSel = true; st.ended = true;
+      const nb = $('#nextfilm'); nb.hidden = false; nb.style.right = '';
+      nb.innerHTML = '<span><small class="up">' + esc(t('nextInSeries')) + '</small>' + esc(nextFilm.title) + '</span>' + ICON.next + '<small>OK</small>';
+      pl.classList.add('nfsel');
+      st.upNextT = setTimeout(() => { if (seq === viewSeq) back(); }, 20000);
+      return;
+    }
     back();
   });
 
@@ -5070,6 +5135,19 @@ async function viewPlayer(ratingKey, opts) {
       return true;
     }
     if (k === ' ') { togglePlay(); return true; }
+    const isBack = k === 'Escape' || k === 'Backspace';
+    /* Back while "Skip intro / Skip credits / Next episode" is showing takes it away (and nothing else);
+       during the countdown after an episode, or the sequel offer after a film, Back leaves the player as before */
+    if (isBack && (st.skip || st.nf) && !st.upNextT && !st.info) {
+      st.skipGone = st.skip || 'credits'; st.skipGoneAt = position() * 1000; st.skip = null; st.nf = false; st.nfSel = false;
+      $('#skipbtn').hidden = true; $('#nextfilm').hidden = true; pl.classList.remove('nfsel');
+      return true;
+    }
+    /* two buttons showing: Left/Right picks between the sequel and "Skip credits", OK takes the picked one */
+    if (st.nf && st.skip && pl.classList.contains('idle') && (k === 'ArrowLeft' || k === 'ArrowRight')) {
+      st.nfSel = k === 'ArrowLeft'; pl.classList.toggle('nfsel', st.nfSel); return true;
+    }
+    if (st.ended && st.nf && k === 'Enter') { goNextFilm(); return true; }
     if (pl.classList.contains('idle')) {
       if (k === 'Escape' || k === 'Backspace') return false; /* controls hidden: Back leaves the player */
       /* skipping with the controls hidden selects the timeline, so further Left/Right keep skipping;
@@ -5080,7 +5158,7 @@ async function viewPlayer(ratingKey, opts) {
          a second press pauses; with no second press the controls hide again after a few seconds */
       if (k === 'ArrowDown') { setInfo(true); setFocus($('#pp'), true); return true; }
       /* while "Skip intro" / "Skip credits" is showing, OK skips */
-      if (k === 'Enter' && st.skip) { doSkip(); return true; }
+      if (k === 'Enter' && (st.skip || st.nf)) { doSkip(); return true; }
       wake(); setFocus($('#pp'), true); return true;
     }
     wake();
@@ -5107,7 +5185,8 @@ async function viewPlayer(ratingKey, opts) {
   };
   pl.addEventListener('mousemove', wake);
   vid.addEventListener('loadedmetadata', function wtHook() { vid.removeEventListener('loadedmetadata', wtHook); if (typeof wtOnPlayer === 'function' && wtOnPlayer(vid, m.ratingKey)) { refreshStatic(); } });
-  $('#skipbtn').addEventListener('click', (e) => { e.stopPropagation(); doSkip(); });
+  $('#skipbtn').addEventListener('click', (e) => { e.stopPropagation(); st.nfSel = false; doSkip(); });
+  $('#nextfilm').addEventListener('click', (e) => { e.stopPropagation(); if (nextFilm) goNextFilm(); });
   $('#track').addEventListener('click', (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     st.pending = null;

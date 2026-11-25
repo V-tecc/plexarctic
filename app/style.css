@@ -1941,3 +1941,14 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .tmdbhead .tov { margin: 14px 0 0; max-width: 1100px; font-size: 22px; line-height: 1.5; }
 .tcasth { margin: 0 0 20px; font-size: 30px; font-weight: var(--w700); }
 .castgrid.tcast { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 34px 20px; }
+
+/* the sequel offered beside "Skip credits": plain until picked with Left, then it takes the highlight */
+.skipbtn.alt { background: rgba(28,28,32,0.86); box-shadow: 0 14px 30px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); transition: bottom 220ms ease, right 220ms ease; }
+.skipbtn.alt span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; max-width: 620px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.skipbtn.alt small.up { margin: 0; padding: 0; border: 0; font-size: 14px; font-weight: var(--w700); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; }
+.player.nfsel .skipbtn.alt { background: var(--grad); box-shadow: 0 14px 30px rgba(0,0,0,0.45); }
+.player.nfsel #skipbtn { background: rgba(28,28,32,0.86); box-shadow: 0 14px 30px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.14); }
+/* a film's series on its page: posters in release order, the film itself marked */
+.section-h small { margin-left: 14px; font-size: 18px; font-weight: var(--w400); color: var(--muted); }
+.seriesrow .card { flex: 0 0 190px; }
+.seriesrow .card.here .img, .seriesrow .card.here .cimg { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--hl); }
