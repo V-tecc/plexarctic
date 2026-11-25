@@ -1952,3 +1952,6 @@ button.crumb.focus { background: var(--surface); color: var(--fg); transform: sc
 .section-h small { margin-left: 14px; font-size: 18px; font-weight: var(--w400); color: var(--muted); }
 .seriesrow .card { flex: 0 0 190px; }
 .seriesrow .card.here .img, .seriesrow .card.here .cimg { box-shadow: 0 0 0 3px var(--bg), 0 0 0 6px var(--hl); }
+/* the arrows are on the skip buttons (Up from the controls): the picked one gets the focus ring, the control below loses its highlight */
+.player.skfocus:not(.nfsel) #skipbtn, .player.skfocus.nfsel #nextfilm { box-shadow: 0 0 0 3px rgba(0,0,0,0.6), 0 0 0 6px #FFFFFF, 0 14px 30px rgba(0,0,0,0.45); }
+.player.skfocus .controls .pbtn.focus, #stage .player.skfocus .controls .pbtn.focus { background: transparent; color: inherit; }
